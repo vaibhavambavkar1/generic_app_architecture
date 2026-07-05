@@ -1,0 +1,30 @@
+{% load ui_tags %}
+{% get_sidebar_menus as menu_items %}
+
+<aside class="fixed inset-y-0 left-0 z-50 w-64 overflow-y-auto transition-transform transform bg-gray-900 border-r border-gray-800 lg:translate-x-0 lg:static lg:inset-0" 
+       :class="{'translate-x-0 ease-out': sidebarOpen, '-translate-x-full ease-in': !sidebarOpen}">
+    <div class="flex items-center justify-center h-16 bg-gray-900 border-b border-gray-800">
+        <span class="text-xl font-black tracking-wider text-white uppercase shadow-sm">ERP Framework</span>
+    </div>
+
+    <nav class="p-4 mt-2 space-y-2">
+        <a href="/" class="flex items-center px-4 py-3 text-sm font-medium text-gray-300 transition-colors rounded-lg hover:text-white hover:bg-gray-800 group">
+            <svg class="w-5 h-5 mr-3 text-gray-400 group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+            Dashboard
+        </a>
+        
+        <div class="pt-4 pb-1">
+            <p class="px-4 text-xs font-bold tracking-wider text-gray-500 uppercase">Modules</p>
+        </div>
+
+        {% for item in menu_items %}
+        <a href="{{ item.url }}" class="flex items-center px-4 py-3 text-sm font-medium text-gray-300 transition-colors rounded-lg hover:text-white hover:bg-gray-800 group">
+            <span class="mr-3 text-gray-400 group-hover:text-blue-400">
+                <!-- Using a generic icon for now, ideally map item.icon to an SVG -->
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+            </span>
+            {{ item.label }}
+        </a>
+        {% endfor %}
+    </nav>
+</aside>

@@ -1,0 +1,17 @@
+<div class="relative overflow-hidden bg-white rounded-xl shadow-sm border border-gray-100 dark:bg-gray-800 dark:border-gray-700 transition-all hover:shadow-md">
+    <div class="p-5">
+        <div class="flex items-center">
+            <div class="flex-shrink-0 p-3 bg-{{ color|default:'blue' }}-50 rounded-lg dark:bg-{{ color|default:'blue' }}-900/30">
+                {{ icon|safe }}
+            </div>
+            <div class="ml-5 w-0 flex-1">
+                <dl>
+                    <dt class="text-sm font-semibold text-gray-500 truncate dark:text-gray-400 uppercase tracking-wide">{{ title }}</dt>
+                    <dd>
+                        <div class="text-3xl font-black text-gray-900 dark:text-white">{{ value|default:"0" }}</div>
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>

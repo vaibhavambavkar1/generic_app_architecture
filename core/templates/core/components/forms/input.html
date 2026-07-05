@@ -1,0 +1,38 @@
+<div class="mb-4">
+    {% if label %}
+    <label for="{{ id|default:name }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        {{ label }}
+        {% if required %}<span class="text-red-500">*</span>{% endif %}
+    </label>
+    {% endif %}
+    
+    <div class="relative rounded-md shadow-sm">
+        {% if icon_left %}
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+            {{ icon_left|safe }}
+        </div>
+        {% endif %}
+        
+        <input 
+            type="{{ type|default:'text' }}" 
+            name="{{ name }}" 
+            id="{{ id|default:name }}"
+            {% if value %}value="{{ value }}"{% endif %}
+            {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
+            {% if required %}required{% endif %}
+            {% if disabled %}disabled{% endif %}
+            class="focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 transition-colors disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-900
+            {% if icon_left %}pl-10{% endif %}
+            {% if error %}border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500 dark:border-red-600 dark:text-red-400{% endif %}
+            {{ extra_classes|default:'' }}"
+        >
+    </div>
+    
+    {% if help_text and not error %}
+    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400" id="{{ id|default:name }}-description">{{ help_text }}</p>
+    {% endif %}
+    
+    {% if error %}
+    <p class="mt-2 text-sm text-red-600 dark:text-red-400" id="{{ id|default:name }}-error">{{ error }}</p>
+    {% endif %}
+</div>
