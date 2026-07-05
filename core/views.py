@@ -95,3 +95,29 @@ def update_config(request, pk):
         return HttpResponse(f'<span class="text-green-600 font-bold ml-2">Saved!</span>')
     except Exception as e:
         return HttpResponse(f'<span class="text-red-600 ml-2">Error: {str(e)}</span>', status=400)
+
+from .license import LicenseManager
+from .config import Config
+from django.shortcuts import redirect
+
+def activate_license(request):
+    """View for displaying and processing license activation."""
+    hwid = LicenseManager.get_hardware_id()
+    
+    if request.method == 'POST':
+        key = request.POST.get('license_key')
+        valid, msg = LicenseManager.verify_license(key)
+        
+        if valid:
+            # Save valid license to the DB Config store
+            Config.set('APP_LICENSE_KEY', key, 'Global System License Key (JWT)')
+            
+            # Invalidate the middleware cache immediately
+            from django.core.cache import cache
+            cache.delete("license_is_valid")
+            
+            return redirect('/')
+        else:
+            return render(request, 'core/activate_license.html', {'hwid': hwid, 'error': msg})
+            
+    return render(request, 'core/activate_license.html', {'hwid': hwid})
