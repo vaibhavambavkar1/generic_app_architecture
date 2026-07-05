@@ -1,3 +1,137 @@
 from django.db import models
+from django.conf import settings
+from .events import EventBus, workflow_transitioned
+from .rules.registry import RuleEngine
 
-# Create your models here.
+class Workflow(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True)
+    model_name = models.CharField(
+        max_length=100, 
+        help_text="e.g., 'inventory.PurchaseOrder'"
+    )
+
+    def __str__(self):
+        return self.name
+
+class State(models.Model):
+    workflow = models.ForeignKey(Workflow, related_name='states', on_delete=models.CASCADE)
+    name = models.CharField(max_length=50)
+    is_initial = models.BooleanField(default=False)
+    is_final = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('workflow', 'name')
+
+    def __str__(self):
+        return f"{self.workflow.name} - {self.name}"
+
+class Transition(models.Model):
+    workflow = models.ForeignKey(Workflow, related_name='transitions', on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    from_state = models.ForeignKey(State, related_name='outgoing_transitions', on_delete=models.CASCADE)
+    to_state = models.ForeignKey(State, related_name='incoming_transitions', on_delete=models.CASCADE)
+    
+    # Comma-separated list of conditions registered in RuleEngine
+    conditions = models.CharField(max_length=255, blank=True, help_text="Comma-separated condition names")
+    
+    # Comma-separated list of actions registered in RuleEngine
+    actions = models.CharField(max_length=255, blank=True, help_text="Comma-separated action names")
+
+    class Meta:
+        unique_together = ('workflow', 'from_state', 'to_state', 'name')
+
+    def __str__(self):
+        return f"{self.name} ({self.from_state.name} -> {self.to_state.name})"
+
+class ApprovalRoute(models.Model):
+    transition = models.ForeignKey(Transition, related_name='approvals', on_delete=models.CASCADE)
+    required_group = models.ForeignKey('auth.Group', on_delete=models.SET_NULL, null=True, blank=True)
+    
+    def can_approve(self, user):
+        if not self.required_group:
+            return True
+        return user.groups.filter(id=self.required_group.id).exists()
+
+class WorkflowMixin(models.Model):
+    """
+    Abstract mixin for fat models to integrate with the Workflow Engine.
+    """
+    workflow_state = models.ForeignKey(
+        State, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='%(class)s_instances'
+    )
+    
+    class Meta:
+        abstract = True
+
+    def get_workflow_name(self):
+        """Derive the workflow identifier based on the model name."""
+        return f"{self._meta.app_label}.{self.__class__.__name__}"
+        
+    def get_available_transitions(self, user):
+        """Return a list of transitions available from the current state for the given user."""
+        if not self.workflow_state:
+            return []
+            
+        transitions = self.workflow_state.outgoing_transitions.all()
+        available = []
+        for transition in transitions:
+            # Check approval route
+            approvals = transition.approvals.all()
+            can_approve = True
+            for approval in approvals:
+                if not approval.can_approve(user):
+                    can_approve = False
+                    break
+            
+            if can_approve:
+                available.append(transition)
+                
+        return available
+
+    def transition_to(self, transition, user, **context_kwargs):
+        """
+        Attempt to execute a transition on this instance.
+        Evaluates conditions, updates state, emits event, and executes actions.
+        """
+        if transition not in self.get_available_transitions(user):
+            raise ValueError(f"Transition {transition.name} is not available for user {user}.")
+            
+        context = {
+            'instance': self,
+            'user': user,
+            'transition': transition
+        }
+        context.update(context_kwargs)
+        
+        # 1. Evaluate Conditions (Rule Engine)
+        if transition.conditions:
+            condition_names = [c.strip() for c in transition.conditions.split(',')]
+            for cond_name in condition_names:
+                if not RuleEngine.evaluate_condition(cond_name, context):
+                    raise ValueError(f"Condition '{cond_name}' failed for transition '{transition.name}'.")
+                    
+        # 2. State Change
+        old_state = self.workflow_state
+        self.workflow_state = transition.to_state
+        self.save(update_fields=['workflow_state'])
+        
+        # 3. Emit Event (Event Bus)
+        EventBus.publish(
+            workflow_transitioned, 
+            sender=self.__class__, 
+            instance=self, 
+            old_state=old_state, 
+            new_state=self.workflow_state, 
+            user=user
+        )
+        
+        # 4. Execute Actions (Rule Engine)
+        if transition.actions:
+            action_names = [a.strip() for a in transition.actions.split(',')]
+            for act_name in action_names:
+                RuleEngine.execute_action(act_name, context)
