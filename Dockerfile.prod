@@ -1,0 +1,62 @@
+# Stage 1: Build & Obfuscate
+FROM python:3.12-slim as builder
+
+# Prevent Python from writing .pyc in __pycache__ folders during run, 
+# because we will compile them directly next to the files.
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+# Install system dependencies required for MySQL and compilation
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    default-libmysqlclient-dev \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install python dependencies into a local directory for easy copying
+COPY requirements.txt .
+RUN pip install --user --no-warn-script-location -r requirements.txt
+
+# Copy the entire source code
+COPY . .
+
+# ==============================================================================
+# INTELLECTUAL PROPERTY PROTECTION (Obfuscation)
+# ==============================================================================
+# Compile all Python source code (.py) into compiled bytecode (.pyc)
+RUN python -m compileall -b .
+
+# Delete all original human-readable source code files
+RUN find . -type f -name "*.py" -delete
+# ==============================================================================
+
+# Stage 2: Production Runner
+FROM python:3.12-slim
+
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+# Install runtime dependencies for MySQL (we don't need build-essential here)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    default-libmysqlclient-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy the installed python packages from the builder stage
+COPY --from=builder /root/.local /root/.local
+ENV PATH=/root/.local/bin:$PATH
+
+# Copy the obfuscated bytecode and static/template assets from the builder stage
+COPY --from=builder /app /app
+
+# Create a non-root user for security
+RUN useradd -m erpuser && chown -R erpuser:erpuser /app
+USER erpuser
+
+EXPOSE 8000
+
+# Use Gunicorn as the robust production WSGI server
+# Python's import system natively understands how to load wsgi.pyc
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "--threads", "2", "erp_framework.wsgi:application"]

@@ -155,7 +155,9 @@ def item_import(request):
     return TemplateResponse(request, 'inventory/modals/import_items.html')
 
 from core.reports.graphs import GraphGenerator
+from core.imports.importer import DataImporter
 from django.db.models import Count
+from django.contrib.auth.decorators import login_required
 
 @login_required
 def dashboard_chart(request):

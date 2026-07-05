@@ -1,0 +1,77 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    command: gunicorn --bind 0.0.0.0:8000 --workers 4 --threads 2 erp_framework.wsgi:application
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+    # Use a named network for security
+    networks:
+      - erp_prod_network
+
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    command: celery -A erp_framework worker -l info --concurrency=4
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - db
+    restart: unless-stopped
+    networks:
+      - erp_prod_network
+
+  celery-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    command: celery -A erp_framework beat -l info
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - db
+    restart: unless-stopped
+    networks:
+      - erp_prod_network
+
+  db:
+    image: mysql:8.0
+    env_file:
+      - .env
+    volumes:
+      - prod_mysql_data:/var/lib/mysql
+    restart: unless-stopped
+    networks:
+      - erp_prod_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    networks:
+      - erp_prod_network
+    volumes:
+      - prod_redis_data:/data
+
+volumes:
+  prod_mysql_data:
+  prod_redis_data:
+
+networks:
+  erp_prod_network:
+    driver: bridge
