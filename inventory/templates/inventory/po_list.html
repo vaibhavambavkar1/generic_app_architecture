@@ -1,0 +1,7 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+    {% include 'core/components/layout/page_header.html' with title="Purchase Orders" subtitle="Manage and track all purchase orders." %}
+
+    {% include 'core/components/tables/datatable.html' with headers=headers rows_template='inventory/partials/po_rows.html' search_url=search_url is_paginated=True bulk_action_url='#' %}
+{% endblock %}

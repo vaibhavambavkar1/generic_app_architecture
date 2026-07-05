@@ -5,4 +5,5 @@ app_name = 'inventory'
 
 urlpatterns = [
     path('', views.dashboard, name='dashboard'),
+    path('po/', views.po_list, name='po_list'),
 ]

@@ -1,4 +1,47 @@
-<!-- Toolbar Component -->
-<div class="toolbar-wrapper">
-    Toolbar
+<div class="flex flex-col sm:flex-row items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 space-y-3 sm:space-y-0 sm:space-x-4">
+    <!-- Search / Filter -->
+    <div class="w-full sm:w-1/2 flex items-center">
+        {% if search_url %}
+        <div class="relative w-full max-w-md">
+            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </div>
+            <!-- Triggers HTMX request exactly 500ms after user stops typing -->
+            <input type="text" name="q" 
+                   hx-get="{{ search_url }}" 
+                   hx-target="#datatable-body" 
+                   hx-swap="innerHTML" 
+                   hx-trigger="keyup changed delay:500ms, search" 
+                   hx-indicator=".htmx-indicator"
+                   class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 transition-colors" 
+                   placeholder="Search records...">
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Bulk Actions (Visible only when rows selected via Alpine.js) -->
+    <div class="w-full sm:w-auto flex items-center justify-end space-x-2" x-show="hasSelection" style="display: none;" x-transition>
+        <span class="text-sm text-gray-500 dark:text-gray-400 mr-2">
+            <span x-text="selectedIds.length" class="font-bold"></span> selected
+        </span>
+        
+        {% if export_url %}
+        <button @click="executeExport()" type="button" class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700 transition-colors">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+            Export
+        </button>
+        {% endif %}
+        
+        {% if bulk_action_url %}
+        <button @click="executeBulkAction('delete')" type="button" class="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-lg shadow-sm hover:bg-red-700 focus:ring-4 focus:outline-none focus:ring-red-300 dark:focus:ring-red-900 transition-colors">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            Delete
+        </button>
+        {% endif %}
+    </div>
+    
+    <!-- Standard Actions (when no selection) -->
+    <div class="w-full sm:w-auto flex items-center justify-end space-x-2" x-show="!hasSelection">
+        {{ toolbar_actions|safe }}
+    </div>
 </div>

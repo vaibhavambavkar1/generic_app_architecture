@@ -1,0 +1,26 @@
+{% for po in page_obj %}
+<tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+    <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white w-10">
+        <input type="checkbox" value="{{ po.id }}" data-row-id="{{ po.id }}" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-300">#PO-{{ po.id|stringformat:"04d" }}</td>
+    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">{{ po.item.name }}</td>
+    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ po.quantity }} units</td>
+    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">${{ po.total_cost }}</td>
+    <td class="px-6 py-4 whitespace-nowrap">
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold 
+            {% if po.workflow_state.name == 'Approved' %}bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300
+            {% elif po.workflow_state.name == 'Pending Approval' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300
+            {% else %}bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300{% endif %}">
+            {{ po.workflow_state.name|default:'Draft' }}
+        </span>
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ po.created_at|date:"M d, Y" }}</td>
+</tr>
+{% empty %}
+<tr>
+    <td colspan="7" class="px-6 py-8">
+        {% include 'core/components/feedback/empty_state.html' with title="No Purchase Orders found." message="Try adjusting your search query." %}
+    </td>
+</tr>
+{% endfor %}

@@ -1,17 +1,102 @@
-<div class="overflow-x-auto bg-white rounded-lg shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-        <thead class="bg-gray-50 dark:bg-gray-900">
-            <tr>
-                {% for header in headers %}
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">
-                    {{ header }}
-                </th>
-                {% endfor %}
-            </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
-            <!-- Iterate over rows via template context or slot -->
-            {{ rows|safe }}
-        </tbody>
-    </table>
+<div x-data="datatable({ 
+        exportUrl: '{{ export_url|default:'' }}', 
+        bulkActionUrl: '{{ bulk_action_url|default:'' }}' 
+    })" 
+    class="bg-white rounded-xl shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+    
+    <!-- Toolbar (Search, Filters, Bulk Actions) -->
+    {% include 'core/components/tables/toolbar.html' %}
+
+    <div class="overflow-x-auto relative min-h-[200px]">
+        <!-- Loading Overlay (triggered by HTMX requests on the table body) -->
+        <div class="htmx-indicator absolute inset-0 z-10 bg-white/50 dark:bg-gray-900/50 flex items-center justify-center backdrop-blur-sm">
+            <svg class="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+        </div>
+
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead class="bg-gray-50 dark:bg-gray-900/50">
+                <tr>
+                    {% if bulk_action_url or export_url %}
+                    <th scope="col" class="px-6 py-4 w-10">
+                        <div class="flex items-center">
+                            <input type="checkbox" x-model="selectAll" @change="toggleAll" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                        </div>
+                    </th>
+                    {% endif %}
+                    
+                    {% for header in headers %}
+                    <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider dark:text-gray-400">
+                        {{ header }}
+                    </th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody id="datatable-body" class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700 relative">
+                <!-- Data injected here via server include or fragment -->
+                {% if rows_template %}
+                    {% include rows_template %}
+                {% else %}
+                    {{ rows|safe }}
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Pagination Footer -->
+    {% if is_paginated or paginator %}
+        {% include 'core/components/tables/pagination.html' %}
+    {% endif %}
+
+    <!-- Hidden Export Form -->
+    <form x-ref="exportForm" :action="exportUrl" method="POST" class="hidden" hx-boost="false">
+        {% csrf_token %}
+        <template x-for="id in selectedIds">
+            <input type="hidden" name="selected_ids[]" :value="id">
+        </template>
+    </form>
 </div>
+
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('datatable', (config) => ({
+            selectedIds: [],
+            selectAll: false,
+            exportUrl: config.exportUrl,
+            bulkActionUrl: config.bulkActionUrl,
+            
+            toggleAll() {
+                if (this.selectAll) {
+                    // Collect all checkbox values currently in the DOM marked with data-row-id
+                    let checkboxes = document.querySelectorAll('#datatable-body input[type="checkbox"][data-row-id]');
+                    this.selectedIds = Array.from(checkboxes).map(cb => cb.value);
+                } else {
+                    this.selectedIds = [];
+                }
+            },
+            
+            get hasSelection() {
+                return this.selectedIds.length > 0;
+            },
+            
+            executeBulkAction(actionType) {
+                if(!this.hasSelection || !this.bulkActionUrl) return;
+                
+                // Native HTMX AJAX call from Javascript
+                htmx.ajax('POST', this.bulkActionUrl, {
+                    values: { action: actionType, ids: this.selectedIds },
+                    target: '#datatable-body',
+                    swap: 'innerHTML',
+                    headers: {'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value}
+                }).then(() => {
+                    this.selectedIds = [];
+                    this.selectAll = false;
+                });
+            },
+            
+            executeExport() {
+                if(!this.hasSelection || !this.exportUrl) return;
+                this.$refs.exportForm.submit();
+            }
+        }))
+    })
+</script>
