@@ -87,6 +87,8 @@ class DataExporter:
         for cell in sheet[1]:
             cell.font = openpyxl.styles.Font(bold=True)
         
+        import datetime
+        
         # Write Data
         for obj in queryset:
             row = []
@@ -95,6 +97,9 @@ class DataExporter:
                 # Ensure no complex types leak into Excel engine
                 if isinstance(val, (dict, list, tuple)):
                     val = str(val)
+                # Excel does not support timezone-aware datetimes
+                elif isinstance(val, datetime.datetime) and val.tzinfo is not None:
+                    val = val.replace(tzinfo=None)
                 row.append(val)
             sheet.append(row)
             
