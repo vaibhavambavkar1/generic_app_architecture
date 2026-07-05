@@ -1,7 +1,15 @@
 {% extends 'core/base.html' %}
 
 {% block content %}
-    {% include 'core/components/layout/page_header.html' with title="Purchase Orders" subtitle="Manage and track all purchase orders." %}
+    <div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
+        {% include 'core/components/layout/page_header.html' with title="Purchase Orders" subtitle="Manage and track all purchase orders." %}
+        <div class="flex items-center space-x-2">
+            <span class="text-sm text-gray-500 dark:text-gray-400 mr-2">Export All:</span>
+            <a href="{% url 'inventory:po_bulk_export' 'csv' %}" class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">CSV</a>
+            <a href="{% url 'inventory:po_bulk_export' 'excel' %}" class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">Excel</a>
+            <a href="{% url 'inventory:po_bulk_export' 'json' %}" class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">JSON</a>
+        </div>
+    </div>
 
     {% include 'core/components/tables/datatable.html' with headers=headers rows_template='inventory/partials/po_rows.html' search_url=search_url is_paginated=True bulk_action_url='#' %}
 {% endblock %}

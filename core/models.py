@@ -44,6 +44,33 @@ class Transition(models.Model):
     def __str__(self):
         return f"{self.name} ({self.from_state.name} -> {self.to_state.name})"
 
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey
+
+class AuditLog(models.Model):
+    ACTION_CHOICES = (
+        ('CREATE', 'Create'),
+        ('UPDATE', 'Update'),
+        ('DELETE', 'Delete'),
+    )
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
+    action = models.CharField(max_length=10, choices=ACTION_CHOICES)
+    
+    # Generic relation to any model
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey('content_type', 'object_id')
+    
+    old_values = models.JSONField(null=True, blank=True)
+    new_values = models.JSONField(null=True, blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-timestamp']
+
+    def __str__(self):
+        return f"{self.action} on {self.content_type} #{self.object_id} at {self.timestamp}"
+
 class ApprovalRoute(models.Model):
     transition = models.ForeignKey(Transition, related_name='approvals', on_delete=models.CASCADE)
     required_group = models.ForeignKey('auth.Group', on_delete=models.SET_NULL, null=True, blank=True)
@@ -53,7 +80,9 @@ class ApprovalRoute(models.Model):
             return True
         return user.groups.filter(id=self.required_group.id).exists()
 
-class WorkflowMixin(models.Model):
+from core.mixins import AuditableMixin
+
+class WorkflowMixin(AuditableMixin):
     """
     Abstract mixin for fat models to integrate with the Workflow Engine.
     """
@@ -118,6 +147,8 @@ class WorkflowMixin(models.Model):
         # 2. State Change
         old_state = self.workflow_state
         self.workflow_state = transition.to_state
+        if user:
+            self._audit_user_id = user.id
         self.save(update_fields=['workflow_state'])
         
         # 3. Emit Event (Event Bus)

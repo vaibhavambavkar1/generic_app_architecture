@@ -25,5 +25,27 @@ services:
   redis:
     image: redis:7-alpine
 
+  celery-worker:
+    build: .
+    command: celery -A erp_framework worker -l INFO
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+
+  celery-beat:
+    build: .
+    command: celery -A erp_framework beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+
 volumes:
   mysql_data:

@@ -49,3 +49,69 @@ def po_list(request):
     headers = ['ID', 'Item', 'Qty', 'Total Cost', 'Status', 'Date']
     context['headers'] = headers
     return TemplateResponse(request, 'inventory/po_list.html', context)
+
+from django.shortcuts import get_object_or_404
+from django.contrib.contenttypes.models import ContentType
+from core.models import AuditLog
+
+def po_detail(request, pk):
+    po = get_object_or_404(PurchaseOrder, pk=pk)
+    
+    # Get Audit Logs
+    ct = ContentType.objects.get_for_model(PurchaseOrder)
+    audit_logs = AuditLog.objects.filter(content_type=ct, object_id=po.id)
+    
+    context = {
+        'po': po,
+        'audit_logs': audit_logs,
+    }
+    return TemplateResponse(request, 'inventory/po_detail.html', context)
+
+from django.http import FileResponse
+from .reports import generate_po_pdf
+
+def po_pdf_export(request, pk):
+    po = get_object_or_404(PurchaseOrder, pk=pk)
+    pdf_buffer = generate_po_pdf(po)
+    
+    return FileResponse(
+        pdf_buffer, 
+        as_attachment=True, 
+        filename=f"PO_{po.id:04d}.pdf"
+    )
+
+from django.http import HttpResponse
+from core.reports.exporter import DataExporter
+
+def po_bulk_export(request, fmt):
+    query = request.GET.get('q', '')
+    
+    queryset = PurchaseOrder.objects.select_related('item', 'workflow_state').order_by('-created_at')
+    
+    if query:
+        queryset = queryset.filter(
+            Q(item__name__icontains=query) | 
+            Q(id__icontains=query)
+        )
+        
+    fields = [
+        ('id', 'PO Number'),
+        ('item.name', 'Item Name'),
+        ('item.sku', 'SKU'),
+        ('quantity', 'Quantity'),
+        ('total_cost', 'Total Cost (USD)'),
+        ('workflow_state.name', 'Status'),
+        ('created_at', 'Date Created')
+    ]
+    
+    if fmt == 'csv':
+        buffer = DataExporter.export_csv(queryset, fields)
+        return FileResponse(buffer, as_attachment=True, filename='purchase_orders.csv')
+    elif fmt == 'excel':
+        buffer = DataExporter.export_excel(queryset, fields)
+        return FileResponse(buffer, as_attachment=True, filename='purchase_orders.xlsx')
+    elif fmt == 'json':
+        buffer = DataExporter.export_json(queryset, fields)
+        return FileResponse(buffer, as_attachment=True, filename='purchase_orders.json')
+    
+    return HttpResponse("Unsupported format", status=400)
