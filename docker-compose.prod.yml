@@ -3,6 +3,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.prod
+    read_only: true
+    tmpfs:
+      - /tmp
     command: gunicorn --bind 0.0.0.0:8000 --workers 4 --threads 2 erp_framework.wsgi:application
     env_file:
       - .env
@@ -22,6 +25,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.prod
+    read_only: true
+    tmpfs:
+      - /tmp
     command: celery -A erp_framework worker -l info --concurrency=4
     env_file:
       - .env
@@ -36,6 +42,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.prod
+    read_only: true
+    tmpfs:
+      - /tmp
     command: celery -A erp_framework beat -l info
     env_file:
       - .env
