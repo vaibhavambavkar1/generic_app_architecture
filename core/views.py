@@ -38,3 +38,60 @@ def execute_transition(request, app_label, model_name, object_id, transition_id)
     }
     
     return render(request, 'core/components/workflow_actions.html', context)
+
+from django.http import FileResponse, HttpResponse
+from .backup import BackupManager
+
+@login_required
+def backup_dashboard(request):
+    """Admin dashboard for managing database backups."""
+    if request.method == 'POST':
+        if 'backup_file' not in request.FILES:
+            return HttpResponse("No file provided", status=400)
+            
+        file = request.FILES['backup_file']
+        if not file.name.endswith('.json'):
+            context = {'toast_message': "Invalid format. Must be JSON.", 'toast_type': 'error'}
+            return render(request, 'core/backup_dashboard.html', context)
+            
+        success, message = BackupManager.restore_backup(file)
+        
+        context = {
+            'toast_message': message,
+            'toast_type': 'success' if success else 'error'
+        }
+        return render(request, 'core/backup_dashboard.html', context)
+        
+    return render(request, 'core/backup_dashboard.html')
+
+@login_required
+def download_backup(request):
+    """Streams a database backup download."""
+    buffer, filename = BackupManager.create_backup()
+    return FileResponse(buffer, as_attachment=True, filename=filename)
+
+from .models import SystemConfig
+
+@login_required
+def settings_dashboard(request):
+    """Unified dashboard for configurations, rules, and backups."""
+    configs = SystemConfig.objects.all().order_by('key')
+    return render(request, 'core/settings_dashboard.html', {'configs': configs})
+
+@login_required
+@require_POST
+def update_config(request, pk):
+    config = get_object_or_404(SystemConfig, pk=pk)
+    try:
+        new_val_str = request.POST.get('value')
+        import json
+        new_val = json.loads(new_val_str)
+        config.value = new_val
+        config.save()
+        
+        from django.core.cache import cache
+        cache.delete(f"sysconfig_{config.key}")
+        
+        return HttpResponse(f'<span class="text-green-600 font-bold ml-2">Saved!</span>')
+    except Exception as e:
+        return HttpResponse(f'<span class="text-red-600 ml-2">Error: {str(e)}</span>', status=400)

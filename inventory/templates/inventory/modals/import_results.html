@@ -1,0 +1,44 @@
+<div id="modal-backdrop" class="fixed inset-0 bg-gray-900 bg-opacity-50 z-50 flex justify-center items-center backdrop-blur-sm"
+     hx-target="this" 
+     hx-swap="outerHTML">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md mx-4 overflow-hidden" @click.stop>
+        <div class="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white">Import Complete</h3>
+            <button onclick="document.getElementById('modal-backdrop').remove(); window.location.reload();" class="text-gray-400 hover:text-gray-500">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <div class="p-6 space-y-4">
+            {% if results.success %}
+                <div class="flex items-center text-green-600 dark:text-green-400 mb-4">
+                    <svg class="w-8 h-8 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    <span class="text-lg font-bold">Successfully imported data!</span>
+                </div>
+            {% else %}
+                <div class="flex items-center text-yellow-600 dark:text-yellow-400 mb-4">
+                    <svg class="w-8 h-8 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    <span class="text-lg font-bold">Imported with some errors.</span>
+                </div>
+            {% endif %}
+            
+            <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                <li><span class="font-bold text-gray-900 dark:text-white">{{ results.created }}</span> new items created.</li>
+                <li><span class="font-bold text-gray-900 dark:text-white">{{ results.updated }}</span> existing items updated.</li>
+            </ul>
+            
+            {% if results.errors %}
+                <div class="mt-4 max-h-32 overflow-y-auto bg-gray-50 dark:bg-gray-900 p-3 rounded border border-gray-200 dark:border-gray-700">
+                    <p class="text-xs font-bold text-red-500 mb-2">Errors encountered:</p>
+                    <ul class="list-disc pl-5 text-xs text-red-400 space-y-1">
+                        {% for error in results.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+        </div>
+        <div class="px-6 py-4 bg-gray-50 dark:bg-gray-700/50 flex justify-end rounded-b-xl">
+            <button type="button" onclick="document.getElementById('modal-backdrop').remove(); window.location.reload();" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 transition-colors">Done</button>
+        </div>
+    </div>
+</div>

@@ -115,3 +115,41 @@ def po_bulk_export(request, fmt):
         return FileResponse(buffer, as_attachment=True, filename='purchase_orders.json')
     
     return HttpResponse("Unsupported format", status=400)
+
+def item_import(request):
+    if request.method == 'POST':
+        if 'import_file' not in request.FILES:
+            return HttpResponse("No file uploaded", status=400)
+            
+        file = request.FILES['import_file']
+        
+        # Determine format from extension
+        ext = file.name.split('.')[-1].lower()
+        if ext == 'csv':
+            fmt = 'csv'
+        elif ext in ['xlsx', 'xls']:
+            fmt = 'excel'
+        elif ext == 'json':
+            fmt = 'json'
+        else:
+            return HttpResponse("Unsupported file type", status=400)
+            
+        mapping = {
+            'SKU': 'sku',
+            'Name': 'name',
+            'Stock Quantity': 'stock_quantity'
+        }
+        
+        results = DataImporter.import_data(
+            app_label='inventory',
+            model_name='item',
+            file_stream=file,
+            fmt=fmt,
+            mapping=mapping,
+            unique_fields=['sku']
+        )
+        
+        context = {'results': results}
+        return TemplateResponse(request, 'inventory/modals/import_results.html', context)
+        
+    return TemplateResponse(request, 'inventory/modals/import_items.html')

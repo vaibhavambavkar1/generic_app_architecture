@@ -1,7 +1,18 @@
 {% extends 'core/base.html' %}
 
 {% block content %}
-    {% include 'core/components/layout/page_header.html' with title="Inventory Dashboard" subtitle="Overview of stock levels and purchase orders across all warehouses." %}
+    <div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
+        {% include 'core/components/layout/page_header.html' with title="Inventory Dashboard" subtitle="Overview of stock levels and purchase orders across all warehouses." %}
+        
+        <div>
+            <button hx-get="{% url 'inventory:item_import' %}" hx-target="#modals-here" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                Import Items
+            </button>
+        </div>
+    </div>
+    
+    <div id="modals-here"></div>
 
     <div class="grid grid-cols-1 gap-5 sm:grid-cols-3 mb-8">
         {% include 'core/components/dashboard/stat_card.html' with title="Total Unique Items" value=total_items color="blue" icon='<svg class="w-7 h-7 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>' %}

@@ -166,3 +166,15 @@ class WorkflowMixin(AuditableMixin):
             action_names = [a.strip() for a in transition.actions.split(',')]
             for act_name in action_names:
                 RuleEngine.execute_action(act_name, context)
+
+class SystemConfig(models.Model):
+    key = models.CharField(max_length=100, unique=True, help_text="e.g., REQUIRE_PO_APPROVAL")
+    value = models.JSONField(help_text="Store values as JSON (e.g., true, 100, \"string\")")
+    description = models.TextField(blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name_plural = "System Configurations"
+        
+    def __str__(self):
+        return f"{self.key}: {self.value}"
