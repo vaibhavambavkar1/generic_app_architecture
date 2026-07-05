@@ -153,3 +153,33 @@ def item_import(request):
         return TemplateResponse(request, 'inventory/modals/import_results.html', context)
         
     return TemplateResponse(request, 'inventory/modals/import_items.html')
+
+from core.reports.graphs import GraphGenerator
+from django.db.models import Count
+
+@login_required
+def dashboard_chart(request):
+    """HTMX endpoint that returns an interactive Plotly chart of PO Statuses."""
+    # Group POs by status
+    qs = PurchaseOrder.objects.values('workflow_state__name').annotate(count=Count('id'))
+    
+    # We must convert it to a list to handle Null names if we want, but plotly handles None.
+    qs_list = list(qs)
+    for item in qs_list:
+        if item['workflow_state__name'] is None:
+            item['workflow_state__name'] = 'Draft'
+            
+    # Mocking queryset behavior for GraphGenerator which expects .values() but we give a list of dicts.
+    # Wait, GraphGenerator does `list(queryset.values())`, so it expects a queryset.
+    # We should just let GraphGenerator handle a list of dicts directly!
+    
+    # Actually, we should tweak GraphGenerator to support lists of dicts directly in case we pass pre-aggregated data.
+    # I'll pass the list directly and map 'workflow_state__name' to 'count'.
+    html = GraphGenerator.generate_pie_chart(
+        queryset=qs_list,
+        names_field='workflow_state__name',
+        values_field='count',
+        title="Purchase Orders by Status"
+    )
+    
+    return HttpResponse(html)
