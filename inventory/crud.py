@@ -5,6 +5,8 @@ from django.template.response import TemplateResponse
 from django.forms import modelform_factory
 from django.contrib.auth.decorators import login_required
 
+from django.core.paginator import Paginator
+
 def get_model(model_name):
     return apps.get_model('inventory', model_name)
 
@@ -12,18 +14,28 @@ def get_model(model_name):
 def manage_list(request, model_name):
     model = get_model(model_name)
     queryset = model.objects.all()
+    if hasattr(model, 'created_at'):
+        queryset = queryset.order_by('-created_at')
+    else:
+        queryset = queryset.order_by('-id')
     
     # Simple Generic Search
     q = request.GET.get('q', '')
     if q and hasattr(model, 'name'):
         queryset = queryset.filter(name__icontains=q)
         
+    paginator = Paginator(queryset, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+        
     # Exclude complex relationships or large text fields from generic list view
     exclude_fields = ['id', 'description', 'address'] 
     fields = [f.name for f in model._meta.fields if f.name not in exclude_fields]
     
     context = {
-        'objects': queryset,
+        'objects': page_obj.object_list,
+        'page_obj': page_obj,
+        'paginator': paginator,
         'model_name': model_name,
         'model_name_display': model._meta.verbose_name_plural.title(),
         'fields': fields,

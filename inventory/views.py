@@ -9,15 +9,24 @@ def dashboard(request):
     total_stock = Item.objects.aggregate(Sum('stock_quantity'))['stock_quantity__sum'] or 0
     total_pos = PurchaseOrder.objects.count()
     
-    # recent POs
-    recent_pos = PurchaseOrder.objects.select_related('vendor', 'workflow_state').order_by('-created_at')[:5]
+    # recent POs paginated
+    qs = PurchaseOrder.objects.select_related('vendor', 'workflow_state').order_by('-created_at')
+    paginator = Paginator(qs, 5)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
     
     context = {
         'total_items': total_items,
         'total_stock': total_stock,
         'total_pos': total_pos,
-        'recent_pos': recent_pos,
+        'page_obj': page_obj,
+        'paginator': paginator,
+        'search_url': request.path,
     }
+    
+    if request.htmx and 'page' in request.GET:
+        return TemplateResponse(request, 'inventory/partials/dashboard_po_rows.html', context)
+        
     return render(request, 'inventory/dashboard.html', context)
 
 def po_list(request):
@@ -215,12 +224,13 @@ def item_list(request):
             Q(barcode__icontains=query)
         )
         
-    paginator = Paginator(queryset, 20)
+    paginator = Paginator(queryset, 10)
     page_number = request.GET.get('page', 1)
     page_obj = paginator.get_page(page_number)
     
     context = {
         'page_obj': page_obj,
+        'paginator': paginator,
         'search_url': request.path,
     }
     

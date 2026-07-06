@@ -1,4 +1,5 @@
 {% extends 'core/base.html' %}
+{% load core_tags %}
 
 {% block content %}
 <div class="p-6 max-w-5xl mx-auto">
@@ -7,7 +8,7 @@
         <a href="{% url 'inventory:po_list' %}" class="text-blue-600 hover:underline">Back to List</a>
     </div>
 
-    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg border border-gray-200 dark:border-gray-700 p-6">
         <form hx-post="{% url 'inventory:po_create' %}" id="po-form">
             {% csrf_token %}
             
@@ -53,14 +54,14 @@
                 </div>
                 <div class="mt-4">
                     <button type="button" hx-get="{% url 'inventory:po_add_item_row' %}" hx-target="#po-items-body" hx-swap="beforeend" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600">
-                        + Add Item Row
+                        {% icon 'add' 'w-4 h-4 mr-1' %} Add Item Row
                     </button>
                 </div>
             </div>
 
             <div class="pt-5 border-t border-gray-200 dark:border-gray-700 flex justify-end">
-                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded shadow">
-                    Create Purchase Order
+                <button type="submit" class="inline-flex items-center bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded shadow">
+                    {% icon 'save' 'w-5 h-5 mr-2' %} Create Purchase Order
                 </button>
             </div>
         </form>

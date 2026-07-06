@@ -11,7 +11,7 @@
     </div>
 
     <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div class="bg-white dark:bg-gray-800 py-8 px-4 shadow sm:rounded-lg sm:px-10">
+        <div class="bg-white dark:bg-gray-800 py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-gray-200 dark:border-gray-700">
             <div id="auth-error-container" class="mb-4"></div>
             
             <form hx-post="{% url 'core:signup' %}" hx-target="#auth-error-container" hx-swap="innerHTML">

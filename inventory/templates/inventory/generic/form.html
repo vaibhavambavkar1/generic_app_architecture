@@ -8,7 +8,7 @@
         <a href="{% url 'inventory:manage_list' model_name %}" class="text-blue-600 hover:underline">Back to List</a>
     </div>
 
-    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg border border-gray-200 dark:border-gray-700 p-6">
         <form method="post">
             {% csrf_token %}
             {% for field in form %}
@@ -24,8 +24,8 @@
             </div>
             {% endfor %}
             <div class="mt-6 flex justify-end">
-                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow">
-                    Save
+                <button type="submit" class="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow">
+                    {% icon 'save' 'w-5 h-5 mr-1' %} Save
                 </button>
             </div>
         </form>

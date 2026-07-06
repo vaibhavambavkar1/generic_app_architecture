@@ -1,10 +1,11 @@
 {% extends 'core/base.html' %}
+{% load core_tags %}
 {% block content %}
 <div class="p-6 max-w-7xl mx-auto">
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Manage {{ model_name_display }}</h1>
-        <a href="{% url 'inventory:manage_create' model_name %}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow">
-            + New {{ model_name_display|slice:":-1" }}
+        <a href="{% url 'inventory:manage_create' model_name %}" class="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow">
+            {% icon 'add' 'w-5 h-5 mr-1' %} New {{ model_name_display|slice:":-1" }}
         </a>
     </div>
 
@@ -13,10 +14,10 @@
                class="focus:ring-blue-500 focus:border-blue-500 block w-full pl-3 sm:text-sm border-gray-300 rounded-md py-3 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
                hx-get="{{ search_url }}"
                hx-trigger="keyup changed delay:300ms, search"
-               hx-target="#generic-tbody">
+               hx-target="#datatable-body">
     </div>
 
-    <div class="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg">
+    <div class="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg border border-gray-200 dark:border-gray-700">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                 <thead class="bg-gray-50 dark:bg-gray-700">
@@ -27,11 +28,12 @@
                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Actions</th>
                     </tr>
                 </thead>
-                <tbody id="generic-tbody" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <tbody id="datatable-body" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                     {% include 'inventory/generic/partials/list_rows.html' %}
                 </tbody>
             </table>
         </div>
+        {% include 'core/components/tables/pagination.html' %}
     </div>
 </div>
 {% endblock %}

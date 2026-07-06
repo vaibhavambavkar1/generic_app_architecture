@@ -6,9 +6,13 @@
         {{ obj|get_attr:f }}
     </td>
     {% endfor %}
-    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-        <a href="{% url 'inventory:manage_update' model_name obj.pk %}" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-3">Edit</a>
-        <a href="{% url 'inventory:manage_delete' model_name obj.pk %}" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">Delete</a>
+    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex justify-end space-x-2">
+        <a href="{% url 'inventory:manage_update' model_name obj.pk %}" class="inline-flex items-center text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-2">
+            {% icon 'edit' 'w-4 h-4 mr-1' %} Edit
+        </a>
+        <a href="{% url 'inventory:manage_delete' model_name obj.pk %}" class="inline-flex items-center text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
+            {% icon 'delete' 'w-4 h-4 mr-1' %} Delete
+        </a>
     </td>
 </tr>
 {% empty %}

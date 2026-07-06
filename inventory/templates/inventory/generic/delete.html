@@ -1,8 +1,8 @@
 {% extends 'core/base.html' %}
-
+{% load core_tags %}
 {% block content %}
 <div class="p-6 max-w-md mx-auto">
-    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 text-center">
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg border border-gray-200 dark:border-gray-700 p-6 text-center">
         <h2 class="text-2xl font-bold text-red-600 mb-4">Confirm Deletion</h2>
         <p class="text-gray-700 dark:text-gray-300 mb-6">
             Are you sure you want to delete <strong>{{ object }}</strong>? This action cannot be undone.
@@ -10,11 +10,11 @@
         
         <form method="post" class="flex justify-center space-x-4">
             {% csrf_token %}
-            <a href="{% url 'inventory:manage_list' model_name %}" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded">
+            <a href="{% url 'inventory:manage_list' model_name %}" class="inline-flex items-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded">
                 Cancel
             </a>
-            <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded shadow">
-                Yes, Delete
+            <button type="submit" class="inline-flex items-center bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded shadow">
+                {% icon 'delete' 'w-5 h-5 mr-1' %} Yes, Delete
             </button>
         </form>
     </div>

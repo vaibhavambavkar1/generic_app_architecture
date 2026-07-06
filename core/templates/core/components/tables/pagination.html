@@ -27,11 +27,15 @@
                 </button>
                 {% endif %}
                 
-                {% for num in paginator.page_range %}
-                    {% if page_obj.number == num %}
-                    <span class="relative z-10 inline-flex items-center bg-blue-600 px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">{{ num }}</span>
+                {% load core_tags %}
+                {% get_elided_page_range paginator page_obj.number on_each_side=1 on_ends=1 as page_range %}
+                {% for num in page_range %}
+                    {% if num == paginator.ELLIPSIS %}
+                        <span class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 dark:text-gray-400 dark:ring-gray-600">...</span>
+                    {% elif num == page_obj.number %}
+                        <span class="relative z-10 inline-flex items-center bg-blue-600 px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">{{ num }}</span>
                     {% else %}
-                    <button hx-get="{{ request.path }}?page={{ num }}" hx-target="#datatable-body" hx-swap="innerHTML" class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 dark:text-gray-200 dark:ring-gray-600 dark:hover:bg-gray-700 transition-colors">{{ num }}</button>
+                        <button hx-get="{{ request.path }}?page={{ num }}" hx-target="#datatable-body" hx-swap="innerHTML" class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 dark:text-gray-200 dark:ring-gray-600 dark:hover:bg-gray-700 transition-colors">{{ num }}</button>
                     {% endif %}
                 {% endfor %}
 
