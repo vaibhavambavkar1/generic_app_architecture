@@ -28,3 +28,6 @@
     </td>
 </tr>
 {% endfor %}
+{% if paginator %}
+{% include 'core/components/tables/pagination.html' with is_oob=True %}
+{% endif %}

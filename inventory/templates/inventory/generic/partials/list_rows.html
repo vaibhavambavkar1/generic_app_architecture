@@ -20,3 +20,6 @@
     <td colspan="100%" class="px-6 py-8 text-center text-gray-500 dark:text-gray-400">No records found.</td>
 </tr>
 {% endfor %}
+{% if paginator %}
+{% include 'core/components/tables/pagination.html' with is_oob=True %}
+{% endif %}
