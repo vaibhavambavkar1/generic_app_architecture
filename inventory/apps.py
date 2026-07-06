@@ -5,10 +5,10 @@ class InventoryConfig(AppConfig):
     name = 'inventory'
 
     def ready(self):
+        import inventory.workflow_actions
         # Register the plugin with the core SDK
         from core.sdk.registry import PluginRegistry
         from .plugin import InventoryPlugin
         PluginRegistry.register(InventoryPlugin)
 
-        # Register business rules with the Rule Engine
-        import inventory.rules
+        PluginRegistry.register(InventoryPlugin)

@@ -1,20 +1,26 @@
-import time
 from celery import shared_task
+from django.db.models import F
+from .models import Item
+import logging
+
+logger = logging.getLogger(__name__)
 
 @shared_task
-def sync_stock_to_external_warehouse(item_id, new_quantity, po_id):
+def check_low_stock_alerts():
     """
-    Simulates a heavy, long-running background task 
-    (e.g., calling an external vendor's API or a legacy warehouse system).
+    Periodically checks for items where stock_quantity falls below minimum_stock_level.
     """
-    print(f"\n[{'='*40}]")
-    print(f"[CELERY WORKER] Starting background sync for Item #{item_id} (Triggered by PO #{po_id})")
-    print(f"[CELERY WORKER] Connecting to legacy warehouse API...")
+    low_stock_items = Item.objects.filter(stock_quantity__lt=F('minimum_stock_level'))
     
-    # Simulate a slow network request (5 seconds)
-    time.sleep(5)
+    if not low_stock_items.exists():
+        logger.info("No low stock items found.")
+        return "No alerts sent."
+        
+    message = "The following items are running low on stock:\n\n"
+    for item in low_stock_items:
+        message += f"- {item.name} ({item.sku}): {item.stock_quantity} (Min: {item.minimum_stock_level})\n"
+        
+    # Simulate sending email for the MVP (this would use send_mail in production)
+    logger.warning("CRITICAL LOW STOCK ALERT TRIGGERED:\n%s", message)
     
-    print(f"[CELERY WORKER] Successfully synced new stock quantity ({new_quantity}) for Item #{item_id}.")
-    print(f"[{'='*40}]\n")
-    
-    return True
+    return f"Sent alerts for {low_stock_items.count()} items."

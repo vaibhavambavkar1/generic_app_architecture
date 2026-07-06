@@ -1,0 +1,22 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="p-6 max-w-md mx-auto">
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 text-center">
+        <h2 class="text-2xl font-bold text-red-600 mb-4">Confirm Deletion</h2>
+        <p class="text-gray-700 dark:text-gray-300 mb-6">
+            Are you sure you want to delete <strong>{{ object }}</strong>? This action cannot be undone.
+        </p>
+        
+        <form method="post" class="flex justify-center space-x-4">
+            {% csrf_token %}
+            <a href="{% url 'inventory:manage_list' model_name %}" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded">
+                Cancel
+            </a>
+            <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded shadow">
+                Yes, Delete
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
