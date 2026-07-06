@@ -178,3 +178,29 @@ class SystemConfig(models.Model):
         
     def __str__(self):
         return f"{self.key}: {self.value}"
+
+from django.contrib.auth.models import User
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    security_question = models.CharField(max_length=255, blank=True)
+    security_answer_hash = models.CharField(max_length=255, blank=True)
+    
+    def set_security_answer(self, raw_answer):
+        from django.contrib.auth.hashers import make_password
+        self.security_answer_hash = make_password(raw_answer.strip().lower())
+        self.save()
+        
+    def check_security_answer(self, raw_answer):
+        from django.contrib.auth.hashers import check_password
+        return check_password(raw_answer.strip().lower(), self.security_answer_hash)
+        
+    def __str__(self):
+        return f"{self.user.username}'s Profile"
+
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        UserProfile.objects.create(user=instance)
