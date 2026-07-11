@@ -47,6 +47,11 @@ class AuditableMixin(models.Model):
             new_json = json.loads(json.dumps(new_values, cls=DjangoJSONEncoder))
             
             user_id = getattr(self, '_audit_user_id', None)
+            if not user_id:
+                from core.middleware import get_current_user
+                curr_user = get_current_user()
+                if curr_user:
+                    user_id = curr_user.id
             
             # Dispatch to Celery instantly
             write_audit_log.delay(

@@ -57,10 +57,12 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'core.middleware.ThreadLocalUserMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_htmx.middleware.HtmxMiddleware',
-    #'core.middleware.LicenseEnforcementMiddleware',
+    'core.middleware.LicenseEnforcementMiddleware',
+    'core.middleware.ExceptionLoggingMiddleware',
 ]
 
 ROOT_URLCONF = 'erp_framework.urls'
@@ -103,6 +105,7 @@ DATABASES = {
         'PASSWORD': os.getenv('DB_PASSWORD', 'rootpassword'),
         'HOST': os.getenv('DB_HOST', 'db'),
         'PORT': os.getenv('DB_PORT', '3306'),
+        'CONN_MAX_AGE': 600,
     }
 }
 
@@ -207,3 +210,19 @@ DAISY_SETTINGS = {
         },
     },
 }
+
+# Cache Configuration
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://redis:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
+
+# Security Headers Configuration
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'

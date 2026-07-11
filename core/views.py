@@ -3,11 +3,13 @@ from django.apps import apps
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.http import HttpResponseBadRequest
+from django.db import transaction
 
 from .models import Transition
 
 @login_required
 @require_POST
+@transaction.atomic
 def execute_transition(request, app_label, model_name, object_id, transition_id):
     """
     Generic HTMX endpoint to execute a workflow transition on any model.

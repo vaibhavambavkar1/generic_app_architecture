@@ -34,3 +34,56 @@ class LicenseEnforcementMiddleware:
             return redirect('core:activate_license')
             
         return self.get_response(request)
+
+
+import logging
+from django.shortcuts import render
+
+logger = logging.getLogger(__name__)
+
+class ExceptionLoggingMiddleware:
+    """Catches unhandled errors, logs them, and yields a clean HTMX error response or toast."""
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        return self.get_response(request)
+
+    def process_exception(self, request, exception):
+        logger.error(f"Unhandled Exception: {str(exception)}", exc_info=True)
+        
+        if request.headers.get('HX-Request'):
+            return render(request, 'core/auth/partials/error_message.html', {
+                'error': f'An unexpected server error occurred: {str(exception)}'
+            }, status=500)
+            
+        return None
+
+
+import contextvars
+
+_current_user = contextvars.ContextVar("current_user", default=None)
+
+class ThreadLocalUserMiddleware:
+    """Stores the current logged-in user in contextvars to make it accessible to models/mixins."""
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        token = None
+        if request.user and request.user.is_authenticated:
+            token = _current_user.set(request.user)
+            
+        try:
+            response = self.get_response(request)
+        finally:
+            if token is not None:
+                _current_user.reset(token)
+                
+        return response
+
+def get_current_user():
+    """Retrieve the current logged-in user from the request thread context."""
+    return _current_user.get()
+
+

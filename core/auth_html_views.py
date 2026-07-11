@@ -2,7 +2,9 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login as django_login, logout as django_logout
 from django.contrib.auth.models import User
 from django.http import HttpResponse
+from .decorators import ratelimit_custom
 
+@ratelimit_custom(rate="5/m")
 def login_view(request):
     if request.method == 'POST':
         u = request.POST.get('username')
@@ -18,6 +20,7 @@ def login_view(request):
             return render(request, 'core/auth/partials/error_message.html', {'error': 'Invalid username or password.'})
     return render(request, 'core/auth/login.html')
 
+@ratelimit_custom(rate="5/m")
 def signup_view(request):
     if request.method == 'POST':
         u = request.POST.get('username')
@@ -40,6 +43,7 @@ def signup_view(request):
         
     return render(request, 'core/auth/signup.html')
 
+@ratelimit_custom(rate="5/m")
 def forgot_password_view(request):
     """Step 1: Check username and return security question form."""
     if request.method == 'POST':
@@ -52,6 +56,7 @@ def forgot_password_view(request):
             
     return render(request, 'core/auth/forgot_password.html')
     
+@ratelimit_custom(rate="5/m")
 def reset_password_view(request):
     """Step 2: Verify answer and reset password."""
     if request.method == 'POST':
