@@ -1,51 +1,57 @@
-version: '3.8'
-
 services:
   web:
+    container_name: erp_framework_web_dev
     build: .
-    command: python manage.py runserver 0.0.0.0:8000
-    volumes:
-      - .:/app
-    ports:
-      - "8000:8000"
     env_file:
       - .env
-    depends_on:
-      - db
-      - redis
-
-  db:
-    image: mysql:8.0
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: erp_db
-    volumes:
-      - mysql_data:/var/lib/mysql
+      # Point DB_HOST to the external MySQL container's name
+      DB_HOST: mysql
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+      - rabbitmq
+    networks:
+      - shared-network
+    restart: always
 
   redis:
     image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - shared-network
+    restart: always
 
-  celery-worker:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - shared-network
+    restart: always
+
+  celery:
+    container_name: erp_framework_celery_dev
     build: .
-    command: celery -A erp_framework worker -l INFO
-    volumes:
-      - .:/app
+    command: celery -A erp_framework worker -l info
     env_file:
       - .env
+    environment:
+      # Point DB_HOST to the external MySQL container's name
+      DB_HOST: mysql
     depends_on:
-      - db
       - redis
+      - rabbitmq
+    networks:
+      - shared-network
+    restart: always
 
-  celery-beat:
-    build: .
-    command: celery -A erp_framework beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler
-    volumes:
-      - .:/app
-    env_file:
-      - .env
-    depends_on:
-      - db
-      - redis
+networks:
+  shared-network:
+    external: true
 
-volumes:
-  mysql_data:
