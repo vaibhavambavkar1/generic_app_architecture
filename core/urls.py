@@ -10,6 +10,7 @@ urlpatterns = [
     path('settings/', views.settings_dashboard, name='settings_dashboard'),
     path('settings/config/<int:pk>/', views.update_config, name='update_config'),
     path('license/activate/', views.activate_license, name='activate_license'),
+    path('profile/', views.profile_view, name='profile'),
 ]
 
 # HTML Auth URLs

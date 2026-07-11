@@ -121,3 +121,43 @@ def activate_license(request):
             return render(request, 'core/activate_license.html', {'hwid': hwid, 'error': msg})
             
     return render(request, 'core/activate_license.html', {'hwid': hwid})
+
+
+from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib import messages
+
+@login_required
+def profile_view(request):
+    user = request.user
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'update_profile':
+            user.first_name = request.POST.get('first_name', '')
+            user.last_name = request.POST.get('last_name', '')
+            user.email = request.POST.get('email', '')
+            user.save()
+            messages.success(request, "Profile updated successfully.")
+            return redirect('core:profile')
+            
+        elif action == 'change_password':
+            form = PasswordChangeForm(user, request.POST)
+            if form.is_valid():
+                user = form.save()
+                update_session_auth_hash(request, user)  # Keep session active
+                messages.success(request, "Password changed successfully.")
+                return redirect('core:profile')
+            else:
+                return render(request, 'core/profile.html', {
+                    'password_form': form,
+                    'active_tab': 'password'
+                })
+                
+    password_form = PasswordChangeForm(user)
+    return render(request, 'core/profile.html', {
+        'password_form': password_form,
+        'active_tab': 'profile'
+    })
+
