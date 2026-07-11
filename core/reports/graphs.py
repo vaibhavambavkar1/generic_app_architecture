@@ -62,3 +62,98 @@ class GraphGenerator:
         fig.update_traces(marker=dict(colors=['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']))
         
         return fig.to_html(full_html=False, include_plotlyjs='cdn', config={'displayModeBar': False})
+
+    @staticmethod
+    def generate_area_chart(queryset, x_field, y_field, title="Area Chart", labels=None):
+        df = pd.DataFrame(list(queryset.values(x_field, y_field)))
+        if df.empty:
+            return "<div class='text-base-content/50 p-6 text-center'>No data available for chart.</div>"
+            
+        fig = px.area(df, x=x_field, y=y_field, title=title, labels=labels)
+        fig.update_layout(**GraphGenerator._get_base_layout())
+        fig.update_traces(line_color='#6366f1', fillcolor='rgba(99, 102, 241, 0.2)')
+        return fig.to_html(full_html=False, include_plotlyjs='cdn', config={'displayModeBar': False})
+
+    @staticmethod
+    def generate_scatter_plot(queryset, x_field, y_field, title="Scatter Plot", color_field=None, labels=None):
+        fields = [x_field, y_field]
+        if color_field:
+            fields.append(color_field)
+        df = pd.DataFrame(list(queryset.values(*fields)))
+        if df.empty:
+            return "<div class='text-base-content/50 p-6 text-center'>No data available for chart.</div>"
+            
+        fig = px.scatter(df, x=x_field, y=y_field, color=color_field, title=title, labels=labels)
+        fig.update_layout(**GraphGenerator._get_base_layout())
+        fig.update_traces(marker=dict(size=10, opacity=0.8, line=dict(width=1, color='DarkSlateGrey')))
+        return fig.to_html(full_html=False, include_plotlyjs='cdn', config={'displayModeBar': False})
+
+    @staticmethod
+    def generate_histogram(queryset, x_field, nbins=20, title="Histogram", labels=None):
+        df = pd.DataFrame(list(queryset.values(x_field)))
+        if df.empty:
+            return "<div class='text-base-content/50 p-6 text-center'>No data available for chart.</div>"
+            
+        fig = px.histogram(df, x=x_field, nbins=nbins, title=title, labels=labels)
+        fig.update_layout(**GraphGenerator._get_base_layout())
+        fig.update_traces(marker_color='#f59e0b', marker_line_color='#d97706', marker_line_width=1)
+        return fig.to_html(full_html=False, include_plotlyjs='cdn', config={'displayModeBar': False})
+
+    @staticmethod
+    def generate_heatmap(z_data, x_labels, y_labels, title="Heatmap"):
+        if not z_data:
+            return "<div class='text-base-content/50 p-6 text-center'>No data available for chart.</div>"
+            
+        fig = px.imshow(z_data, x=x_labels, y=y_labels, labels=dict(x="X Axis", y="Y Axis", color="Value"), title=title)
+        fig.update_layout(**GraphGenerator._get_base_layout())
+        fig.update_traces(colorscale='Blues')
+        return fig.to_html(full_html=False, include_plotlyjs='cdn', config={'displayModeBar': False})
+
+    @staticmethod
+    def generate_radar_chart(categories, values, title="Radar Chart"):
+        if not categories or not values:
+            return "<div class='text-base-content/50 p-6 text-center'>No data available for chart.</div>"
+            
+        fig = go.Figure()
+        fig.add_trace(go.Scatterpolar(
+            r=values,
+            theta=categories,
+            fill='toself',
+            name=title,
+            line_color='#8b5cf6'
+        ))
+        
+        layout = GraphGenerator._get_base_layout()
+        layout.update({
+            'polar': dict(
+                radialaxis=dict(visible=True, range=[0, max(values) * 1.1 if values else 100])
+            ),
+            'title': title
+        })
+        fig.update_layout(**layout)
+        return fig.to_html(full_html=False, include_plotlyjs='cdn', config={'displayModeBar': False})
+
+    @staticmethod
+    def generate_gauge_chart(value, min_val=0, max_val=100, title="KPI Gauge"):
+        fig = go.Figure(go.Indicator(
+            mode = "gauge+number",
+            value = value,
+            domain = {'x': [0, 1], 'y': [0, 1]},
+            title = {'text': title, 'font': {'size': 18}},
+            gauge = {
+                'axis': {'range': [min_val, max_val]},
+                'bar': {'color': "#3b82f6"},
+                'steps': [
+                    {'range': [min_val, (max_val - min_val) * 0.5], 'color': "lightgray"},
+                    {'range': [(max_val - min_val) * 0.5, (max_val - min_val) * 0.85], 'color': "gray"}
+                ],
+                'threshold': {
+                    'line': {'color': "red", 'width': 4},
+                    'thickness': 0.75,
+                    'value': max_val * 0.9
+                }
+            }
+        ))
+        fig.update_layout(**GraphGenerator._get_base_layout())
+        return fig.to_html(full_html=False, include_plotlyjs='cdn', config={'displayModeBar': False})
+
