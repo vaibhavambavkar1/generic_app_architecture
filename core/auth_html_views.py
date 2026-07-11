@@ -12,7 +12,7 @@ def login_view(request):
             django_login(request, user)
             # Instruct HTMX to redirect the browser to the dashboard
             response = HttpResponse()
-            response['HX-Redirect'] = '/inventory/'
+            response['HX-Redirect'] = '/'
             return response
         else:
             return render(request, 'core/auth/partials/error_message.html', {'error': 'Invalid username or password.'})
@@ -35,7 +35,7 @@ def signup_view(request):
         
         django_login(request, user)
         response = HttpResponse()
-        response['HX-Redirect'] = '/inventory/'
+        response['HX-Redirect'] = '/'
         return response
         
     return render(request, 'core/auth/signup.html')

@@ -43,7 +43,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'core',
     'django_htmx',
-    'inventory',
     'django_celery_beat',
     'rest_framework',
     'rest_framework_simplejwt',
