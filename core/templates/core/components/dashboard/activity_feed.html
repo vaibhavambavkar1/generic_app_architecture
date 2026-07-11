@@ -1,4 +1,49 @@
-<!-- Activity Feed Component -->
-<div class="activity_feed-wrapper">
-    Activity Feed
+<div class="card bg-base-100 shadow-xl border border-base-200">
+    <div class="card-body p-6">
+        <h3 class="text-lg font-bold text-base-content mb-4">{{ title|default:"Recent Activity" }}</h3>
+        <div class="flow-root">
+            <ul class="-mb-8">
+                {% for activity in activities %}
+                <li>
+                    <div class="relative pb-8">
+                        {% if not forloop.last %}
+                        <span class="absolute left-5 top-5 -ml-px h-full w-0.5 bg-base-300" aria-hidden="true"></span>
+                        {% endif %}
+                        <div class="relative flex space-x-3">
+                            <div>
+                                <span class="h-10 w-10 rounded-full bg-base-200 flex items-center justify-center ring-8 ring-base-100">
+                                    {% if activity.avatar %}
+                                        <img class="h-10 w-10 rounded-full" src="{{ activity.avatar }}" alt="">
+                                    {% else %}
+                                        <div class="avatar placeholder">
+                                            <div class="bg-neutral text-neutral-content rounded-full w-10">
+                                                <span class="text-xs">{{ activity.user|slice:":2"|upper }}</span>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="flex-1 min-w-0 pt-1.5 flex justify-between space-x-4">
+                                <div>
+                                    <p class="text-sm text-base-content/85">
+                                        <span class="font-semibold text-base-content">{{ activity.user }}</span>
+                                        {{ activity.action }}
+                                        <span class="font-medium text-primary">{{ activity.target }}</span>
+                                    </p>
+                                </div>
+                                <div class="text-right text-xs whitespace-nowrap text-base-content/60">
+                                    <time datetime="{{ activity.timestamp }}">{{ activity.time_ago }}</time>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                {% empty %}
+                <div class="text-center py-4 text-base-content/60">
+                    No recent activity
+                </div>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
 </div>

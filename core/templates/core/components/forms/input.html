@@ -1,4 +1,23 @@
-<!-- Input Component -->
-<div class="input-wrapper">
-    Input
+<div class="form-control w-full {{ extra_wrapper_classes }}">
+    {% if label %}
+    <label class="label">
+        <span class="label-text font-semibold text-base-content/85">{{ label }}</span>
+        {% if label_alt %}
+        <span class="label-text-alt">{{ label_alt }}</span>
+        {% endif %}
+    </label>
+    {% endif %}
+    <input type="{{ type|default:'text' }}" 
+           name="{{ name }}" 
+           value="{{ value|default:'' }}" 
+           placeholder="{{ placeholder|default:'' }}" 
+           class="input input-bordered w-full {% if error %}input-error{% elif success %}input-success{% endif %} {{ extra_input_classes }}" 
+           {% if required %}required{% endif %}
+           {% if disabled %}disabled{% endif %}
+           {% if id %}id="{{ id }}"{% endif %} />
+    {% if helper_text %}
+    <label class="label">
+        <span class="label-text-alt {% if error %}text-error{% else %}text-base-content/60{% endif %}">{{ helper_text }}</span>
+    </label>
+    {% endif %}
 </div>

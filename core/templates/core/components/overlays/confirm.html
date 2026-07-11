@@ -1,4 +1,15 @@
-<!-- Confirm Component -->
-<div class="confirm-wrapper">
-    Confirm
+<div class="card bg-base-100 shadow-xl border border-base-200 max-w-sm">
+    <div class="card-body items-center text-center">
+        <h2 class="card-title text-error font-bold">{{ title|default:"Confirm Action" }}</h2>
+        <p class="text-sm text-base-content/75">{{ message|default:"Are you sure you want to proceed?" }}</p>
+        <div class="card-actions justify-end mt-6 w-full gap-2">
+            <button class="btn btn-ghost flex-1" onclick="this.closest('.card').remove()">Cancel</button>
+            <button class="btn btn-error flex-1 text-white" 
+                    {% if hx_post %}hx-post="{{ hx_post }}"{% endif %}
+                    {% if hx_target %}hx-target="{{ hx_target }}"{% endif %}
+                    {% if hx_swap %}hx-swap="{{ hx_swap }}"{% endif %}>
+                Confirm
+            </button>
+        </div>
+    </div>
 </div>

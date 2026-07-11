@@ -1,4 +1,20 @@
-<!-- Form Layout Component -->
-<div class="form_layout-wrapper">
-    Form Layout
-</div>
+<form {% if id %}id="{{ id }}"{% endif %} 
+      {% if hx_post %}hx-post="{{ hx_post }}"{% endif %} 
+      {% if hx_get %}hx-get="{{ hx_get }}"{% endif %} 
+      {% if hx_target %}hx-target="{{ hx_target }}"{% endif %} 
+      {% if hx_swap %}hx-swap="{{ hx_swap }}"{% endif %}
+      class="space-y-4 {{ extra_classes }}"
+      method="{{ method|default:'POST' }}" 
+      {% if enctype %}enctype="{{ enctype }}"{% endif %}>
+    {% csrf_token %}
+    
+    <div class="grid grid-cols-1 {% if cols %}md:grid-cols-{{ cols }}{% endif %} gap-4">
+        {{ fields|safe }}
+    </div>
+
+    {% if actions %}
+    <div class="flex items-center justify-end gap-2 pt-4 border-t border-base-200">
+        {{ actions|safe }}
+    </div>
+    {% endif %}
+</form>

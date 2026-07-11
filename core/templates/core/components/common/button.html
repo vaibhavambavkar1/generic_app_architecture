@@ -1,4 +1,17 @@
-<!-- Button Component -->
-<div class="button-wrapper">
-    Button
-</div>
+<button type="{{ button_type|default:'button' }}"
+        class="btn {% if type %}btn-{{ type }}{% endif %} {% if size %}btn-{{ size }}{% endif %} {% if outline %}btn-outline{% endif %} {% if active %}btn-active{% endif %} {% if disabled %}btn-disabled{% endif %} {% if wide %}btn-wide{% endif %} {% if circle %}btn-circle{% endif %} {% if square %}btn-square{% endif %} {{ extra_classes }}"
+        {% if id %}id="{{ id }}"{% endif %}
+        {% if disabled %}disabled{% endif %}
+        {% if hx_get %}hx-get="{{ hx_get }}"{% endif %}
+        {% if hx_post %}hx-post="{{ hx_post }}"{% endif %}
+        {% if hx_target %}hx-target="{{ hx_target }}"{% endif %}
+        {% if hx_swap %}hx-swap="{{ hx_swap }}"{% endif %}
+        {% if hx_trigger %}hx-trigger="{{ hx_trigger }}"{% endif %}
+        {% if hx_indicator %}hx-indicator="{{ hx_indicator }}"{% endif %}
+        {% if hx_confirm %}hx-confirm="{{ hx_confirm }}"{% endif %}
+        {% if click_action %}@click="{{ click_action }}"{% endif %}>
+    {% if icon %}
+        <span class="inline-block">{{ icon|safe }}</span>
+    {% endif %}
+    {{ label|default:"Button" }}
+</button>

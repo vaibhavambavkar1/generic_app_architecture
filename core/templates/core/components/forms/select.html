@@ -1,4 +1,24 @@
-<!-- Select Component -->
-<div class="select-wrapper">
-    Select
+<div class="form-control w-full {{ extra_wrapper_classes }}">
+    {% if label %}
+    <label class="label">
+        <span class="label-text font-semibold text-base-content/85">{{ label }}</span>
+    </label>
+    {% endif %}
+    <select name="{{ name }}" 
+            class="select select-bordered w-full {% if error %}select-error{% elif success %}select-success{% endif %} {{ extra_select_classes }}"
+            {% if required %}required{% endif %}
+            {% if disabled %}disabled{% endif %}
+            {% if id %}id="{{ id }}"{% endif %}>
+        {% if placeholder %}
+        <option disabled {% if not selected_value %}selected{% endif %}>{{ placeholder }}</option>
+        {% endif %}
+        {% for option in options %}
+        <option value="{{ option.value }}" {% if option.value == selected_value %}selected{% endif %}>{{ option.label }}</option>
+        {% endfor %}
+    </select>
+    {% if helper_text %}
+    <label class="label">
+        <span class="label-text-alt text-base-content/60">{{ helper_text }}</span>
+    </label>
+    {% endif %}
 </div>

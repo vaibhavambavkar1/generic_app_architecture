@@ -1,4 +1,17 @@
-<!-- Navbar Component -->
-<div class="navbar-wrapper">
-    Navbar
+<div class="navbar bg-base-100 shadow-lg rounded-box {{ extra_classes }}">
+    <div class="navbar-start">
+        {% if brand_url %}
+        <a href="{{ brand_url }}" class="btn btn-ghost normal-case text-xl text-primary font-bold">{{ brand_name|default:"ERP" }}</a>
+        {% else %}
+        <span class="normal-case text-xl text-primary font-bold px-4">{{ brand_name|default:"ERP" }}</span>
+        {% endif %}
+    </div>
+    <div class="navbar-center hidden lg:flex">
+        <ul class="menu menu-horizontal px-1">
+            {{ menu_content|safe }}
+        </ul>
+    </div>
+    <div class="navbar-end">
+        {{ actions|safe }}
+    </div>
 </div>

@@ -1,4 +1,6 @@
-<!-- Loading Component -->
-<div class="loading-wrapper">
-    Loading
+<div class="flex items-center justify-center p-4 gap-2">
+    <span class="loading loading-{% if type %}{{ type }}{% else %}spinner{% endif %} loading-{% if size %}{{ size }}{% else %}md{% endif %} text-{% if color %}{{ color }}{% else %}primary{% endif %}"></span>
+    {% if label %}
+        <span class="text-sm text-base-content/75">{{ label }}</span>
+    {% endif %}
 </div>

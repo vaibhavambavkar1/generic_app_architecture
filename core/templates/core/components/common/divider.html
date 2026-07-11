@@ -1,4 +1,3 @@
-<!-- Divider Component -->
-<div class="divider-wrapper">
-    Divider
+<div class="divider {% if horizontal %}divider-horizontal{% endif %} {% if type %}divider-{{ type }}{% endif %}">
+    {{ label }}
 </div>

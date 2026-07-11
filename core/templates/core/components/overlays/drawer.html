@@ -1,4 +1,14 @@
-<!-- Drawer Component -->
-<div class="drawer-wrapper">
-    Drawer
+<div class="drawer {% if open %}drawer-open{% endif %} {% if right %}drawer-end{% endif %}">
+    <input id="{{ id|default:'my-drawer' }}" type="checkbox" class="drawer-toggle" />
+    <div class="drawer-content">
+        <!-- Page content here -->
+        {{ content|safe }}
+    </div> 
+    <div class="drawer-side z-50">
+        <label for="{{ id|default:'my-drawer' }}" class="drawer-overlay"></label>
+        <div class="menu p-4 w-80 min-h-full bg-base-200 text-base-content border-r border-base-300">
+            <!-- Sidebar content here -->
+            {{ drawer_content|safe }}
+        </div>
+    </div>
 </div>

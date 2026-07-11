@@ -1,4 +1,24 @@
-<!-- Combobox Component -->
-<div class="combobox-wrapper">
-    Combobox
+<div class="form-control w-full {{ extra_wrapper_classes }}" x-data="{ open: false, selected: '', search: '' }">
+    {% if label %}
+    <label class="label">
+        <span class="label-text font-semibold text-base-content/85">{{ label }}</span>
+    </label>
+    {% endif %}
+    <div class="relative">
+        <input type="text" 
+               class="input input-bordered w-full pr-10" 
+               @click="open = !open" 
+               @click.away="open = false" 
+               placeholder="{{ placeholder|default:'Select an option...' }}" 
+               x-model="search" 
+               name="{{ name }}" />
+        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-base-content/50">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+        </div>
+        <ul class="menu bg-base-100 w-full rounded-box shadow absolute z-10 border border-base-200 mt-1 max-h-60 overflow-y-auto" x-show="open" style="display: none;">
+            {% for option in options %}
+            <li><a @click="search = '{{ option.label }}'; open = false; selected = '{{ option.value }}'">{{ option.label }}</a></li>
+            {% endfor %}
+        </ul>
+    </div>
 </div>

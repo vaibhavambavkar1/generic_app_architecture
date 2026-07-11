@@ -1,4 +1,31 @@
-<!-- Calendar Component -->
-<div class="calendar-wrapper">
-    Calendar
+<div class="card bg-base-100 shadow-xl border border-base-200">
+    <div class="card-body p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-bold text-base-content">{{ month_name|default:"Calendar" }}</h3>
+            <div class="flex gap-1">
+                <button class="btn btn-sm btn-outline btn-square">&lt;</button>
+                <button class="btn btn-sm btn-outline btn-square">&gt;</button>
+            </div>
+        </div>
+        <div class="grid grid-cols-7 gap-2 text-center text-xs font-bold text-base-content/60 mb-2">
+            <div>Su</div>
+            <div>Mo</div>
+            <div>Tu</div>
+            <div>We</div>
+            <div>Th</div>
+            <div>Fr</div>
+            <div>Sa</div>
+        </div>
+        <div class="grid grid-cols-7 gap-2">
+            {% for day in days %}
+            <div class="aspect-square flex flex-col items-center justify-center rounded-lg text-sm transition-all duration-200 
+                {% if day.is_today %}bg-primary text-white font-bold{% elif day.is_active %}bg-base-200 hover:bg-base-300 text-base-content cursor-pointer{% else %}text-base-content/30{% endif %}">
+                <span>{{ day.number }}</span>
+                {% if day.has_events %}
+                <span class="w-1 h-1 rounded-full bg-secondary mt-1"></span>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
 </div>

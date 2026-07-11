@@ -1,4 +1,19 @@
-<!-- Timeline Component -->
-<div class="timeline-wrapper">
-    Timeline
-</div>
+<ul class="timeline {% if vertical %}timeline-vertical{% else %}timeline-horizontal{% endif %}">
+    {% for item in items %}
+    <li>
+        {% if not forloop.first %}<hr class="{% if item.completed %}bg-primary{% endif %}" />{% endif %}
+        {% if item.start %}
+        <div class="timeline-start">{{ item.start }}</div>
+        {% endif %}
+        <div class="timeline-middle">
+            {% if item.icon %}
+                {{ item.icon|safe }}
+            {% else %}
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 {% if item.completed %}text-primary{% endif %}"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg>
+            {% endif %}
+        </div>
+        <div class="timeline-end {% if item.box %}timeline-box{% endif %}">{{ item.content|safe }}</div>
+        {% if not forloop.last %}<hr class="{% if item.completed %}bg-primary{% endif %}" />{% endif %}
+    </li>
+    {% endfor %}
+</ul>

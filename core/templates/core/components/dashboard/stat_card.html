@@ -1,17 +1,14 @@
-<div class="relative overflow-hidden bg-white rounded-xl shadow-sm border border-gray-100 dark:bg-gray-800 dark:border-gray-700 transition-all hover:shadow-md">
-    <div class="p-5">
-        <div class="flex items-center">
-            <div class="flex-shrink-0 p-3 bg-{{ color|default:'blue' }}-50 rounded-lg dark:bg-{{ color|default:'blue' }}-900/30">
+<div class="stats shadow bg-base-100 border border-base-200 w-full hover:shadow-md transition-shadow duration-300">
+    <div class="stat">
+        <div class="stat-figure text-{{ color|default:'primary' }}">
+            <div class="p-3 bg-{{ color|default:'primary' }}/10 rounded-lg">
                 {{ icon|safe }}
             </div>
-            <div class="ml-5 w-0 flex-1">
-                <dl>
-                    <dt class="text-sm font-semibold text-gray-500 truncate dark:text-gray-400 uppercase tracking-wide">{{ title }}</dt>
-                    <dd>
-                        <div class="text-3xl font-black text-gray-900 dark:text-white">{{ value|default:"0" }}</div>
-                    </dd>
-                </dl>
-            </div>
         </div>
+        <div class="stat-title text-xs font-bold uppercase tracking-wider text-base-content/60">{{ title }}</div>
+        <div class="stat-value text-3xl font-extrabold text-base-content my-1">{{ value|default:"0" }}</div>
+        {% if description %}
+        <div class="stat-desc text-base-content/70">{{ description }}</div>
+        {% endif %}
     </div>
 </div>

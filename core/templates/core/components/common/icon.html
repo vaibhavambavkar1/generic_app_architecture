@@ -1,4 +1,4 @@
-<!-- Icon Component -->
-<div class="icon-wrapper">
-    Icon
-</div>
+{% load core_tags %}
+<span class="inline-block {{ class|default:'w-5 h-5' }} {% if color %}text-{{ color }}{% endif %}">
+    {% get_svg_icon name %}
+</span>

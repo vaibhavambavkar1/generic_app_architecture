@@ -1,4 +1,20 @@
-<!-- Radio Component -->
-<div class="radio-wrapper">
-    Radio
+<div class="form-control {{ extra_wrapper_classes }}">
+    {% if label %}
+    <label class="label">
+        <span class="label-text font-semibold text-base-content/85">{{ label }}</span>
+    </label>
+    {% endif %}
+    <div class="flex flex-col gap-2 {% if inline %}sm:flex-row sm:gap-4{% endif %}">
+        {% for option in options %}
+        <label class="label cursor-pointer justify-start gap-2">
+            <input type="radio" 
+                   name="{{ name }}" 
+                   value="{{ option.value }}" 
+                   class="radio radio-primary {{ extra_radio_classes }}" 
+                   {% if option.value == selected_value %}checked{% endif %}
+                   {% if disabled %}disabled{% endif %} />
+            <span class="label-text">{{ option.label }}</span>
+        </label>
+        {% endfor %}
+    </div>
 </div>

@@ -1,4 +1,19 @@
-<!-- Breadcrumb Component -->
-<div class="breadcrumb-wrapper">
-    Breadcrumb
+<div class="text-sm breadcrumbs">
+    <ul>
+        {% for item in items %}
+        <li>
+            {% if item.url %}
+            <a href="{{ item.url }}" class="flex items-center gap-1">
+                {% if item.icon %}{{ item.icon|safe }}{% endif %}
+                {{ item.label }}
+            </a>
+            {% else %}
+            <span class="flex items-center gap-1 text-base-content/60">
+                {% if item.icon %}{{ item.icon|safe }}{% endif %}
+                {{ item.label }}
+            </span>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
 </div>

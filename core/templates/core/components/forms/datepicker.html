@@ -1,4 +1,19 @@
-<!-- Datepicker Component -->
-<div class="datepicker-wrapper">
-    Datepicker
+<div class="form-control w-full {{ extra_wrapper_classes }}">
+    {% if label %}
+    <label class="label">
+        <span class="label-text font-semibold text-base-content/85">{{ label }}</span>
+    </label>
+    {% endif %}
+    <div class="relative">
+        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-base-content/50">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+        </div>
+        <input type="date" 
+               name="{{ name }}" 
+               value="{{ value|default:'' }}" 
+               class="input input-bordered w-full pl-10 {% if error %}input-error{% endif %} {{ extra_input_classes }}" 
+               {% if required %}required{% endif %}
+               {% if disabled %}disabled{% endif %}
+               {% if id %}id="{{ id }}"{% endif %} />
+    </div>
 </div>

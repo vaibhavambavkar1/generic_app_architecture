@@ -1,4 +1,18 @@
-<!-- Filters Component -->
-<div class="filters-wrapper">
-    Filters
+<div class="dropdown dropdown-end">
+    <label tabindex="0" class="btn btn-outline btn-sm gap-2">
+        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 13.707A1 1 0 013 13V4z"></path></svg>
+        Filters
+    </label>
+    <div tabindex="0" class="dropdown-content z-[1] card card-compact w-64 p-2 shadow bg-base-100 rounded-box border border-base-200">
+        <div class="card-body">
+            <h3 class="card-title text-sm font-bold">Filter Options</h3>
+            <form hx-get="{{ request.path }}" hx-target="#datatable-body" hx-swap="innerHTML" class="space-y-3">
+                {{ filter_fields|safe }}
+                <div class="flex justify-end gap-2 mt-4">
+                    <button type="reset" class="btn btn-ghost btn-xs">Reset</button>
+                    <button type="submit" class="btn btn-primary btn-xs text-white">Apply</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>

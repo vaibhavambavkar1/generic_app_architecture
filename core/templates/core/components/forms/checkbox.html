@@ -1,4 +1,19 @@
-<!-- Checkbox Component -->
-<div class="checkbox-wrapper">
-    Checkbox
+<div class="form-control {{ extra_wrapper_classes }}">
+    <label class="label cursor-pointer justify-start gap-3">
+        <input type="checkbox" 
+               name="{{ name }}" 
+               value="{{ value|default:'true' }}" 
+               class="checkbox checkbox-{% if type %}{{ type }}{% else %}primary{% endif %} {{ extra_checkbox_classes }}" 
+               {% if checked %}checked{% endif %}
+               {% if disabled %}disabled{% endif %}
+               {% if id %}id="{{ id }}"{% endif %} />
+        {% if label %}
+        <span class="label-text font-semibold text-base-content/85">{{ label }}</span>
+        {% endif %}
+    </label>
+    {% if helper_text %}
+    <label class="label pt-0">
+        <span class="label-text-alt text-base-content/60">{{ helper_text }}</span>
+    </label>
+    {% endif %}
 </div>

@@ -1,4 +1,8 @@
-<!-- Dropdown Component -->
-<div class="dropdown-wrapper">
-    Dropdown
+<div class="dropdown {% if align %}dropdown-{{ align }}{% endif %} {% if position %}dropdown-{{ position }}{% endif %} {% if hover %}dropdown-hover{% endif %}">
+    <label tabindex="0" class="btn {% if trigger_type %}btn-{{ trigger_type }}{% endif %} {% if trigger_size %}btn-{{ trigger_size }}{% endif %} m-1">
+        {{ label|default:"Dropdown" }}
+    </label>
+    <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52 border border-base-200">
+        {{ content|safe }}
+    </ul>
 </div>

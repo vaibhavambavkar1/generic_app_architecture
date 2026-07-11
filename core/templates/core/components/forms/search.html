@@ -1,4 +1,17 @@
-<!-- Search Component -->
-<div class="search-wrapper">
-    Search
+<div class="relative w-full {{ extra_wrapper_classes }}">
+    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-base-content/50">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+        </svg>
+    </div>
+    <input type="search" 
+           name="{{ name|default:'q' }}" 
+           value="{{ value|default:'' }}" 
+           placeholder="{{ placeholder|default:'Search...' }}" 
+           class="input input-bordered w-full pl-10 {{ extra_input_classes }}" 
+           {% if hx_get %}hx-get="{{ hx_get }}"{% endif %}
+           {% if hx_target %}hx-target="{{ hx_target }}"{% endif %}
+           {% if hx_swap %}hx-swap="{{ hx_swap }}"{% endif %}
+           {% if hx_trigger %}hx-trigger="{{ hx_trigger }}"{% endif %}
+           {% if hx_indicator %}hx-indicator="{{ hx_indicator }}"{% endif %} />
 </div>

@@ -1,4 +1,8 @@
-<!-- Notification Component -->
-<div class="notification-wrapper">
-    Notification
+<div class="indicator">
+    {% if count %}
+    <span class="indicator-item badge badge-secondary badge-xs">{{ count }}</span> 
+    {% endif %}
+    <div class="grid w-10 h-10 bg-base-300 place-items-center rounded-lg">
+        {{ icon|safe }}
+    </div>
 </div>

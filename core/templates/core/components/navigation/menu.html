@@ -1,4 +1,26 @@
-<!-- Menu Component -->
-<div class="menu-wrapper">
-    Menu
-</div>
+<ul class="menu bg-base-100 rounded-box {{ extra_classes }}">
+    {% for item in items %}
+        {% if item.submenu %}
+        <li>
+            <details {% if item.open %}open{% endif %}>
+                <summary>
+                    {% if item.icon %}{{ item.icon|safe }}{% endif %}
+                    {{ item.label }}
+                </summary>
+                <ul>
+                    {% for sub in item.submenu %}
+                    <li><a href="{{ sub.url }}">{{ sub.label }}</a></li>
+                    {% endfor %}
+                </ul>
+            </details>
+        </li>
+        {% else %}
+        <li>
+            <a href="{{ item.url }}">
+                {% if item.icon %}{{ item.icon|safe }}{% endif %}
+                {{ item.label }}
+            </a>
+        </li>
+        {% endif %}
+    {% endfor %}
+</ul>

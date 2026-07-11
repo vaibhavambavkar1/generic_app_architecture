@@ -1,4 +1,10 @@
-<!-- Bulk Actions Component -->
-<div class="bulk_actions-wrapper">
-    Bulk Actions
+<div class="dropdown dropdown-end" x-show="hasSelection" style="display: none;" x-transition>
+    <label tabindex="0" class="btn btn-outline btn-sm gap-2">
+        Bulk Actions (<span x-text="selectedIds.length"></span>)
+        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+    </label>
+    <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52 border border-base-200">
+        <li><a @click="executeBulkAction('delete')" class="text-error font-medium">Delete Selected</a></li>
+        {{ extra_actions|safe }}
+    </ul>
 </div>

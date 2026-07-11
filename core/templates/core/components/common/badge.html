@@ -1,4 +1,3 @@
-<!-- Badge Component -->
-<div class="badge-wrapper">
-    Badge
+<div class="badge {% if type %}badge-{{ type }}{% endif %} {% if size %}badge-{{ size }}{% endif %} {% if outline %}badge-outline{% endif %}">
+    {{ label|default:"Badge" }}
 </div>

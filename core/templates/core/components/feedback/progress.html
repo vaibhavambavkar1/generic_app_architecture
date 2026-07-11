@@ -1,4 +1,11 @@
-<!-- Progress Component -->
-<div class="progress-wrapper">
-    Progress
+<div class="w-full">
+    {% if label %}
+    <div class="flex justify-between text-xs mb-1">
+        <span class="text-base-content/75">{{ label }}</span>
+        {% if show_percentage %}
+        <span class="font-bold text-base-content">{{ value }}%</span>
+        {% endif %}
+    </div>
+    {% endif %}
+    <progress class="progress progress-{% if color %}{{ color }}{% else %}primary{% endif %} w-full" value="{{ value|default:'0' }}" max="{{ max|default:'100' }}"></progress>
 </div>

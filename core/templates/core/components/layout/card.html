@@ -1,4 +1,16 @@
-<!-- Card Component -->
-<div class="card-wrapper">
-    Card
+<div class="card bg-base-100 {% if border %}border border-base-200{% endif %} shadow-{% if shadow %}{{ shadow }}{% else %}xl{% endif %} {{ extra_classes }}">
+    {% if image_src %}
+    <figure><img src="{{ image_src }}" alt="{{ image_alt|default:'Card Image' }}" /></figure>
+    {% endif %}
+    <div class="card-body">
+        {% if title %}
+        <h2 class="card-title text-base-content">{{ title }}</h2>
+        {% endif %}
+        {{ content|safe }}
+        {% if actions %}
+        <div class="card-actions justify-end mt-4">
+            {{ actions|safe }}
+        </div>
+        {% endif %}
+    </div>
 </div>

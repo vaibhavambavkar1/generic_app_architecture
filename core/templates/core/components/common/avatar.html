@@ -1,4 +1,9 @@
-<!-- Avatar Component -->
-<div class="avatar-wrapper">
-    Avatar
+<div class="avatar {% if placeholder %}placeholder{% endif %} {% if online %}online{% elif offline %}offline{% endif %}">
+    <div class="{{ size|default:'w-12' }} rounded-{% if shape %}{{ shape }}{% else %}full{% endif %}">
+        {% if placeholder %}
+            <span class="text-xl">{{ text|default:"U" }}</span>
+        {% else %}
+            <img src="{{ src }}" alt="{{ alt|default:'Avatar' }}" />
+        {% endif %}
+    </div>
 </div>

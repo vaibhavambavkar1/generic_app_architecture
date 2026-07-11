@@ -1,4 +1,12 @@
-<!-- Tabs Component -->
-<div class="tabs-wrapper">
-    Tabs
+<div class="tabs tabs-{% if type %}{{ type }}{% else %}lifted{% endif %} {% if size %}tabs-{{ size }}{% endif %}">
+    {% for tab in tabs %}
+    <a href="{{ tab.url|default:'#' }}" 
+       class="tab {% if tab.active %}tab-active{% endif %}"
+       {% if tab.hx_get %}hx-get="{{ tab.hx_get }}"{% endif %}
+       {% if tab.hx_target %}hx-target="{{ tab.hx_target }}"{% endif %}
+       {% if tab.hx_swap %}hx-swap="{{ tab.hx_swap }}"{% endif %}>
+        {% if tab.icon %}<span class="mr-2">{{ tab.icon|safe }}</span>{% endif %}
+        {{ tab.label }}
+    </a>
+    {% endfor %}
 </div>
