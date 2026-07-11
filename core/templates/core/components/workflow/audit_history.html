@@ -4,13 +4,13 @@
         <li>
             <div class="relative pb-8">
                 {% if not forloop.last %}
-                <span class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200 dark:bg-gray-700" aria-hidden="true"></span>
+                <span class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-base-300" aria-hidden="true"></span>
                 {% endif %}
                 <div class="relative flex space-x-3">
                     <div>
-                        <span class="h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white dark:ring-gray-800 
-                            {% if log.action == 'CREATE' %}bg-green-500{% elif log.action == 'UPDATE' %}bg-blue-500{% else %}bg-red-500{% endif %}">
-                            <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <span class="h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-base-100 
+                            {% if log.action == 'CREATE' %}bg-success text-success-content{% elif log.action == 'UPDATE' %}bg-info text-info-content{% else %}bg-error text-error-content{% endif %}">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 {% if log.action == 'CREATE' %}
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                                 {% elif log.action == 'UPDATE' %}
@@ -23,12 +23,12 @@
                     </div>
                     <div class="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
                         <div>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">
+                            <p class="text-sm text-base-content/70">
                                 {{ log.action|title }} by 
-                                <span class="font-medium text-gray-900 dark:text-white">{{ log.user.username|default:"System" }}</span>
+                                <span class="font-medium text-base-content">{{ log.user.username|default:"System" }}</span>
                             </p>
                             {% if log.new_values %}
-                            <div class="mt-2 text-sm text-gray-700 dark:text-gray-300">
+                            <div class="mt-2 text-sm text-base-content/85">
                                 <ul class="list-disc pl-5">
                                 {% for key, val in log.new_values.items %}
                                     <li><span class="font-semibold">{{ key }}:</span> {{ val }}</li>
@@ -37,7 +37,7 @@
                             </div>
                             {% endif %}
                         </div>
-                        <div class="text-right text-sm whitespace-nowrap text-gray-500 dark:text-gray-400">
+                        <div class="text-right text-sm whitespace-nowrap text-base-content/60">
                             <time datetime="{{ log.timestamp|date:'c' }}">{{ log.timestamp|timesince }} ago</time>
                         </div>
                     </div>
@@ -45,7 +45,7 @@
             </div>
         </li>
         {% empty %}
-        <p class="text-sm text-gray-500">No audit history available.</p>
+        <p class="text-sm text-base-content/50">No audit history available.</p>
         {% endfor %}
     </ul>
 </div>

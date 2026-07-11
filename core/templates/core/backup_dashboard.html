@@ -7,14 +7,14 @@
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- Download Backup Card -->
-        <div class="card bg-base-100 dark:bg-gray-800 shadow-xl border border-gray-200 dark:border-gray-700 p-6">
+        <div class="card bg-base-100 shadow-xl border border-base-300 p-6">
             <div class="flex items-center mb-4">
-                <div class="flex-shrink-0 h-10 w-10 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center">
-                    <svg class="h-6 w-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                <div class="flex-shrink-0 h-10 w-10 bg-info/10 rounded-full flex items-center justify-center">
+                    <svg class="h-6 w-6 text-info" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                 </div>
-                <h3 class="ml-3 text-lg font-bold text-gray-900 dark:text-white">Export Database</h3>
+                <h3 class="ml-3 text-lg font-bold text-base-content">Export Database</h3>
             </div>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mb-6 h-12">Download a complete, portable JSON snapshot of your entire database state.</p>
+            <p class="text-sm text-base-content/70 mb-6 h-12">Download a complete, portable JSON snapshot of your entire database state.</p>
             
             <a href="{% url 'core:download_backup' %}" class="btn btn-primary w-full text-white">
                 Generate & Download Backup
@@ -22,14 +22,14 @@
         </div>
 
         <!-- Restore Backup Card -->
-        <div class="card bg-base-100 dark:bg-gray-800 shadow-xl border border-gray-200 dark:border-gray-700 p-6">
+        <div class="card bg-base-100 shadow-xl border border-base-300 p-6">
             <div class="flex items-center mb-4">
-                <div class="flex-shrink-0 h-10 w-10 bg-red-100 dark:bg-red-900/50 rounded-full flex items-center justify-center">
-                    <svg class="h-6 w-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                <div class="flex-shrink-0 h-10 w-10 bg-error/10 rounded-full flex items-center justify-center">
+                    <svg class="h-6 w-6 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
                 </div>
-                <h3 class="ml-3 text-lg font-bold text-gray-900 dark:text-white">Restore System</h3>
+                <h3 class="ml-3 text-lg font-bold text-base-content">Restore System</h3>
             </div>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mb-6 h-12">Upload a previously generated JSON backup file. <span class="font-bold text-red-500">Warning:</span> Overwrites matching IDs.</p>
+            <p class="text-sm text-base-content/70 mb-6 h-12">Upload a previously generated JSON backup file. <span class="font-bold text-error">Warning:</span> Overwrites matching IDs.</p>
             
             <form method="post" action="{% url 'core:backup_dashboard' %}" enctype="multipart/form-data" class="form-control gap-4">
                 {% csrf_token %}

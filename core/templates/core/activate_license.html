@@ -4,18 +4,18 @@
 {% block header %}{% endblock %}
 
 {% block content %}
-<div class="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 absolute inset-0 z-50">
+<div class="min-h-screen bg-base-200 flex flex-col justify-center py-12 sm:px-6 lg:px-8 absolute inset-0 z-50">
     <div class="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
+        <h2 class="mt-6 text-center text-3xl font-extrabold text-base-content">
             System Activation Required
         </h2>
-        <p class="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+        <p class="mt-2 text-center text-sm text-base-content/70">
             Please enter a valid license key to continue using the ERP Framework.
         </p>
     </div>
 
     <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div class="card bg-base-100 dark:bg-gray-800 shadow-xl border border-gray-200 dark:border-gray-700 p-8 sm:px-10">
+        <div class="card bg-base-100 shadow-xl border border-base-300 p-8 sm:px-10">
             {% if error %}
             <div class="alert alert-error mb-4 shadow-sm py-2">
                 <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -25,22 +25,22 @@
             
             <div class="mb-6">
                 <label class="label">
-                    <span class="label-text font-medium text-gray-700 dark:text-gray-300">Your Hardware ID</span>
+                    <span class="label-text font-medium text-base-content/85">Your Hardware ID</span>
                 </label>
                 <div class="mt-1">
-                    <input type="text" readonly value="{{ hwid }}" class="input input-bordered w-full font-mono bg-gray-100 dark:bg-gray-700 dark:text-gray-300 text-center tracking-widest text-lg text-blue-600 dark:text-blue-400">
+                    <input type="text" readonly value="{{ hwid }}" class="input input-bordered w-full font-mono bg-base-200 text-center tracking-widest text-lg text-primary">
                 </div>
-                <p class="mt-2 text-xs text-gray-500 text-center">Provide this ID to your vendor to generate a license.</p>
+                <p class="mt-2 text-xs text-base-content/60 text-center">Provide this ID to your vendor to generate a license.</p>
             </div>
 
             <form action="{% url 'core:activate_license' %}" method="POST" class="form-control">
                 {% csrf_token %}
                 <div>
                     <label for="license_key" class="label">
-                        <span class="label-text font-medium text-gray-700 dark:text-gray-300">RSA Signed License Token</span>
+                        <span class="label-text font-medium text-base-content/85">RSA Signed License Token</span>
                     </label>
                     <div class="mt-1">
-                        <textarea id="license_key" name="license_key" rows="6" required class="textarea textarea-bordered w-full font-mono dark:bg-gray-900 dark:text-green-400 text-xs"></textarea>
+                        <textarea id="license_key" name="license_key" rows="6" required class="textarea textarea-bordered w-full font-mono text-xs"></textarea>
                     </div>
                 </div>
 

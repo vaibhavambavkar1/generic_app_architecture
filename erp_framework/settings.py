@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'django_celery_beat',
     'rest_framework',
     'rest_framework_simplejwt',
+    'import_export',
 ]
 
 MIDDLEWARE = [
