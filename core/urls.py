@@ -11,6 +11,7 @@ urlpatterns = [
     path('settings/config/<int:pk>/', views.update_config, name='update_config'),
     path('license/activate/', views.activate_license, name='activate_license'),
     path('profile/', views.profile_view, name='profile'),
+    path('organization/setup/', views.organization_setup, name='organization_create'),
 ]
 
 # HTML Auth URLs

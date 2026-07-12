@@ -1,0 +1,261 @@
+{% extends 'core/base.html' %}
+
+{% block title %}
+    {% if is_new %}Initialize Organization | ERP Framework{% else %}Edit Organization Details | ERP Framework{% endif %}
+{% endblock %}
+
+{% block content %}
+{% if is_new %}
+<!-- Full Screen Setup Mode -->
+<div class="min-h-screen bg-base-200 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 absolute inset-0 z-50 overflow-y-auto">
+    <div class="sm:mx-auto sm:w-full sm:max-w-2xl">
+        <h2 class="mt-6 text-center text-3xl font-extrabold text-base-content">
+            Welcome to ERP Framework
+        </h2>
+        <p class="mt-2 text-center text-sm text-base-content/70">
+            Please register your organization/company details to initialize the system.
+        </p>
+    </div>
+
+    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-2xl">
+        <div class="card bg-base-100 shadow-xl border border-base-300 p-8 sm:px-10">
+            <form action="{% url 'core:organization_create' %}" method="POST" enctype="multipart/form-data" class="space-y-6">
+                {% csrf_token %}
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Organization Name -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold text-xs uppercase tracking-wider text-base-content/70">Organization/Company Name</span>
+                        </label>
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                        <label class="label"><span class="label-text-alt text-error text-xs">{{ form.name.errors.as_text }}</span></label>
+                        {% endif %}
+                    </div>
+
+                    <!-- Owner Name -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold text-xs uppercase tracking-wider text-base-content/70">Owner Name</span>
+                        </label>
+                        {{ form.owner_name }}
+                        {% if form.owner_name.errors %}
+                        <label class="label"><span class="label-text-alt text-error text-xs">{{ form.owner_name.errors.as_text }}</span></label>
+                        {% endif %}
+                    </div>
+
+                    <!-- Email -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold text-xs uppercase tracking-wider text-base-content/70">Email Address</span>
+                        </label>
+                        {{ form.email }}
+                        {% if form.email.errors %}
+                        <label class="label"><span class="label-text-alt text-error text-xs">{{ form.email.errors.as_text }}</span></label>
+                        {% endif %}
+                    </div>
+
+                    <!-- Phone -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold text-xs uppercase tracking-wider text-base-content/70">Contact / Phone Number</span>
+                        </label>
+                        {{ form.phone }}
+                        {% if form.phone.errors %}
+                        <label class="label"><span class="label-text-alt text-error text-xs">{{ form.phone.errors.as_text }}</span></label>
+                        {% endif %}
+                    </div>
+
+                    <!-- GSTIN -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold text-xs uppercase tracking-wider text-base-content/70">GSTIN Number (Optional)</span>
+                        </label>
+                        {{ form.gstin }}
+                        {% if form.gstin.errors %}
+                        <label class="label"><span class="label-text-alt text-error text-xs">{{ form.gstin.errors.as_text }}</span></label>
+                        {% endif %}
+                    </div>
+
+                    <!-- License Number -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold text-xs uppercase tracking-wider text-base-content/70">License Number (Optional)</span>
+                        </label>
+                        {{ form.license_number }}
+                        {% if form.license_number.errors %}
+                        <label class="label"><span class="label-text-alt text-error text-xs">{{ form.license_number.errors.as_text }}</span></label>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Address -->
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text font-semibold text-xs uppercase tracking-wider text-base-content/70">Address</span>
+                    </label>
+                    {{ form.address }}
+                    {% if form.address.errors %}
+                    <label class="label"><span class="label-text-alt text-error text-xs">{{ form.address.errors.as_text }}</span></label>
+                    {% endif %}
+                </div>
+
+                <!-- Logo -->
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text font-semibold text-xs uppercase tracking-wider text-base-content/70">Organization Logo (Optional)</span>
+                    </label>
+                    {{ form.logo }}
+                    {% if form.logo.errors %}
+                    <label class="label"><span class="label-text-alt text-error text-xs">{{ form.logo.errors.as_text }}</span></label>
+                    {% endif %}
+                </div>
+
+                <div class="pt-4">
+                    <button type="submit" class="btn btn-primary w-full text-white">
+                        Register Organization & Initialize System
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% else %}
+<!-- Standard Form Edit Mode within App -->
+<div class="space-y-6">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold tracking-tight">Organization Profile</h1>
+            <p class="text-base-content/60 font-medium">Update your company metadata, logo, and registration keys.</p>
+        </div>
+        <div>
+            <a href="{% url 'core:settings_dashboard' %}" class="btn btn-outline btn-sm">
+                Cancel
+            </a>
+        </div>
+    </div>
+
+    <div class="card bg-base-100 shadow-xl border border-base-300 overflow-hidden">
+        <div class="px-6 py-4 bg-base-200 border-b border-base-300 flex items-center justify-between">
+            <div>
+                <h3 class="text-lg font-bold text-base-content">Company Details</h3>
+                <p class="text-sm text-base-content/70">These details will be used across standard document receipts and purchase orders.</p>
+            </div>
+            {% if org.logo %}
+            <div class="avatar">
+                <div class="w-12 h-12 rounded-xl ring ring-primary ring-offset-base-100 ring-offset-2">
+                    <img src="{{ org.logo.url }}" alt="{{ org.name }} Logo" />
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="p-6">
+            <form action="{% url 'core:organization_create' %}" method="POST" enctype="multipart/form-data" class="space-y-6">
+                {% csrf_token %}
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Organization Name -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold text-xs uppercase tracking-wider text-base-content/70">Organization/Company Name</span>
+                        </label>
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                        <label class="label"><span class="label-text-alt text-error text-xs">{{ form.name.errors.as_text }}</span></label>
+                        {% endif %}
+                    </div>
+
+                    <!-- Owner Name -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold text-xs uppercase tracking-wider text-base-content/70">Owner Name</span>
+                        </label>
+                        {{ form.owner_name }}
+                        {% if form.owner_name.errors %}
+                        <label class="label"><span class="label-text-alt text-error text-xs">{{ form.owner_name.errors.as_text }}</span></label>
+                        {% endif %}
+                    </div>
+
+                    <!-- Email -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold text-xs uppercase tracking-wider text-base-content/70">Email Address</span>
+                        </label>
+                        {{ form.email }}
+                        {% if form.email.errors %}
+                        <label class="label"><span class="label-text-alt text-error text-xs">{{ form.email.errors.as_text }}</span></label>
+                        {% endif %}
+                    </div>
+
+                    <!-- Phone -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold text-xs uppercase tracking-wider text-base-content/70">Contact / Phone Number</span>
+                        </label>
+                        {{ form.phone }}
+                        {% if form.phone.errors %}
+                        <label class="label"><span class="label-text-alt text-error text-xs">{{ form.phone.errors.as_text }}</span></label>
+                        {% endif %}
+                    </div>
+
+                    <!-- GSTIN -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold text-xs uppercase tracking-wider text-base-content/70">GSTIN Number (Optional)</span>
+                        </label>
+                        {{ form.gstin }}
+                        {% if form.gstin.errors %}
+                        <label class="label"><span class="label-text-alt text-error text-xs">{{ form.gstin.errors.as_text }}</span></label>
+                        {% endif %}
+                    </div>
+
+                    <!-- License Number -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-semibold text-xs uppercase tracking-wider text-base-content/70">License Number (Optional)</span>
+                        </label>
+                        {{ form.license_number }}
+                        {% if form.license_number.errors %}
+                        <label class="label"><span class="label-text-alt text-error text-xs">{{ form.license_number.errors.as_text }}</span></label>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Address -->
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text font-semibold text-xs uppercase tracking-wider text-base-content/70">Address</span>
+                    </label>
+                    {{ form.address }}
+                    {% if form.address.errors %}
+                    <label class="label"><span class="label-text-alt text-error text-xs">{{ form.address.errors.as_text }}</span></label>
+                    {% endif %}
+                </div>
+
+                <!-- Logo -->
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text font-semibold text-xs uppercase tracking-wider text-base-content/70">Organization Logo (Optional)</span>
+                    </label>
+                    {{ form.logo }}
+                    {% if form.logo.errors %}
+                    <label class="label"><span class="label-text-alt text-error text-xs">{{ form.logo.errors.as_text }}</span></label>
+                    {% endif %}
+                </div>
+
+                <div class="flex justify-end gap-3 pt-4 border-t border-base-200">
+                    <a href="{% url 'core:settings_dashboard' %}" class="btn btn-ghost btn-sm">
+                        Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary btn-sm text-white">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

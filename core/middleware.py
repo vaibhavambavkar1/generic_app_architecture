@@ -1,7 +1,44 @@
 from django.shortcuts import redirect
-from django.urls import resolve
+from django.urls import resolve, Resolver404
 from django.core.cache import cache
 from .license import LicenseManager
+from .models import Organization
+
+class OrganizationEnforcementMiddleware:
+    """Forces the user to register organization details on first initialization."""
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if not request.user or not request.user.is_authenticated:
+            return self.get_response(request)
+
+        try:
+            resolved = resolve(request.path_info)
+            url_name = resolved.url_name
+            app_name = resolved.app_name
+        except Resolver404:
+            url_name = None
+            app_name = None
+
+        exempt_routes = [
+            'login', 'logout', 'activate_license', 'organization_create',
+            'admin:login', 'admin:index', 'admin:app_list'
+        ]
+
+        is_exempt = (
+            url_name in exempt_routes or
+            app_name == 'admin' or
+            request.path_info.startswith('/static/') or
+            request.path_info.startswith('/media/') or
+            request.path_info.startswith('/admin/')
+        )
+
+        if not is_exempt:
+            if not Organization.objects.exists():
+                return redirect('core:organization_create')
+
+        return self.get_response(request)
 
 class LicenseEnforcementMiddleware:
     """Intercepts all requests and enforces an active, system-bound license."""

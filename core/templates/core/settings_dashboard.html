@@ -38,6 +38,73 @@
         </div>
     </div>
 
+    <!-- Organization Settings -->
+    <div class="card bg-base-100 shadow-xl border border-base-300 mb-8 overflow-hidden">
+        <div class="px-6 py-4 border-b border-base-300 bg-base-200 flex items-center justify-between">
+            <div>
+                <h3 class="text-lg font-bold text-base-content">Organization Details</h3>
+                <p class="text-sm text-base-content/70">Company credentials, license numbers, and visual assets used across application invoices.</p>
+            </div>
+            <div>
+                <a href="{% url 'core:organization_create' %}" class="btn btn-primary btn-sm text-white gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                    Edit Profile
+                </a>
+            </div>
+        </div>
+        
+        <div class="p-6 grid grid-cols-1 md:grid-cols-4 gap-6">
+            {% if org %}
+            <div class="flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-base-300 pb-4 md:pb-0 md:pr-6">
+                {% if org.logo %}
+                <div class="avatar mb-3">
+                    <div class="w-24 h-24 rounded-xl ring ring-primary ring-offset-base-100 ring-offset-2">
+                        <img src="{{ org.logo.url }}" alt="{{ org.name }} Logo" />
+                    </div>
+                </div>
+                {% else %}
+                <div class="w-24 h-24 rounded-xl bg-neutral text-neutral-content flex items-center justify-center font-bold text-3xl mb-3 shadow">
+                    {{ org.name|slice:":2"|upper }}
+                </div>
+                {% endif %}
+                <span class="font-bold text-lg text-center">{{ org.name }}</span>
+                <span class="text-xs text-base-content/60 text-center font-medium">Owner: {{ org.owner_name }}</span>
+            </div>
+
+            <div class="md:col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                <div>
+                    <span class="block font-bold text-xs uppercase tracking-wider text-base-content/55">Email Address</span>
+                    <span class="font-mono text-base-content/90">{{ org.email }}</span>
+                </div>
+                <div>
+                    <span class="block font-bold text-xs uppercase tracking-wider text-base-content/55">Phone Number</span>
+                    <span>{{ org.phone|default:"-" }}</span>
+                </div>
+                <div>
+                    <span class="block font-bold text-xs uppercase tracking-wider text-base-content/55">GSTIN Registered</span>
+                    <span class="font-mono text-base-content/90">{{ org.gstin|default:"Not Provided" }}</span>
+                </div>
+                <div>
+                    <span class="block font-bold text-xs uppercase tracking-wider text-base-content/55">Company License</span>
+                    <span class="font-mono text-base-content/90">{{ org.license_number|default:"Not Provided" }}</span>
+                </div>
+                <div class="sm:col-span-2">
+                    <span class="block font-bold text-xs uppercase tracking-wider text-base-content/55">Address</span>
+                    <span class="text-base-content/85">{{ org.address|default:"-" }}</span>
+                </div>
+            </div>
+            {% else %}
+            <div class="col-span-4 text-center py-6">
+                <svg class="mx-auto h-12 w-12 text-error mb-2 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                <p class="text-sm font-semibold text-error">No Organization profile has been initialized yet.</p>
+                <p class="text-xs text-base-content/60 mt-1">Initialize it now to enable full platform capabilities.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
     <!-- Backup & Restore System -->
     <div class="card bg-base-100 shadow-xl border border-base-300 mb-8 overflow-hidden">
         <div class="px-6 py-4 border-b border-base-300 bg-base-200">

@@ -78,7 +78,11 @@ from .models import SystemConfig
 def settings_dashboard(request):
     """Unified dashboard for configurations, rules, and backups."""
     configs = SystemConfig.objects.all().order_by('key')
-    return render(request, 'core/settings_dashboard.html', {'configs': configs})
+    org = Organization.objects.first()
+    return render(request, 'core/settings_dashboard.html', {
+        'configs': configs,
+        'org': org
+    })
 
 @login_required
 @require_POST
@@ -161,5 +165,29 @@ def profile_view(request):
     return render(request, 'core/profile.html', {
         'password_form': password_form,
         'active_tab': 'profile'
+    })
+
+from .forms import OrganizationForm
+from .models import Organization
+
+@login_required
+def organization_setup(request):
+    """View to setup or edit the single Organization instance."""
+    org = Organization.objects.first()
+    is_new = org is None
+    
+    if request.method == 'POST':
+        form = OrganizationForm(request.POST, request.FILES, instance=org)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Organization details saved successfully.")
+            return redirect('core:settings_dashboard')
+    else:
+        form = OrganizationForm(instance=org)
+        
+    return render(request, 'core/organization_form.html', {
+        'form': form,
+        'is_new': is_new,
+        'org': org
     })
 

@@ -1,7 +1,34 @@
 from django.db import models
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from .events import EventBus, workflow_transitioned
 from .rules.registry import RuleEngine
+
+class Organization(models.Model):
+    name = models.CharField(max_length=255, verbose_name="Organization/Company Name")
+    owner_name = models.CharField(max_length=150, verbose_name="Owner Name")
+    address = models.TextField(blank=True, verbose_name="Address")
+    email = models.EmailField(verbose_name="Email")
+    phone = models.CharField(max_length=20, blank=True, verbose_name="Contact/Phone Number")
+    gstin = models.CharField(max_length=15, blank=True, null=True, verbose_name="GSTIN Number")
+    license_number = models.CharField(max_length=100, blank=True, null=True, verbose_name="License Number")
+    logo = models.ImageField(upload_to='org_logos/', blank=True, null=True, verbose_name="Organization Logo")
+
+    class Meta:
+        verbose_name = "Organization Details"
+        verbose_name_plural = "Organization Details"
+
+    def clean(self):
+        # Enforce singleton pattern: only one record allowed
+        if not self.pk and Organization.objects.exists():
+            raise ValidationError("Only one Organization can be registered.")
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
 
 class Workflow(models.Model):
     name = models.CharField(max_length=100, unique=True)

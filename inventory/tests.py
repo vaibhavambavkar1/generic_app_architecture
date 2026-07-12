@@ -8,6 +8,14 @@ from django.urls import reverse
 
 class InventoryWorkflowTests(TestCase):
     def setUp(self):
+        # Create default organization to satisfy OrganizationEnforcementMiddleware
+        from core.models import Organization
+        self.org = Organization.objects.create(
+            name="Test Corp",
+            owner_name="Owner",
+            email="owner@testcorp.com"
+        )
+
         # Create groups and users
         self.managers_group = Group.objects.create(name='Managers')
         
