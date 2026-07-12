@@ -45,6 +45,6 @@
     </div>
     
     {% if toast_message %}
-        {% include 'core/components/toast.html' with message=toast_message type=toast_type|default:'success' %}
+        {% include 'core/components/feedback/toast.html' with message=toast_message type=toast_type|default:'success' %}
     {% endif %}
 {% endblock %}

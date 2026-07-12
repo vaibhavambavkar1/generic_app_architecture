@@ -1,0 +1,162 @@
+{% extends "core/base.html" %}
+
+{% block title %}Create Purchase Order | ERP Framework{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+    <!-- Breadcrumbs -->
+    <div class="text-sm breadcrumbs">
+        <ul>
+            <li><a href="{% url 'inventory:po_list' %}">Purchase Orders</a></li>
+            <li>New Purchase Order</li>
+        </ul>
+    </div>
+
+    <!-- Title -->
+    <div>
+        <h1 class="text-3xl font-bold tracking-tight">Create Purchase Order</h1>
+        <p class="text-base-content/60">Generate a new procurement request and define target SKU volumes.</p>
+    </div>
+
+    <form method="POST" class="space-y-6" x-data="poForm()">
+        {% csrf_token %}
+
+        <div class="card bg-base-200 shadow">
+            <div class="card-body gap-6">
+                <h2 class="card-title text-primary">PO Metadata</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- PO Number -->
+                    <div class="form-control">
+                        <label class="label"><span class="label-text font-semibold">Purchase Order Number</span></label>
+                        <input type="text" readonly placeholder="Auto-generated on Save" class="input input-bordered w-full bg-base-300 cursor-not-allowed font-medium text-base-content/50" />
+                    </div>
+
+                    <!-- Supplier -->
+                    <div class="form-control">
+                        <label class="label"><span class="label-text font-semibold">Target Supplier</span></label>
+                        <select name="supplier" required x-model="selectedSupplierId" class="select select-bordered w-full">
+                            <option value="" disabled selected>Select a supplier...</option>
+                            {% for supplier in suppliers %}
+                            <option value="{{ supplier.id }}">{{ supplier.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Line Items Card -->
+        <div class="card bg-base-200 shadow">
+            <div class="card-body">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="card-title text-primary">Order Line Items</h2>
+                    <button type="button" @click="lines.push({ item_id: '', quantity: 1, price: 0.00 })" class="btn btn-sm btn-outline btn-primary gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        Add Item Row
+                    </button>
+                </div>
+
+                <div class="space-y-4">
+                    <!-- Lines List -->
+                    <template x-for="(line, index) in lines" :key="index">
+                        <div class="flex flex-col md:flex-row gap-4 items-end bg-base-300/40 p-4 rounded-lg relative">
+                            <!-- Remove button -->
+                            <button type="button" @click="lines.splice(index, 1)" class="absolute top-2 right-2 text-error hover:text-error/80 md:static md:mb-2 btn btn-square btn-sm btn-ghost" :disabled="lines.length === 1">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            </button>
+
+                            <!-- Product selection -->
+                            <div class="form-control flex-1">
+                                <label class="label"><span class="label-text font-semibold">Select SKU / Product</span></label>
+                                <select name="item[]" required x-model="line.item_id" @change="updatePrice(index)" class="select select-bordered w-full" :disabled="!selectedSupplierId">
+                                    <option value="" disabled x-text="selectedSupplierId ? 'Choose a product...' : 'Select a supplier first...'"></option>
+                                    <template x-for="item in getFilteredItems()" :key="item.id">
+                                        <option :value="item.id" x-text="item.name + ' (' + item.sku + ')'"></option>
+                                    </template>
+                                </select>
+                            </div>
+
+                            <!-- Quantity -->
+                            <div class="form-control w-full md:w-32">
+                                <label class="label"><span class="label-text font-semibold">Quantity</span></label>
+                                <input type="number" name="quantity[]" min="1" required x-model.number="line.quantity" class="input input-bordered w-full" />
+                            </div>
+
+                            <!-- Cost Price -->
+                            <div class="form-control w-full md:w-40">
+                                <label class="label"><span class="label-text font-semibold">Unit Price ($)</span></label>
+                                <input type="number" step="0.01" name="price[]" required x-model.number="line.price" class="input input-bordered w-full" />
+                            </div>
+
+                            <!-- Subtotal display -->
+                            <div class="w-full md:w-28 text-right font-mono font-bold text-lg pb-3">
+                                $<span x-text="(line.quantity * line.price).toFixed(2)"></span>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Total Display -->
+                <div class="flex justify-end items-center gap-4 mt-6 border-t border-base-300 pt-4">
+                    <span class="text-lg font-semibold">Estimated PO Total:</span>
+                    <span class="text-2xl font-black text-primary">$<span x-text="calculateTotal()"></span></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Submission -->
+        <div class="flex justify-end gap-3">
+            <a href="{% url 'inventory:po_list' %}" class="btn btn-ghost">Cancel</a>
+            <button type="submit" class="btn btn-primary px-8">Save & Initialize Draft PO</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('poForm', () => ({
+            selectedSupplierId: '',
+            lines: [ { item_id: '', quantity: 1, price: 0.00 } ],
+            items: [
+                {% for item in items %}
+                { 
+                    id: '{{ item.id|escapejs }}', 
+                    name: '{{ item.name|escapejs }}', 
+                    price: '{{ item.unit_price }}', 
+                    sku: '{{ item.sku|escapejs }}',
+                    supplier_prices: {
+                        {% for entry in item.catalog_items.all %}
+                        '{{ entry.supplier_id }}': '{{ entry.price }}',
+                        {% endfor %}
+                    }
+                },
+                {% endfor %}
+            ],
+            init() {
+                this.$watch('selectedSupplierId', () => {
+                    this.lines = [ { item_id: '', quantity: 1, price: 0.00 } ];
+                });
+            },
+            getFilteredItems() {
+                if (!this.selectedSupplierId) {
+                    return [];
+                }
+                const supplierIdStr = this.selectedSupplierId.toString();
+                return this.items.filter(item => supplierIdStr in item.supplier_prices);
+            },
+            updatePrice(index) {
+                const selectedId = this.lines[index].item_id;
+                const match = this.items.find(i => i.id == selectedId);
+                if (match) {
+                    const supplierPrice = match.supplier_prices[this.selectedSupplierId.toString()];
+                    this.lines[index].price = supplierPrice ? parseFloat(supplierPrice) : parseFloat(match.price);
+                }
+            },
+            calculateTotal() {
+                return this.lines.reduce((sum, line) => sum + (line.quantity * line.price), 0).toFixed(2);
+            }
+        }));
+    });
+</script>
+{% endblock %}

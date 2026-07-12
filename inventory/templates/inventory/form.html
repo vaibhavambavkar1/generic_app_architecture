@@ -1,0 +1,56 @@
+{% extends "core/base.html" %}
+{% load ui_tags %}
+
+{% block title %}{{ title }} | ERP Framework{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto space-y-6">
+    <!-- Breadcrumbs -->
+    <div class="text-sm breadcrumbs">
+        <ul>
+            <li><a href="{{ back_url }}" class="link link-hover">Back</a></li>
+            <li>{{ title }}</li>
+        </ul>
+    </div>
+
+    <div>
+        <h1 class="text-3xl font-bold tracking-tight text-primary">{{ title }}</h1>
+    </div>
+
+    <form method="POST" class="card bg-base-200 shadow">
+        {% csrf_token %}
+        <div class="card-body gap-4">
+            {% for field in form %}
+            <div class="form-control w-full">
+                <label class="label">
+                    <span class="label-text font-semibold">{{ field.label }}</span>
+                </label>
+                
+                {% if field.field.widget.input_type == "checkbox" %}
+                    <div class="flex items-center">
+                        {{ field|add_class:"checkbox checkbox-primary" }}
+                    </div>
+                {% elif "select" in field.field.widget.attrs.class or field.field.widget.input_type == "select" or field.field.widget.input_type is None %}
+                    {{ field|add_class:"select select-bordered w-full" }}
+                {% elif field.field.widget.attrs.rows %}
+                    {{ field|add_class:"textarea textarea-bordered w-full" }}
+                {% else %}
+                    {{ field|add_class:"input input-bordered w-full" }}
+                {% endif %}
+                
+                {% if field.errors %}
+                <label class="label">
+                    <span class="label-text-alt text-error font-semibold">{{ field.errors.0 }}</span>
+                </label>
+                {% endif %}
+            </div>
+            {% endfor %}
+            
+            <div class="flex justify-end gap-3 mt-6">
+                <a href="{{ back_url }}" class="btn btn-ghost">Cancel</a>
+                <button type="submit" class="btn btn-primary px-8">Save Changes</button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

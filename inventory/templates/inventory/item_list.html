@@ -1,0 +1,296 @@
+{% extends "core/base.html" %}
+
+{% block title %}Products List | ERP Framework{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+            <h1 class="text-3xl font-bold tracking-tight">Products Catalog</h1>
+            <p class="text-base-content/60">Manage catalog SKUs, unit pricing, and stock level thresholds.</p>
+        </div>
+        <div>
+            {% comment %}
+            <a href="{% url 'inventory:item_create' %}" class="btn btn-primary btn-sm gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                Add Product
+            </a>
+            {% endcomment %}
+        </div>
+    </div>
+
+    <!-- Filters Bar -->
+    <div class="card bg-base-200 shadow p-4">
+        <form method="GET" class="flex flex-wrap items-end gap-4">
+            <!-- Search -->
+            <div class="form-control w-full max-w-xs">
+                <label class="label"><span class="label-text">Search Products</span></label>
+                <input type="text" name="q" value="{{ query }}" placeholder="SKU or name..."
+                    class="input input-bordered w-full max-w-xs" />
+            </div>
+
+            <!-- Low Stock Filter -->
+            <div class="form-control">
+                <label class="label cursor-pointer justify-start gap-3">
+                    <input type="checkbox" name="low_stock" value="1" {% if low_stock == '1' %}checked{% endif %}
+                        class="checkbox checkbox-primary" />
+                    <span class="label-text">Show Low Stock SKUs only</span>
+                </label>
+            </div>
+
+            <!-- Buttons -->
+            <div class="flex gap-2 ml-auto">
+                <button type="button" onclick="openScanner()" class="btn btn-outline btn-secondary gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 4v1m0 11v1m5-6h-1m-11 0H3m2 3.5a1.5 1.5 0 011.5-1.5h9A1.5 1.5 0 0117 14.5v-5A1.5 1.5 0 0015.5 8h-9A1.5 1.5 0 005 9.5v5z" />
+                    </svg>
+                    Scan Barcode
+                </button>
+                <button type="submit" class="btn btn-primary">Apply Filters</button>
+                <a href="{% url 'inventory:item_list' %}" class="btn btn-ghost">Reset</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Scanner Modal -->
+    <dialog id="scanner_modal" class="modal modal-bottom sm:modal-middle">
+        <div class="modal-box">
+            <h3 class="font-bold text-lg mb-4 text-primary">Scan SKU Barcode</h3>
+            <div id="qr-reader" class="overflow-hidden rounded-lg border border-base-300 bg-black"></div>
+            <div class="modal-action">
+                <button type="button" class="btn" onclick="closeScanner()">Close Scanner</button>
+            </div>
+        </div>
+    </dialog>
+
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script>
+        let scanner = null;
+        function openScanner() {
+            document.getElementById('scanner_modal').showModal();
+            scanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: 250 });
+            scanner.render((decodedText) => {
+                document.querySelector('input[name="q"]').value = decodedText;
+                closeScanner();
+                document.querySelector('form').submit();
+            });
+        }
+        function closeScanner() {
+            if (scanner) {
+                scanner.clear().catch(err => console.error(err));
+                scanner = null;
+            }
+            document.getElementById('scanner_modal').close();
+        }
+    </script>
+
+    <!-- Table -->
+    <div class="overflow-x-auto bg-base-200 rounded-lg shadow">
+        <table class="table w-full">
+            <thead>
+                <tr>
+                    <th>SKU</th>
+                    <th>Product Name</th>
+                    <th>Stock Level</th>
+                    <th>Reorder Threshold</th>
+                    <th>Unit Cost</th>
+                    <th>Status</th>
+                    <th class="text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr class="hover">
+                    <td class="font-mono font-bold text-primary">{{ item.sku }}</td>
+                    <td>
+                        <div>
+                            <div class="font-semibold">{{ item.name }}</div>
+                            <div class="text-xs text-base-content/50">{{ item.description|truncatechars:50 }}</div>
+                        </div>
+                    </td>
+                    <td>{{ item.stock_level }}</td>
+                    <td>{{ item.reorder_threshold }}</td>
+                    <td>
+                        <div class="flex items-center gap-1.5">
+                            <span class="font-semibold">${{ item.unit_price|floatformat:2 }}</span>
+                            <button hx-get="{% url 'inventory:item_price_history' item.id %}"
+                                hx-target="#modal_container" hx-trigger="click"
+                                class="btn btn-ghost btn-circle btn-xs text-primary/80 hover:text-primary hover:bg-primary/10"
+                                title="View Price History">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2"
+                                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </td>
+                    <td>
+                        {% if item.stock_level <= item.reorder_threshold %} <span class="badge badge-error gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                class="inline-block w-3 h-3 stroke-current">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                                </path>
+                            </svg>
+                            Reorder Alert
+                            </span>
+                            {% else %}
+                            <span class="badge badge-success gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    class="inline-block w-3 h-3 stroke-current">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                Healthy
+                            </span>
+                            {% endif %}
+                    </td>
+                    <td class="text-right">
+                        <div class="flex justify-end gap-2">
+                            {% if item.barcode or item.qr_code %}
+                            <button class="btn btn-ghost btn-xs text-secondary gap-1"
+                                onclick="showCodesModal('{{ item.sku|escapejs }}', '{% if item.barcode %}{{ item.barcode.url|escapejs }}{% endif %}', '{% if item.qr_code %}{{ item.qr_code.url|escapejs }}{% endif %}')"
+                                title="View Codes">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 4v1m0 11v1m5-6h-1m-11 0H3m2 3.5a1.5 1.5 0 011.5-1.5h9A1.5 1.5 0 0117 14.5v-5A1.5 1.5 0 0015.5 8h-9A1.5 1.5 0 005 9.5v5z" />
+                                </svg>
+                                Codes
+                            </button>
+                            {% endif %}
+                            <a href="{% url 'inventory:item_update' item.id %}"
+                                class="btn btn-ghost btn-xs text-info gap-1" title="Edit">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                </svg>
+                                Edit
+                            </a>
+                            <a href="{% url 'inventory:item_delete' item.id %}"
+                                class="btn btn-ghost btn-xs text-error gap-1" title="Delete">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                                Delete
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center p-8 text-base-content/50">No products found matching filters.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div id="modal_container"></div>
+
+<!-- Product Codes Modal -->
+<dialog id="codes_modal" class="modal modal-bottom sm:modal-middle">
+    <div class="modal-box bg-base-100 border border-base-300 shadow-xl rounded-2xl max-w-md">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="font-bold text-xl text-primary" id="codes_modal_title">Product Codes</h3>
+            <button class="btn btn-sm btn-circle btn-ghost" onclick="closeCodesModal()">✕</button>
+        </div>
+
+        <div class="flex flex-col gap-6 items-center">
+            <!-- Barcode Section -->
+            <div class="w-full text-center">
+                <span class="text-xs font-semibold uppercase tracking-wider text-base-content/50 block mb-2">Barcode
+                    (Code128)</span>
+                <div class="bg-white p-4 rounded-xl inline-block border border-base-200 shadow-inner">
+                    <img id="modal_barcode_img" src="" alt="Barcode" class="max-h-20 object-contain mx-auto" />
+                </div>
+                <div class="mt-3">
+                    <a id="modal_barcode_download" href="" download
+                        class="btn btn-xs btn-outline btn-secondary gap-1 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        Download Barcode
+                    </a>
+                </div>
+            </div>
+
+            <!-- Divider -->
+            <div class="divider my-0"></div>
+
+            <!-- QR Code Section -->
+            <div class="w-full text-center">
+                <span class="text-xs font-semibold uppercase tracking-wider text-base-content/50 block mb-2">QR
+                    Code</span>
+                <div class="bg-white p-4 rounded-xl inline-block border border-base-200 shadow-inner">
+                    <img id="modal_qrcode_img" src="" alt="QR Code" class="h-32 w-32 object-contain mx-auto" />
+                </div>
+                <div class="mt-3">
+                    <a id="modal_qrcode_download" href="" download
+                        class="btn btn-xs btn-outline btn-primary gap-1 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        Download QR Code
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-action mt-8">
+            <button type="button" class="btn btn-ghost w-full" onclick="closeCodesModal()">Close</button>
+        </div>
+    </div>
+</dialog>
+
+<script>
+    function showCodesModal(sku, barcodeUrl, qrcodeUrl) {
+        document.getElementById('codes_modal_title').innerText = 'SKU: ' + sku;
+
+        const barcodeImg = document.getElementById('modal_barcode_img');
+        const barcodeDownload = document.getElementById('modal_barcode_download');
+        if (barcodeUrl) {
+            barcodeImg.src = barcodeUrl;
+            barcodeImg.classList.remove('hidden');
+            barcodeDownload.href = barcodeUrl;
+            barcodeDownload.style.display = 'inline-flex';
+        } else {
+            barcodeImg.classList.add('hidden');
+            barcodeDownload.style.display = 'none';
+        }
+
+        const qrcodeImg = document.getElementById('modal_qrcode_img');
+        const qrcodeDownload = document.getElementById('modal_qrcode_download');
+        if (qrcodeUrl) {
+            qrcodeImg.src = qrcodeUrl;
+            qrcodeImg.classList.remove('hidden');
+            qrcodeDownload.href = qrcodeUrl;
+            qrcodeDownload.style.display = 'inline-flex';
+        } else {
+            qrcodeImg.classList.add('hidden');
+            qrcodeDownload.style.display = 'none';
+        }
+
+        document.getElementById('codes_modal').showModal();
+    }
+    function closeCodesModal() {
+        document.getElementById('codes_modal').close();
+    }
+</script>
+{% endblock %}

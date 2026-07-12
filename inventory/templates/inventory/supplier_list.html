@@ -1,0 +1,85 @@
+{% extends "core/base.html" %}
+
+{% block title %}Suppliers List | ERP Framework{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+            <h1 class="text-3xl font-bold tracking-tight">Active Suppliers</h1>
+            <p class="text-base-content/60">Manage supplier profiles and procurement contacts.</p>
+        </div>
+        <div>
+            <a href="{% url 'inventory:supplier_create' %}" class="btn btn-primary btn-sm gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Add Supplier
+            </a>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="overflow-x-auto bg-base-200 rounded-lg shadow">
+        <table class="table w-full">
+            <thead>
+                <tr>
+                    <th>Supplier Name</th>
+                    <th>Email Address</th>
+                    <th>Phone</th>
+                    <th>Registered Office / Address</th>
+                    <th class="text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for supplier in suppliers %}
+                <tr class="hover">
+                    <td class="font-bold text-primary">
+                        <div>{{ supplier.name }}</div>
+                        <div class="flex flex-wrap gap-1 mt-1">
+                            <span class="badge badge-sm badge-ghost font-normal">{{ supplier.supplied_items.count }} items in catalog</span>
+                            {% if supplier.gst_number %}
+                            <span class="badge badge-sm badge-info font-normal">GST: {{ supplier.gst_number }}</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td class="font-mono">{{ supplier.contact_email }}</td>
+                    <td>{{ supplier.phone|default:"-" }}</td>
+                    <td>
+                        <div class="max-w-xs truncate" title="{{ supplier.address }}">
+                            {{ supplier.address|default:"-" }}
+                        </div>
+                    </td>
+                    <td class="text-right">
+                        <div class="flex justify-end gap-2">
+                            <button 
+                                hx-get="{% url 'inventory:supplier_catalog_modal' supplier.id %}"
+                                hx-target="#modal_container"
+                                hx-swap="innerHTML"
+                                class="btn btn-ghost btn-xs text-primary gap-1"
+                                title="Manage Catalog">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                                Catalog
+                            </button>
+                            <a href="{% url 'inventory:supplier_update' supplier.id %}" class="btn btn-ghost btn-xs text-info gap-1" title="Edit">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                                Edit
+                            </a>
+                            <a href="{% url 'inventory:supplier_delete' supplier.id %}" class="btn btn-ghost btn-xs text-error gap-1" title="Delete">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                Delete
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center p-8 text-base-content/50">No suppliers registered yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div id="modal_container"></div>
+{% endblock %}

@@ -157,3 +157,43 @@ class GraphGenerator:
         fig.update_layout(**GraphGenerator._get_base_layout())
         return fig.to_html(full_html=False, include_plotlyjs='cdn', config={'displayModeBar': False})
 
+    @staticmethod
+    def generate_forecast_chart(historical_data, x_field, y_field, title="Demand Forecast"):
+        """
+        Generates a line chart displaying historical data and an appended trend line
+        representing a moving average forecast.
+        """
+        df = pd.DataFrame(historical_data)
+        if df.empty:
+            return "<div class='text-base-content/50 p-6 text-center text-sm italic'>No historical ordering data available for demand forecasting.</div>"
+            
+        df = df.sort_values(by=x_field)
+        df['Moving Average'] = df[y_field].rolling(window=min(len(df), 3), min_periods=1).mean()
+        
+        fig = go.Figure()
+        
+        # Actual Line
+        fig.add_trace(go.Scatter(
+            x=df[x_field],
+            y=df[y_field],
+            mode='lines+markers',
+            name='Actual Demand',
+            line=dict(color='#6366f1', width=3)
+        ))
+        
+        # Forecast Trend Line
+        fig.add_trace(go.Scatter(
+            x=df[x_field],
+            y=df['Moving Average'],
+            mode='lines',
+            name='3-Period Moving Avg Trend',
+            line=dict(color='#f59e0b', width=2, dash='dash')
+        ))
+        
+        layout = GraphGenerator._get_base_layout()
+        layout.update({'title': title})
+        fig.update_layout(**layout)
+        
+        return fig.to_html(full_html=False, include_plotlyjs='cdn', config={'displayModeBar': False})
+
+

@@ -1,0 +1,73 @@
+<dialog id="po_receive_modal" class="modal modal-open modal-bottom sm:modal-middle">
+    <div class="modal-box bg-base-100 border border-base-300 shadow-xl rounded-2xl max-w-4xl">
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h3 class="font-bold text-xl text-primary flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                    </svg>
+                    Receive Stock Validation
+                </h3>
+                <p class="text-xs text-base-content/60 mt-1">PO Number: {{ po.po_number }} | Verify item quantities, prices, and expiry dates.</p>
+            </div>
+            <button class="btn btn-sm btn-circle btn-ghost" onclick="this.closest('dialog').remove()">✕</button>
+        </div>
+
+        <form hx-post="{% url 'inventory:po_receive_submit' po.id transition.id %}"
+              hx-swap="none"
+              hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+              class="space-y-4">
+            
+            <div class="overflow-x-auto">
+                <table class="table w-full text-sm">
+                    <thead>
+                        <tr>
+                            <th>Item (SKU)</th>
+                            <th class="text-center w-24">Ordered Qty</th>
+                            <th class="text-center w-28">Received Qty</th>
+                            <th class="text-right w-24">Ord Price</th>
+                            <th class="text-right w-28">Recv Price ($)</th>
+                            <th class="w-40">Expiry Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for line in po.lines.all %}
+                        <tr>
+                            <td>
+                                <span class="font-semibold block">{{ line.item.name }}</span>
+                                <span class="text-xs text-base-content/50 font-mono">{{ line.item.sku }}</span>
+                                <input type="hidden" name="line_id[]" value="{{ line.id }}" />
+                            </td>
+                            <td class="text-center font-mono font-medium">{{ line.quantity }}</td>
+                            <td>
+                                <input type="number" name="received_qty_{{ line.id }}" min="0" required
+                                       value="{{ line.quantity }}"
+                                       class="input input-bordered input-sm w-full text-center" />
+                            </td>
+                            <td class="text-right font-mono">${{ line.unit_price|floatformat:2 }}</td>
+                            <td>
+                                <input type="number" step="0.01" name="received_price_{{ line.id }}" min="0" required
+                                       value="{{ line.unit_price|floatformat:2 }}"
+                                       class="input input-bordered input-sm w-full text-right" />
+                            </td>
+                            <td>
+                                {% if line.item.has_expiry_date %}
+                                <input type="date" name="expiry_date_{{ line.id }}" required
+                                       class="input input-bordered input-sm w-full text-sm" />
+                                {% else %}
+                                <span class="text-xs text-base-content/40 italic block text-center">N/A</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="modal-action mt-6 flex justify-end gap-3">
+                <button type="button" class="btn btn-ghost" onclick="this.closest('dialog').remove()">Cancel</button>
+                <button type="submit" class="btn btn-primary px-6">Confirm & Receive</button>
+            </div>
+        </form>
+    </div>
+</dialog>

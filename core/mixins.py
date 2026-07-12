@@ -20,22 +20,32 @@ class AuditableMixin(models.Model):
         old_values = {}
         new_values = {}
         
+        from django.db.models.fields.files import FieldFile
+        
         if not is_new:
             # We need to get the old values from DB to diff them
             cls = self.__class__
             old_instance = cls.objects.get(pk=self.pk)
             
             for field in cls._meta.fields:
-                field_name = field.name
+                field_name = field.attname
                 old_val = getattr(old_instance, field_name)
                 new_val = getattr(self, field_name)
+                
+                if isinstance(old_val, FieldFile):
+                    old_val = old_val.name if old_val else None
+                if isinstance(new_val, FieldFile):
+                    new_val = new_val.name if new_val else None
                 
                 if old_val != new_val:
                     old_values[field_name] = old_val
                     new_values[field_name] = new_val
         else:
             for field in self._meta.fields:
-                new_values[field.name] = getattr(self, field.name)
+                val = getattr(self, field.attname)
+                if isinstance(val, FieldFile):
+                    val = val.name if val else None
+                new_values[field.attname] = val
 
         # Proceed with normal save
         super().save(*args, **kwargs)

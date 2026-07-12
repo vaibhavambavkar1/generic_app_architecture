@@ -1,0 +1,150 @@
+{% extends "core/base.html" %}
+
+{% block title %}PO {{ instance.po_number }} | ERP Framework{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Breadcrumbs / Back button -->
+    <div class="text-sm breadcrumbs">
+        <ul>
+            <li><a href="{% url 'inventory:po_list' %}">Purchase Orders</a></li>
+            <li>{{ instance.po_number }}</li>
+        </ul>
+    </div>
+
+    <!-- Header Panel -->
+    <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+            <h1 class="text-3xl font-bold tracking-tight">PO Number: {{ instance.po_number }}</h1>
+            <p class="text-base-content/60">Supplier: <span class="font-bold text-base-content">{{ instance.supplier.name }}</span></p>
+        </div>
+        <div class="flex items-center gap-4">
+            {% if not instance.workflow_state or instance.workflow_state.name == 'Draft' %}
+            <a href="{% url 'inventory:po_edit' instance.id %}" class="btn btn-primary btn-sm gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                Edit PO
+            </a>
+            {% endif %}
+            {% if instance.workflow_state.name == 'Approved' %}
+            <button 
+                hx-get="{% url 'inventory:po_email_modal' instance.id %}"
+                hx-target="#modal_container"
+                hx-swap="innerHTML"
+                class="btn btn-outline btn-primary btn-sm gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                Email Supplier
+            </button>
+            {% endif %}
+            <a href="{% url 'inventory:po_download_pdf' instance.id %}" class="btn btn-outline btn-secondary btn-sm gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                Download PDF
+            </a>
+            <div class="text-right">
+                <span class="text-sm text-base-content/50">Created on</span>
+                <div class="font-semibold text-lg">{{ instance.created_at|date:"Y-m-d H:i" }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Layout Columns -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Main Purchase Order Info and Lines (Left/Center) -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Line Items Card -->
+            <div class="card bg-base-200 shadow">
+                <div class="card-body">
+                    <h2 class="card-title mb-4">Line Items</h2>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="table w-full">
+                            <thead>
+                                <tr>
+                                    <th>Product SKU</th>
+                                    <th>Name</th>
+                                    <th>Ordered Qty</th>
+                                    {% if instance.workflow_state.name == "Received" %}
+                                    <th>Received Qty</th>
+                                    {% endif %}
+                                    <th>Ordered Price</th>
+                                    {% if instance.workflow_state.name == "Received" %}
+                                    <th>Received Price</th>
+                                    <th>Expiry Date</th>
+                                    {% endif %}
+                                    <th class="text-right">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for line in lines %}
+                                <tr>
+                                    <td class="font-mono text-sm">{{ line.item.sku }}</td>
+                                    <td>{{ line.item.name }}</td>
+                                    <td>{{ line.quantity }}</td>
+                                    {% if instance.workflow_state.name == "Received" %}
+                                    <td class="font-bold text-success">{{ line.received_quantity }}</td>
+                                    {% endif %}
+                                    <td>${{ line.unit_price|floatformat:2 }}</td>
+                                    {% if instance.workflow_state.name == "Received" %}
+                                    <td class="font-bold text-success">${{ line.received_unit_price|floatformat:2 }}</td>
+                                    <td>
+                                        {% if line.expiry_date %}
+                                        <span class="badge badge-warning text-xs font-semibold">{{ line.expiry_date|date:"d-M-Y" }}</span>
+                                        {% else %}
+                                        <span class="text-base-content/40 italic">-</span>
+                                        {% endif %}
+                                    </td>
+                                    {% endif %}
+                                    <td class="text-right font-semibold">
+                                        {% if instance.workflow_state.name == "Received" %}
+                                        ${{ line.received_subtotal|floatformat:2 }}
+                                        {% else %}
+                                        ${{ line.subtotal|floatformat:2 }}
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <th colspan="{% if instance.workflow_state.name == 'Received' %}7{% else %}4{% endif %}" class="text-right text-base-content">Total Value:</th>
+                                    <th class="text-right text-lg font-bold text-primary">${{ instance.total_amount|floatformat:2 }}</th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Audit Trail Timeline -->
+            <div class="card bg-base-200 shadow">
+                <div class="card-body">
+                    <h2 class="card-title mb-6">Audit Trail & Operations History</h2>
+                    {% include "core/components/workflow/audit_history.html" with audit_logs=audit_logs %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Workflow / State Panel (Right) -->
+        <div class="space-y-6">
+            <div class="card bg-base-200 shadow">
+                <div class="card-body">
+                    <h2 class="card-title mb-4">Workflow Control Panel</h2>
+                    <!-- Dynamic HTMX Transition Swapper -->
+                    {% include "core/components/workflow/action_buttons.html" with instance=instance transitions=transitions app_label=app_label model_name=model_name %}
+                </div>
+            </div>
+            
+            <!-- Supplier Quick Info Card -->
+            <div class="card bg-base-200 shadow">
+                <div class="card-body">
+                    <h2 class="card-title text-sm uppercase tracking-wider text-base-content/50">Supplier Contact</h2>
+                    <p class="font-bold text-lg">{{ instance.supplier.name }}</p>
+                    <p class="text-sm font-mono text-base-content/75">{{ instance.supplier.contact_email }}</p>
+                    <p class="text-sm text-base-content/75">{{ instance.supplier.phone }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="modal_container"></div>
+{% endblock %}

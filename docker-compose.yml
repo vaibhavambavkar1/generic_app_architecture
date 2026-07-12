@@ -9,6 +9,8 @@ services:
       DB_HOST: mysql
     ports:
       - "8000:8000"
+    volumes:
+      - .:/app
     depends_on:
       - redis
       - rabbitmq
@@ -44,6 +46,8 @@ services:
     environment:
       # Point DB_HOST to the external MySQL container's name
       DB_HOST: mysql
+    volumes:
+      - .:/app
     depends_on:
       - redis
       - rabbitmq

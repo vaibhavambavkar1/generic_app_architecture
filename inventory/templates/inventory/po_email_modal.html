@@ -1,0 +1,72 @@
+<dialog id="po_email_modal" class="modal modal-open modal-bottom sm:modal-middle">
+    <div class="modal-box bg-base-100 border border-base-300 shadow-xl rounded-2xl max-w-2xl">
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h3 class="font-bold text-xl text-primary flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    Email Purchase Order
+                </h3>
+                <p class="text-xs text-base-content/60 mt-1">PO Number: {{ po.po_number }} | Send documents directly to the supplier.</p>
+            </div>
+            <button class="btn btn-sm btn-circle btn-ghost" onclick="this.closest('dialog').remove()">✕</button>
+        </div>
+
+        <form hx-post="{% url 'inventory:po_email_submit' po.id %}"
+              hx-swap="none"
+              hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+              class="space-y-4">
+            
+            <!-- Recipient Email -->
+            <div class="form-control">
+                <label class="label"><span class="label-text font-semibold">Supplier Contact Email</span></label>
+                <input type="email" name="email" required value="{{ po.supplier.contact_email }}"
+                       class="input input-bordered w-full" />
+            </div>
+
+            <!-- Subject -->
+            <div class="form-control">
+                <label class="label"><span class="label-text font-semibold">Subject</span></label>
+                <input type="text" name="subject" required value="{{ default_subject }}"
+                       class="input input-bordered w-full" />
+            </div>
+
+            <!-- Body -->
+            <div class="form-control">
+                <div class="flex justify-between items-center mb-1">
+                    <label class="label py-0"><span class="label-text font-semibold">Email Message Body</span></label>
+                    <button type="button" 
+                            onclick="navigator.clipboard.writeText(this.closest('.form-control').querySelector('textarea').value); const btn = this; const origText = btn.innerHTML; btn.innerHTML = 'Copied!'; btn.classList.add('btn-success', 'text-white'); setTimeout(() => { btn.innerHTML = origText; btn.classList.remove('btn-success', 'text-white'); }, 2000);"
+                            class="btn btn-xs btn-outline btn-secondary gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                        </svg>
+                        Copy Text
+                    </button>
+                </div>
+                <textarea name="body" rows="10" required class="textarea textarea-bordered w-full font-mono text-sm leading-relaxed">{{ default_body }}</textarea>
+            </div>
+
+            <!-- Attachment Indicator -->
+            <div class="flex items-center gap-3 p-3 bg-base-200 rounded-lg border border-base-300">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+                <div class="flex-1">
+                    <span class="text-sm font-semibold block text-base-content/80">PO_{{ po.po_number }}.pdf</span>
+                    <span class="text-xs text-base-content/50">Auto-generated Purchase Order Document</span>
+                </div>
+                <div class="badge badge-success text-white font-bold text-xs uppercase px-2 py-1">Attached</div>
+            </div>
+
+            <div class="modal-action mt-6 flex justify-end gap-3">
+                <button type="button" class="btn btn-ghost" onclick="this.closest('dialog').remove()">Cancel</button>
+                <button type="submit" class="btn btn-primary px-6 gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                    Send Email
+                </button>
+            </div>
+        </form>
+    </div>
+</dialog>

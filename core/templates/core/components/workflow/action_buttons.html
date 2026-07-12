@@ -9,15 +9,25 @@
         
         <div class="flex space-x-2">
             {% for transition in transitions %}
-            <button 
-                hx-post="{% url 'core:execute_transition' app_label model_name instance.id transition.id %}"
-                hx-target="#workflow-actions-{{ instance.id }}"
-                hx-swap="outerHTML"
-                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
-                class="btn btn-primary btn-sm gap-2">
-                <span>{{ transition.name }}</span>
-                <span class="htmx-indicator loading loading-spinner loading-xs"></span>
-            </button>
+                {% if transition.name == "Receive Stock" %}
+                <button 
+                    hx-get="{% url 'inventory:po_receive_modal' instance.id transition.id %}"
+                    hx-target="#modal_container"
+                    hx-swap="innerHTML"
+                    class="btn btn-primary btn-sm gap-2">
+                    <span>{{ transition.name }}</span>
+                </button>
+                {% else %}
+                <button 
+                    hx-post="{% url 'core:execute_transition' app_label model_name instance.id transition.id %}"
+                    hx-target="#workflow-actions-{{ instance.id }}"
+                    hx-swap="outerHTML"
+                    hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                    class="btn btn-primary btn-sm gap-2">
+                    <span>{{ transition.name }}</span>
+                    <span class="htmx-indicator loading loading-spinner loading-xs"></span>
+                </button>
+                {% endif %}
             {% empty %}
             <span class="text-sm text-base-content/50 italic">No further actions available.</span>
             {% endfor %}
@@ -27,6 +37,6 @@
 
 {% if toast_message %}
 <div hx-swap-oob="beforeend:body">
-    {% include 'core/components/toast.html' with message=toast_message type=toast_type %}
+    {% include 'core/components/feedback/toast.html' with message=toast_message type=toast_type %}
 </div>
 {% endif %}

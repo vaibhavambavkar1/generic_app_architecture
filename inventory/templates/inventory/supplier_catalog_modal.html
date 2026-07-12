@@ -1,0 +1,186 @@
+<dialog id="supplier_catalog_modal" class="modal modal-open modal-bottom sm:modal-middle">
+    <div class="modal-box bg-base-100 border border-base-300 shadow-xl rounded-2xl max-w-4xl w-11/12 max-h-[90vh] flex flex-col p-6">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-4 flex-shrink-0">
+            <div>
+                <h3 class="font-bold text-xl text-primary flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                    Supplier Catalog: {{ supplier.name }}
+                </h3>
+                <p class="text-xs text-base-content/60 mt-1">Manage supplier-specific catalog items. Create new items using the form below.</p>
+            </div>
+            <button class="btn btn-sm btn-circle btn-ghost" onclick="window.location.reload()">✕</button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto space-y-6 pr-1">
+            <!-- Catalog List Table -->
+            <div>
+                <h4 class="font-semibold text-sm text-base-content/85 mb-2 flex items-center gap-1.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                    Current Catalog Items
+                </h4>
+                <div class="overflow-x-auto border border-base-300 rounded-lg bg-base-200/40">
+                    <table class="table table-compact w-full">
+                        <thead>
+                            <tr>
+                                <th>SKU</th>
+                                <th>Product Name</th>
+                                <th class="text-right">Default Price</th>
+                                <th class="text-right">Supplier Price</th>
+                                <th class="text-center">Expiry Reqd</th>
+                                <th class="text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for entry in catalog_items %}
+                            <tr class="hover">
+                                <td class="font-mono font-semibold text-sm">{{ entry.item.sku }}</td>
+                                <td class="truncate max-w-xs" title="{{ entry.item.name }}">{{ entry.item.name }}</td>
+                                <td class="text-right font-mono">${{ entry.item.unit_price|floatformat:2 }}</td>
+                                <td class="text-right font-mono font-semibold text-primary">${{ entry.price|floatformat:2 }}</td>
+                                <td class="text-center">
+                                    {% if entry.item.has_expiry_date %}
+                                    <span class="badge badge-xs badge-warning">Yes</span>
+                                    {% else %}
+                                    <span class="badge badge-xs badge-ghost">No</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <button type="button"
+                                            hx-post="{% url 'inventory:supplier_catalog_remove' entry.id %}"
+                                            hx-target="#supplier_catalog_modal"
+                                            hx-swap="outerHTML"
+                                            hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                                            class="btn btn-ghost btn-xs text-error btn-square hover:bg-error/10" 
+                                            title="Remove from Catalog">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center p-6 text-base-content/50 text-xs">No products in this supplier's catalog. Use the form below to add one.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Add Product Form -->
+            <div class="border-t border-base-300 pt-6">
+                <h4 class="font-semibold text-sm text-base-content/85 mb-4 flex items-center gap-1.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    Create & Add New Product to Catalog
+                </h4>
+                
+                <form hx-post="{% url 'inventory:supplier_catalog_add_product' supplier.id %}"
+                      hx-target="#supplier_catalog_modal"
+                      hx-swap="outerHTML"
+                      hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                      class="space-y-4 bg-base-200/50 p-4 rounded-xl border border-base-300">
+                    
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-error shadow-sm py-2 text-sm">
+                        {% for error in form.non_field_errors %}
+                        <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- SKU -->
+                        <div class="form-control">
+                            <label class="label py-1"><span class="label-text font-semibold text-xs">SKU *</span></label>
+                            {{ form.sku }}
+                            {% if form.sku.errors %}
+                            <label class="label py-0.5"><span class="label-text-alt text-error text-[10px]">{{ form.sku.errors.as_text }}</span></label>
+                            {% endif %}
+                        </div>
+
+                        <!-- Name -->
+                        <div class="form-control md:col-span-2">
+                            <label class="label py-1"><span class="label-text font-semibold text-xs">Product Name *</span></label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                            <label class="label py-0.5"><span class="label-text-alt text-error text-[10px]">{{ form.name.errors.as_text }}</span></label>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="form-control">
+                        <label class="label py-1"><span class="label-text font-semibold text-xs">Description</span></label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                        <label class="label py-0.5"><span class="label-text-alt text-error text-[10px]">{{ form.description.errors.as_text }}</span></label>
+                        {% endif %}
+                    </div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <!-- Stock Level -->
+                        <div class="form-control">
+                            <label class="label py-1"><span class="label-text font-semibold text-xs">Initial Stock *</span></label>
+                            {{ form.stock_level }}
+                            {% if form.stock_level.errors %}
+                            <label class="label py-0.5"><span class="label-text-alt text-error text-[10px]">{{ form.stock_level.errors.as_text }}</span></label>
+                            {% endif %}
+                        </div>
+
+                        <!-- Reorder Threshold -->
+                        <div class="form-control">
+                            <label class="label py-1"><span class="label-text font-semibold text-xs">Reorder Level *</span></label>
+                            {{ form.reorder_threshold }}
+                            {% if form.reorder_threshold.errors %}
+                            <label class="label py-0.5"><span class="label-text-alt text-error text-[10px]">{{ form.reorder_threshold.errors.as_text }}</span></label>
+                            {% endif %}
+                        </div>
+
+                        <!-- Default Price -->
+                        <div class="form-control">
+                            <label class="label py-1"><span class="label-text font-semibold text-xs">Default price ($) *</span></label>
+                            {{ form.unit_price }}
+                            {% if form.unit_price.errors %}
+                            <label class="label py-0.5"><span class="label-text-alt text-error text-[10px]">{{ form.unit_price.errors.as_text }}</span></label>
+                            {% endif %}
+                        </div>
+
+                        <!-- Supplier Price -->
+                        <div class="form-control">
+                            <label class="label py-1"><span class="label-text font-semibold text-xs text-primary">Supplier cost ($) *</span></label>
+                            {{ form.supplier_price }}
+                            {% if form.supplier_price.errors %}
+                            <label class="label py-0.5"><span class="label-text-alt text-error text-[10px]">{{ form.supplier_price.errors.as_text }}</span></label>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Expiry Checkbox -->
+                    <div class="flex items-center gap-2 pt-2">
+                        <input type="checkbox" name="has_expiry_date" id="id_has_expiry_date" 
+                               class="checkbox checkbox-primary checkbox-sm"
+                               {% if form.has_expiry_date.value %}checked{% endif %}>
+                        <label class="label-text font-semibold text-xs cursor-pointer select-none" for="id_has_expiry_date">
+                            Requires Expiry Date validation on receipt
+                        </label>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="flex justify-end pt-2">
+                        <button type="submit" class="btn btn-secondary btn-sm gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                            Create & Add to Catalog
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div class="modal-action mt-4 border-t border-base-300 pt-4 flex-shrink-0 flex justify-end">
+            <button type="button" class="btn btn-primary px-8" onclick="window.location.reload()">Done</button>
+        </div>
+    </div>
+</dialog>

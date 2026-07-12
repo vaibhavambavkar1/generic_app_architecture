@@ -39,7 +39,7 @@ def execute_transition(request, app_label, model_name, object_id, transition_id)
         'toast_type': toast_type
     }
     
-    return render(request, 'core/components/workflow_actions.html', context)
+    return render(request, 'core/components/workflow/action_buttons.html', context)
 
 from django.http import FileResponse, HttpResponse
 from .backup import BackupManager

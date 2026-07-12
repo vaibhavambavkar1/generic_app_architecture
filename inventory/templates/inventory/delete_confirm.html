@@ -1,0 +1,27 @@
+{% extends "core/base.html" %}
+
+{% block title %}{{ title }} | ERP Framework{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto space-y-6 mt-12">
+    <div class="card bg-base-200 shadow border border-error/20">
+        <form method="POST" class="card-body gap-6 text-center">
+            {% csrf_token %}
+            
+            <div class="flex justify-center text-error">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            </div>
+            
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight text-error">{{ title }}</h1>
+                <p class="mt-2 text-sm text-base-content/60">Are you sure you want to permanently delete this record? This action cannot be undone.</p>
+            </div>
+
+            <div class="flex justify-center gap-3 mt-4">
+                <a href="{{ back_url }}" class="btn btn-ghost">Cancel</a>
+                <button type="submit" class="btn btn-error px-8">Confirm Delete</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
