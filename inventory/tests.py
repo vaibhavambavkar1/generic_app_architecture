@@ -369,5 +369,67 @@ class InventoryWorkflowTests(TestCase):
         self.supplier.refresh_from_db()
         self.assertEqual(self.supplier.supplied_items.count(), 0)
 
+    def test_supplier_detail_view(self):
+        """Test retrieving the supplier detail page and verifying product catalog listing."""
+        self.client.force_login(self.manager_user)
+        
+        # Add a product to the supplier's catalog first
+        item = InventoryItem.objects.create(
+            sku="CAT-SKU-999",
+            name="Catalog Item 999",
+            stock_level=10,
+            reorder_threshold=5,
+            unit_price=20.00
+        )
+        SupplierCatalogItem.objects.create(
+            supplier=self.supplier,
+            item=item,
+            price=18.50
+        )
+        
+        url = reverse('inventory:supplier_detail', args=[self.supplier.id])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'inventory/supplier_detail.html')
+        self.assertContains(response, self.supplier.name)
+        self.assertContains(response, "Catalog Item 999")
+        self.assertContains(response, "18.50")
+
+    def test_supplier_catalog_export_formats(self):
+        """Test exporting the supplier catalog in PDF and Excel formats."""
+        self.client.force_login(self.manager_user)
+
+        # Add a product to the supplier's catalog first
+        item = InventoryItem.objects.create(
+            sku="CAT-SKU-999",
+            name="Catalog Item 999",
+            stock_level=10,
+            reorder_threshold=5,
+            unit_price=20.00
+        )
+        SupplierCatalogItem.objects.create(
+            supplier=self.supplier,
+            item=item,
+            price=18.50
+        )
+
+        # 1. Test PDF Export
+        pdf_url = reverse('inventory:export_supplier_catalog_pdf', args=[self.supplier.id])
+        response = self.client.get(pdf_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'application/pdf')
+        self.assertTrue(response.has_header('Content-Disposition'))
+        self.assertIn('attachment', response['Content-Disposition'])
+        self.assertIn('.pdf', response['Content-Disposition'])
+
+        # 2. Test Excel Export
+        excel_url = reverse('inventory:export_supplier_catalog_excel', args=[self.supplier.id])
+        response = self.client.get(excel_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        self.assertTrue(response.has_header('Content-Disposition'))
+        self.assertIn('attachment', response['Content-Disposition'])
+        self.assertIn('.xlsx', response['Content-Disposition'])
+
 
 

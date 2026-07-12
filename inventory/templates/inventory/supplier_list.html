@@ -34,7 +34,7 @@
                 {% for supplier in suppliers %}
                 <tr class="hover">
                     <td class="font-bold text-primary">
-                        <div>{{ supplier.name }}</div>
+                        <a href="{% url 'inventory:supplier_detail' supplier.id %}" class="hover:underline">{{ supplier.name }}</a>
                         <div class="flex flex-wrap gap-1 mt-1">
                             <span class="badge badge-sm badge-ghost font-normal">{{ supplier.supplied_items.count }} items in catalog</span>
                             {% if supplier.gst_number %}

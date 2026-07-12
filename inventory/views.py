@@ -118,6 +118,16 @@ def supplier_list(request):
     return render(request, 'inventory/supplier_list.html', {'suppliers': suppliers})
 
 @login_required
+def supplier_detail(request, pk):
+    """Detailed view of a supplier, showing basic info and product catalog."""
+    supplier = get_object_or_404(Supplier, pk=pk)
+    catalog_items = supplier.catalog_entries.all().select_related('item')
+    return render(request, 'inventory/supplier_detail.html', {
+        'supplier': supplier,
+        'catalog_items': catalog_items
+    })
+
+@login_required
 def po_list(request):
     """List of all purchase orders."""
     pos = PurchaseOrder.objects.all().select_related('supplier', 'workflow_state').order_by('-created_at')
@@ -694,6 +704,210 @@ def po_email_submit(request, pk):
         f'</script>'
     )
     return HttpResponse(response_content)
+
+
+import openpyxl
+from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+
+def generate_supplier_catalog_pdf_bytes(supplier, catalog_items):
+    """Generates a professional PDF of the Supplier Catalog."""
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=letter,
+        rightMargin=36,
+        leftMargin=36,
+        topMargin=36,
+        bottomMargin=36
+    )
+    
+    story = []
+    styles = getSampleStyleSheet()
+    
+    title_style = ParagraphStyle(
+        'DocTitle',
+        parent=styles['Heading1'],
+        fontName='Helvetica-Bold',
+        fontSize=20,
+        leading=24,
+        textColor=colors.HexColor('#1e3a8a'),
+        spaceAfter=15
+    )
+    section_heading = ParagraphStyle(
+        'SectionHeading',
+        parent=styles['Heading2'],
+        fontName='Helvetica-Bold',
+        fontSize=12,
+        leading=16,
+        textColor=colors.HexColor('#334155'),
+        spaceBefore=12,
+        spaceAfter=10
+    )
+    body_style = ParagraphStyle(
+        'DocBody',
+        parent=styles['Normal'],
+        fontName='Helvetica',
+        fontSize=9,
+        leading=13,
+        textColor=colors.HexColor('#1e293b')
+    )
+    header_style = ParagraphStyle(
+        'HeaderStyle',
+        parent=body_style,
+        fontName='Helvetica-Bold',
+        textColor=colors.white
+    )
+    
+    story.append(Paragraph(f"SUPPLIER PRODUCT CATALOG", title_style))
+    story.append(Spacer(1, 10))
+    
+    meta_data = [
+        [
+            Paragraph(f"<b>Supplier Name:</b> {supplier.name}", body_style),
+            Paragraph(f"<b>Contact Email:</b> {supplier.contact_email}", body_style)
+        ],
+        [
+            Paragraph(f"<b>Phone:</b> {supplier.phone or 'N/A'}", body_style),
+            Paragraph(f"<b>GST Number:</b> {supplier.gst_number or 'N/A'}", body_style)
+        ],
+        [
+            Paragraph(f"<b>Address:</b> {supplier.address or 'N/A'}", body_style),
+            Paragraph("", body_style)
+        ]
+    ]
+    meta_table = Table(meta_data, colWidths=[270, 270])
+    meta_table.setStyle(TableStyle([
+        ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 4),
+        ('TOPPADDING', (0,0), (-1,-1), 4),
+    ]))
+    story.append(meta_table)
+    story.append(Spacer(1, 15))
+    
+    story.append(Paragraph("Catalog Items", section_heading))
+    
+    table_data = [[
+        Paragraph("SKU", header_style),
+        Paragraph("Product Name", header_style),
+        Paragraph("Default Market Price", header_style),
+        Paragraph("Supplier Cost", header_style),
+        Paragraph("Expiry Req", header_style)
+    ]]
+    
+    for entry in catalog_items:
+        table_data.append([
+            Paragraph(entry.item.sku, body_style),
+            Paragraph(entry.item.name, body_style),
+            Paragraph(f"${entry.item.unit_price:.2f}", body_style),
+            Paragraph(f"<b>${entry.price:.2f}</b>", body_style),
+            Paragraph("Yes" if entry.item.has_expiry_date else "No", body_style)
+        ])
+        
+    catalog_table = Table(table_data, colWidths=[100, 200, 80, 80, 80])
+    catalog_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#1e3a8a')),
+        ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+        ('TOPPADDING', (0,0), (-1,-1), 6),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#e2e8f0')),
+        ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, colors.HexColor('#f8fafc')]),
+    ]))
+    story.append(catalog_table)
+    
+    doc.build(story)
+    return buffer.getvalue()
+
+@login_required
+def export_supplier_catalog_pdf(request, pk):
+    """View to download the supplier catalog in PDF format."""
+    supplier = get_object_or_404(Supplier, pk=pk)
+    catalog_items = supplier.catalog_entries.all().select_related('item')
+    pdf_bytes = generate_supplier_catalog_pdf_bytes(supplier, catalog_items)
+    
+    response = HttpResponse(pdf_bytes, content_type='application/pdf')
+    filename = f"Catalog_{supplier.name.replace(' ', '_')}.pdf"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
+
+@login_required
+def export_supplier_catalog_excel(request, pk):
+    """View to download the supplier catalog in Excel format (.xlsx)."""
+    supplier = get_object_or_404(Supplier, pk=pk)
+    catalog_items = supplier.catalog_entries.all().select_related('item')
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Supplier Catalog"
+
+    title_font = Font(name='Arial', size=16, bold=True, color='1E3A8A')
+    header_font = Font(name='Arial', size=11, bold=True, color='FFFFFF')
+    header_fill = PatternFill(start_color='1E3A8A', end_color='1E3A8A', fill_type='solid')
+    bold_font = Font(name='Arial', size=10, bold=True)
+    normal_font = Font(name='Arial', size=10)
+    
+    thin_border = Border(
+        left=Side(style='thin', color='CCCCCC'),
+        right=Side(style='thin', color='CCCCCC'),
+        top=Side(style='thin', color='CCCCCC'),
+        bottom=Side(style='thin', color='CCCCCC')
+    )
+
+    ws.cell(row=1, column=1, value=f"Supplier Catalog - {supplier.name}").font = title_font
+    
+    ws.cell(row=3, column=1, value="Email Address:").font = bold_font
+    ws.cell(row=3, column=2, value=supplier.contact_email).font = normal_font
+    ws.cell(row=4, column=1, value="Phone Number:").font = bold_font
+    ws.cell(row=4, column=2, value=supplier.phone or "N/A").font = normal_font
+    ws.cell(row=5, column=1, value="GSTIN:").font = bold_font
+    ws.cell(row=5, column=2, value=supplier.gst_number or "N/A").font = normal_font
+    ws.cell(row=6, column=1, value="Address:").font = bold_font
+    ws.cell(row=6, column=2, value=supplier.address or "N/A").font = normal_font
+
+    headers = ["SKU", "Product Name", "Default Market Price ($)", "Supplier Custom Cost ($)", "Expiry Required"]
+    row_idx = 8
+    for col_idx, header in enumerate(headers, 1):
+        cell = ws.cell(row=row_idx, column=col_idx, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal='center' if col_idx == 5 else 'left')
+
+    row_idx = 9
+    for entry in catalog_items:
+        ws.cell(row=row_idx, column=1, value=entry.item.sku).font = normal_font
+        ws.cell(row=row_idx, column=2, value=entry.item.name).font = normal_font
+        
+        cell_mkt = ws.cell(row=row_idx, column=3, value=float(entry.item.unit_price))
+        cell_mkt.font = normal_font
+        cell_mkt.number_format = '"$"#,##0.00'
+        
+        cell_cost = ws.cell(row=row_idx, column=4, value=float(entry.price))
+        cell_cost.font = bold_font
+        cell_cost.number_format = '"$"#,##0.00'
+        
+        cell_exp = ws.cell(row=row_idx, column=5, value="Yes" if entry.item.has_expiry_date else "No")
+        cell_exp.font = normal_font
+        cell_exp.alignment = Alignment(horizontal='center')
+        
+        for col_idx in range(1, 6):
+            ws.cell(row=row_idx, column=col_idx).border = thin_border
+            
+        row_idx += 1
+
+    for col in ws.columns:
+        max_len = 0
+        col_letter = col[0].column_letter
+        for cell in col:
+            if cell.value:
+                max_len = max(max_len, len(str(cell.value)))
+        ws.column_dimensions[col_letter].width = max(max_len + 3, 12)
+
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    filename = f"Catalog_{supplier.name.replace(' ', '_')}.xlsx"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    wb.save(response)
+    return response
 
 
 

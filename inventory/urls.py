@@ -13,8 +13,11 @@ urlpatterns = [
     
     path('suppliers/', views.supplier_list, name='supplier_list'),
     path('suppliers/create/', views.supplier_create, name='supplier_create'),
+    path('suppliers/<int:pk>/', views.supplier_detail, name='supplier_detail'),
     path('suppliers/<int:pk>/edit/', views.supplier_update, name='supplier_update'),
     path('suppliers/<int:pk>/delete/', views.supplier_delete, name='supplier_delete'),
+    path('suppliers/<int:pk>/catalog/pdf/', views.export_supplier_catalog_pdf, name='export_supplier_catalog_pdf'),
+    path('suppliers/<int:pk>/catalog/excel/', views.export_supplier_catalog_excel, name='export_supplier_catalog_excel'),
     path('suppliers/<int:pk>/catalog-modal/', views.supplier_catalog_modal, name='supplier_catalog_modal'),
     path('suppliers/<int:pk>/catalog-add/', views.supplier_catalog_add_product, name='supplier_catalog_add_product'),
     path('suppliers/catalog-remove/<int:entry_pk>/', views.supplier_catalog_remove, name='supplier_catalog_remove'),
