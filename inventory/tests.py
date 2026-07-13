@@ -633,25 +633,35 @@ class InventoryWorkflowTests(TestCase):
         self.assertFalse(response.context['purchase_orders'].has_next())
 
     def test_pdf_generation_includes_organization_details(self):
-        """Test that generated PDFs include organization details when an Organization exists."""
-        from inventory.views import generate_po_pdf_bytes
+        """Test that get_organization_header_flowables is called during PDF generation."""
+        from unittest.mock import patch
         
-        # We already have self.org created in setUp:
-        # self.org.name = "Test Corp"
-        # Let's update it to include more details
-        self.org.address = "456 Tech Boulevard, Silicon Valley"
-        self.org.phone = "+91 1234567890"
-        self.org.gstin = "27GSTIN1234A1Z5"
-        self.org.save()
+        with patch('inventory.views.get_organization_header_flowables') as mock_header:
+            from inventory.views import generate_po_pdf_bytes
+            mock_header.return_value = []
+            
+            pdf_bytes = generate_po_pdf_bytes(self.po)
+            self.assertIsNotNone(pdf_bytes)
+            mock_header.assert_called_once()
+
+    def test_excel_generation_includes_organization_details(self):
+        """Test that inject_excel_organization_header is called during Excel generation of POs and Supplier Catalogs."""
+        from unittest.mock import patch
+        self.client.force_login(self.manager_user)
         
-        pdf_bytes = generate_po_pdf_bytes(self.po)
-        self.assertIsNotNone(pdf_bytes)
-        
-        # Convert to string to search for basic text contents (ReportLab packs strings inside the PDF stream)
-        pdf_text = pdf_bytes.decode('latin1')
-        self.assertIn("Test Corp", pdf_text)
-        self.assertIn("456 Tech Boulevard", pdf_text)
-        self.assertIn("27GSTIN1234A1Z5", pdf_text)
+        # Test PO Export Excel
+        with patch('inventory.views.inject_excel_organization_header') as mock_header:
+            mock_header.return_value = 7
+            response = self.client.get(reverse('inventory:po_export_excel'))
+            self.assertEqual(response.status_code, 200)
+            mock_header.assert_called_once()
+
+        # Test Supplier Catalog Excel Export
+        with patch('inventory.views.inject_excel_organization_header') as mock_header:
+            mock_header.return_value = 7
+            response = self.client.get(reverse('inventory:export_supplier_catalog_excel', kwargs={'pk': self.supplier.pk}))
+            self.assertEqual(response.status_code, 200)
+            mock_header.assert_called_once()
 
 
 

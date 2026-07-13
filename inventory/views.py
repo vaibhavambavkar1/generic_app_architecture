@@ -501,6 +501,68 @@ def po_export_pdf(request):
     response['Content-Disposition'] = 'attachment; filename="Purchase_Orders_Report.pdf"'
     return response
 
+def inject_excel_organization_header(ws):
+    """
+    Injects organization logo and details at the top of an openpyxl worksheet.
+    Returns the next available row index for content.
+    """
+    from core.models import Organization
+    from django.conf import settings
+    from openpyxl.styles import Font, Border, Side
+    from openpyxl.drawing.image import Image as OpenpyxlImage
+    import os
+
+    org = Organization.objects.first()
+    org_name = org.name if org else "Quantum Global"
+    org_address = org.address if org else "123 Business Road, Corporate Hub, India"
+    org_email = org.email if org else "info@quantumglobal.com"
+    org_phone = org.phone if org else "+91 99999 88888"
+    org_gstin = org.gstin if org else "27AAAAA0000A1Z5"
+    org_license = org.license_number if org else "LIC-998877"
+
+    logo_path = None
+    if org and org.logo and os.path.exists(org.logo.path):
+        logo_path = org.logo.path
+    if not logo_path:
+        default_logo_path = os.path.join(settings.MEDIA_ROOT, 'org_logos', 'default_logo.png')
+        if os.path.exists(default_logo_path):
+            logo_path = default_logo_path
+
+    # Define fonts
+    org_name_font = Font(name='Arial', size=14, bold=True, color='1E3A8A')
+    org_details_font = Font(name='Arial', size=9, color='475569')
+
+    # Add details in Column B
+    ws.cell(row=1, column=2, value=org_name).font = org_name_font
+    ws.cell(row=2, column=2, value=org_address).font = org_details_font
+    ws.cell(row=3, column=2, value=f"Phone: {org_phone} | Email: {org_email}").font = org_details_font
+    ws.cell(row=4, column=2, value=f"GSTIN: {org_gstin} | License: {org_license}").font = org_details_font
+
+    if logo_path:
+        try:
+            img = OpenpyxlImage(logo_path)
+            img.width = 55
+            img.height = 55
+            ws.add_image(img, 'A1')
+        except Exception:
+            pass
+
+    # Row heights
+    ws.row_dimensions[1].height = 18
+    ws.row_dimensions[2].height = 14
+    ws.row_dimensions[3].height = 14
+    ws.row_dimensions[4].height = 14
+    ws.row_dimensions[5].height = 10
+
+    # Draw bottom border on cells in row 5
+    thin_border_side = Side(border_style="thin", color="CBD5E1")
+    bottom_border = Border(bottom=thin_border_side)
+    for col in range(1, 11):
+        ws.cell(row=5, column=col).border = bottom_border
+
+    return 7
+
+
 @login_required
 def po_export_excel(request):
     """View to download filtered purchase orders in Excel format."""
@@ -524,6 +586,9 @@ def po_export_excel(request):
     ws = wb.active
     ws.title = "Purchase Orders"
     
+    # Inject organization details and logo at the top
+    start_row = inject_excel_organization_header(ws)
+    
     title_font = Font(name='Arial', size=16, bold=True, color='1E3A8A')
     header_font = Font(name='Arial', size=11, bold=True, color='FFFFFF')
     header_fill = PatternFill(start_color='1E3A8A', end_color='1E3A8A', fill_type='solid')
@@ -531,11 +596,11 @@ def po_export_excel(request):
     normal_font = Font(name='Arial', size=10)
     
     # Title
-    ws.cell(row=1, column=1, value="Purchase Orders Report").font = title_font
+    ws.cell(row=start_row, column=1, value="Purchase Orders Report").font = title_font
     
     # Filter descriptions
-    ws.cell(row=3, column=1, value="Filters Applied:").font = bold_font
-    filter_row = 3
+    ws.cell(row=start_row + 2, column=1, value="Filters Applied:").font = bold_font
+    filter_row = start_row + 2
     if supplier_id:
         supplier_name = Supplier.objects.filter(id=supplier_id).values_list('name', flat=True).first()
         ws.cell(row=filter_row, column=2, value=f"Supplier: {supplier_name}").font = normal_font
@@ -546,8 +611,8 @@ def po_export_excel(request):
     if end_date:
         ws.cell(row=filter_row, column=2, value=f"End Date: {end_date}").font = normal_font
         filter_row += 1
-    if filter_row == 3:
-        ws.cell(row=3, column=2, value="None").font = normal_font
+    if filter_row == start_row + 2:
+        ws.cell(row=start_row + 2, column=2, value="None").font = normal_font
         filter_row += 1
         
     headers = [
@@ -1314,6 +1379,9 @@ def export_supplier_catalog_excel(request, pk):
     ws = wb.active
     ws.title = "Supplier Catalog"
 
+    # Inject organization details and logo at the top
+    start_row = inject_excel_organization_header(ws)
+
     title_font = Font(name='Arial', size=16, bold=True, color='1E3A8A')
     header_font = Font(name='Arial', size=11, bold=True, color='FFFFFF')
     header_fill = PatternFill(start_color='1E3A8A', end_color='1E3A8A', fill_type='solid')
@@ -1327,26 +1395,26 @@ def export_supplier_catalog_excel(request, pk):
         bottom=Side(style='thin', color='CCCCCC')
     )
 
-    ws.cell(row=1, column=1, value=f"Supplier Catalog - {supplier.name}").font = title_font
+    ws.cell(row=start_row, column=1, value=f"Supplier Catalog - {supplier.name}").font = title_font
     
-    ws.cell(row=3, column=1, value="Email Address:").font = bold_font
-    ws.cell(row=3, column=2, value=supplier.contact_email).font = normal_font
-    ws.cell(row=4, column=1, value="Phone Number:").font = bold_font
-    ws.cell(row=4, column=2, value=supplier.phone or "N/A").font = normal_font
-    ws.cell(row=5, column=1, value="GSTIN:").font = bold_font
-    ws.cell(row=5, column=2, value=supplier.gst_number or "N/A").font = normal_font
-    ws.cell(row=6, column=1, value="Address:").font = bold_font
-    ws.cell(row=6, column=2, value=supplier.address or "N/A").font = normal_font
+    ws.cell(row=start_row + 2, column=1, value="Email Address:").font = bold_font
+    ws.cell(row=start_row + 2, column=2, value=supplier.contact_email).font = normal_font
+    ws.cell(row=start_row + 3, column=1, value="Phone Number:").font = bold_font
+    ws.cell(row=start_row + 3, column=2, value=supplier.phone or "N/A").font = normal_font
+    ws.cell(row=start_row + 4, column=1, value="GSTIN:").font = bold_font
+    ws.cell(row=start_row + 4, column=2, value=supplier.gst_number or "N/A").font = normal_font
+    ws.cell(row=start_row + 5, column=1, value="Address:").font = bold_font
+    ws.cell(row=start_row + 5, column=2, value=supplier.address or "N/A").font = normal_font
 
     headers = ["SKU", "Product Name", "Default Market Price (₹)", "Supplier Custom Cost (₹)", "Expiry Required"]
-    row_idx = 8
+    row_idx = start_row + 7
     for col_idx, header in enumerate(headers, 1):
         cell = ws.cell(row=row_idx, column=col_idx, value=header)
         cell.font = header_font
         cell.fill = header_fill
         cell.alignment = Alignment(horizontal='center' if col_idx == 5 else 'left')
 
-    row_idx = 9
+    row_idx = start_row + 8
     for entry in catalog_items:
         ws.cell(row=row_idx, column=1, value=entry.item.sku).font = normal_font
         ws.cell(row=row_idx, column=2, value=entry.item.name).font = normal_font
