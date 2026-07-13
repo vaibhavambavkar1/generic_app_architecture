@@ -40,3 +40,32 @@
     {% include 'core/components/feedback/toast.html' with message=toast_message type=toast_type %}
 </div>
 {% endif %}
+
+{% if is_transition_response and model_name|lower == "purchaseorder" %}
+<div id="po-header-actions" hx-swap-oob="true" class="flex items-center gap-4">
+    {% if not instance.workflow_state or instance.workflow_state.name == 'Draft' %}
+    <a href="{% url 'inventory:po_edit' instance.id %}" class="btn btn-primary btn-sm gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+        Edit PO
+    </a>
+    {% endif %}
+    {% if instance.workflow_state.name == 'Approved' %}
+    <button 
+        hx-get="{% url 'inventory:po_email_modal' instance.id %}"
+        hx-target="#modal_container"
+        hx-swap="innerHTML"
+        class="btn btn-outline btn-primary btn-sm gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+        Email Supplier
+    </button>
+    {% endif %}
+    <a href="{% url 'inventory:po_download_pdf' instance.id %}" class="btn btn-outline btn-secondary btn-sm gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+        Download PDF
+    </a>
+    <div class="text-right">
+        <span class="text-sm text-base-content/50">Created on</span>
+        <div class="font-semibold text-lg">{{ instance.created_at|date:"Y-m-d H:i" }}</div>
+    </div>
+</div>
+{% endif %}

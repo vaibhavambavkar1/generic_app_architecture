@@ -37,7 +37,7 @@
                         <div class="font-semibold text-base-content/85">{{ log.changed_at|date:"d-M-Y" }}</div>
                         <div class="text-xs text-base-content/50">{{ log.changed_at|date:"H:i" }}</div>
                     </td>
-                    <td class="text-right font-mono font-bold text-primary">${{ log.price|floatformat:2 }}</td>
+                    <td class="text-right font-mono font-bold text-primary">₹{{ log.price|floatformat:2 }}</td>
                     <td class="text-right flex justify-end">
                         {% if forloop.last %}
                             <span class="badge badge-ghost text-xs">Initial</span>

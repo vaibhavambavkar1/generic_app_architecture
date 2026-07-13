@@ -174,6 +174,7 @@ class InventoryWorkflowTests(TestCase):
         self.assertEqual(response.status_code, 302)
         item.refresh_from_db()
         self.assertEqual(item.name, 'Updated Product Widget')
+        self.assertEqual(item.stock_level, 10)  # Should remain 10 since field is disabled on update
         
         # 3. Product Delete
         response = self.client.get(reverse('inventory:item_delete', args=[item.id]))
@@ -430,6 +431,25 @@ class InventoryWorkflowTests(TestCase):
         self.assertTrue(response.has_header('Content-Disposition'))
         self.assertIn('attachment', response['Content-Disposition'])
         self.assertIn('.xlsx', response['Content-Disposition'])
+
+    def test_item_create_auto_sku(self):
+        """Test that item creation without providing a SKU automatically generates one."""
+        self.client.force_login(self.manager_user)
+        response = self.client.post(reverse('inventory:item_create'), {
+            'sku': '',
+            'name': 'Auto SKU Widget',
+            'description': 'Description',
+            'stock_level': 100,
+            'reorder_threshold': 10,
+            'unit_price': 15.00
+        })
+        self.assertEqual(response.status_code, 302)
+        
+        # Check that the item was created and has a generated SKU starting with "SKU-"
+        new_item = InventoryItem.objects.filter(name='Auto SKU Widget').first()
+        self.assertIsNotNone(new_item)
+        self.assertTrue(new_item.sku.startswith('SKU-'))
+        self.assertEqual(len(new_item.sku), 12) # SKU- + 8 hex chars
 
 
 

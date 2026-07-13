@@ -314,15 +314,15 @@ def generate_po_pdf_bytes(po):
             Paragraph(line.item.sku, body_style),
             Paragraph(line.item.name, body_style),
             Paragraph(str(line.quantity), body_style),
-            Paragraph(f"${line.unit_price:.2f}", body_style),
-            Paragraph(f"${line.subtotal:.2f}", body_bold)
+            Paragraph(f"Rs. {line.unit_price:.2f}", body_style),
+            Paragraph(f"Rs. {line.subtotal:.2f}", body_bold)
         ])
         
     # Total row
     table_data.append([
         Paragraph("<b>Total Amount:</b>", body_bold),
         "", "", "",
-        Paragraph(f"<b>${po.total_amount:.2f}</b>", body_bold)
+        Paragraph(f"<b>Rs. {po.total_amount:.2f}</b>", body_bold)
     ])
     
     items_table = Table(table_data, colWidths=[100, 200, 70, 80, 90])
@@ -648,10 +648,10 @@ def po_email_modal(request, pk):
         ""
     ]
     for line in po.lines.all().select_related('item'):
-        body_lines.append(f"- {line.item.name} (SKU: {line.item.sku}): {line.quantity} units @ ${line.unit_price:.2f}/unit")
+        body_lines.append(f"- {line.item.name} (SKU: {line.item.sku}): {line.quantity} units @ Rs. {line.unit_price:.2f}/unit")
     body_lines.extend([
         "",
-        f"Total Estimated Value: ${po.total_amount:.2f}",
+        f"Total Estimated Value: Rs. {po.total_amount:.2f}",
         "",
         "Please review the attached PDF document for our full terms and shipping/billing information.",
         "Confirm receipt and estimated delivery date by replying to this email.",
@@ -799,8 +799,8 @@ def generate_supplier_catalog_pdf_bytes(supplier, catalog_items):
         table_data.append([
             Paragraph(entry.item.sku, body_style),
             Paragraph(entry.item.name, body_style),
-            Paragraph(f"${entry.item.unit_price:.2f}", body_style),
-            Paragraph(f"<b>${entry.price:.2f}</b>", body_style),
+            Paragraph(f"Rs. {entry.item.unit_price:.2f}", body_style),
+            Paragraph(f"<b>Rs. {entry.price:.2f}</b>", body_style),
             Paragraph("Yes" if entry.item.has_expiry_date else "No", body_style)
         ])
         
@@ -865,7 +865,7 @@ def export_supplier_catalog_excel(request, pk):
     ws.cell(row=6, column=1, value="Address:").font = bold_font
     ws.cell(row=6, column=2, value=supplier.address or "N/A").font = normal_font
 
-    headers = ["SKU", "Product Name", "Default Market Price ($)", "Supplier Custom Cost ($)", "Expiry Required"]
+    headers = ["SKU", "Product Name", "Default Market Price (₹)", "Supplier Custom Cost (₹)", "Expiry Required"]
     row_idx = 8
     for col_idx, header in enumerate(headers, 1):
         cell = ws.cell(row=row_idx, column=col_idx, value=header)
@@ -880,11 +880,11 @@ def export_supplier_catalog_excel(request, pk):
         
         cell_mkt = ws.cell(row=row_idx, column=3, value=float(entry.item.unit_price))
         cell_mkt.font = normal_font
-        cell_mkt.number_format = '"$"#,##0.00'
+        cell_mkt.number_format = '"\u20B9"#,##0.00'
         
         cell_cost = ws.cell(row=row_idx, column=4, value=float(entry.price))
         cell_cost.font = bold_font
-        cell_cost.number_format = '"$"#,##0.00'
+        cell_cost.number_format = '"\u20B9"#,##0.00'
         
         cell_exp = ws.cell(row=row_idx, column=5, value="Yes" if entry.item.has_expiry_date else "No")
         cell_exp.font = normal_font

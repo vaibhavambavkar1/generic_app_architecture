@@ -36,7 +36,8 @@ def execute_transition(request, app_label, model_name, object_id, transition_id)
         'app_label': app_label,
         'model_name': model_name,
         'toast_message': toast_message,
-        'toast_type': toast_type
+        'toast_type': toast_type,
+        'is_transition_response': True,
     }
     
     return render(request, 'core/components/workflow/action_buttons.html', context)

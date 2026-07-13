@@ -38,8 +38,8 @@
                             <tr class="hover">
                                 <td class="font-mono font-semibold text-sm">{{ entry.item.sku }}</td>
                                 <td class="truncate max-w-xs" title="{{ entry.item.name }}">{{ entry.item.name }}</td>
-                                <td class="text-right font-mono">${{ entry.item.unit_price|floatformat:2 }}</td>
-                                <td class="text-right font-mono font-semibold text-primary">${{ entry.price|floatformat:2 }}</td>
+                                <td class="text-right font-mono">₹{{ entry.item.unit_price|floatformat:2 }}</td>
+                                <td class="text-right font-mono font-semibold text-primary">₹{{ entry.price|floatformat:2 }}</td>
                                 <td class="text-center">
                                     {% if entry.item.has_expiry_date %}
                                     <span class="badge badge-xs badge-warning">Yes</span>
@@ -140,7 +140,7 @@
 
                         <!-- Default Price -->
                         <div class="form-control">
-                            <label class="label py-1"><span class="label-text font-semibold text-xs">Default price ($) *</span></label>
+                            <label class="label py-1"><span class="label-text font-semibold text-xs">Default price (₹) *</span></label>
                             {{ form.unit_price }}
                             {% if form.unit_price.errors %}
                             <label class="label py-0.5"><span class="label-text-alt text-error text-[10px]">{{ form.unit_price.errors.as_text }}</span></label>
@@ -149,7 +149,7 @@
 
                         <!-- Supplier Price -->
                         <div class="form-control">
-                            <label class="label py-1"><span class="label-text font-semibold text-xs text-primary">Supplier cost ($) *</span></label>
+                            <label class="label py-1"><span class="label-text font-semibold text-xs text-primary">Supplier cost (₹) *</span></label>
                             {{ form.supplier_price }}
                             {% if form.supplier_price.errors %}
                             <label class="label py-0.5"><span class="label-text-alt text-error text-[10px]">{{ form.supplier_price.errors.as_text }}</span></label>

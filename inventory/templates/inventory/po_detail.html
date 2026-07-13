@@ -18,7 +18,7 @@
             <h1 class="text-3xl font-bold tracking-tight">PO Number: {{ instance.po_number }}</h1>
             <p class="text-base-content/60">Supplier: <span class="font-bold text-base-content">{{ instance.supplier.name }}</span></p>
         </div>
-        <div class="flex items-center gap-4">
+        <div id="po-header-actions" class="flex items-center gap-4">
             {% if not instance.workflow_state or instance.workflow_state.name == 'Draft' %}
             <a href="{% url 'inventory:po_edit' instance.id %}" class="btn btn-primary btn-sm gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
@@ -82,9 +82,9 @@
                                     {% if instance.workflow_state.name == "Received" %}
                                     <td class="font-bold text-success">{{ line.received_quantity }}</td>
                                     {% endif %}
-                                    <td>${{ line.unit_price|floatformat:2 }}</td>
+                                    <td>₹{{ line.unit_price|floatformat:2 }}</td>
                                     {% if instance.workflow_state.name == "Received" %}
-                                    <td class="font-bold text-success">${{ line.received_unit_price|floatformat:2 }}</td>
+                                    <td class="font-bold text-success">₹{{ line.received_unit_price|floatformat:2 }}</td>
                                     <td>
                                         {% if line.expiry_date %}
                                         <span class="badge badge-warning text-xs font-semibold">{{ line.expiry_date|date:"d-M-Y" }}</span>
@@ -95,9 +95,9 @@
                                     {% endif %}
                                     <td class="text-right font-semibold">
                                         {% if instance.workflow_state.name == "Received" %}
-                                        ${{ line.received_subtotal|floatformat:2 }}
+                                        ₹{{ line.received_subtotal|floatformat:2 }}
                                         {% else %}
-                                        ${{ line.subtotal|floatformat:2 }}
+                                        ₹{{ line.subtotal|floatformat:2 }}
                                         {% endif %}
                                     </td>
                                 </tr>
@@ -106,7 +106,7 @@
                             <tfoot>
                                 <tr>
                                     <th colspan="{% if instance.workflow_state.name == 'Received' %}7{% else %}4{% endif %}" class="text-right text-base-content">Total Value:</th>
-                                    <th class="text-right text-lg font-bold text-primary">${{ instance.total_amount|floatformat:2 }}</th>
+                                    <th class="text-right text-lg font-bold text-primary">₹{{ instance.total_amount|floatformat:2 }}</th>
                                 </tr>
                             </tfoot>
                         </table>

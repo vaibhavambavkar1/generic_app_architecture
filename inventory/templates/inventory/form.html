@@ -21,29 +21,39 @@
         {% csrf_token %}
         <div class="card-body gap-4">
             {% for field in form %}
-            <div class="form-control w-full">
-                <label class="label">
-                    <span class="label-text font-semibold">{{ field.label }}</span>
-                </label>
-                
                 {% if field.field.widget.input_type == "checkbox" %}
-                    <div class="flex items-center">
+                <div class="form-control w-full">
+                    <label class="label cursor-pointer justify-start gap-3 py-3">
                         {{ field|add_class:"checkbox checkbox-primary" }}
-                    </div>
-                {% elif "select" in field.field.widget.attrs.class or field.field.widget.input_type == "select" or field.field.widget.input_type is None %}
-                    {{ field|add_class:"select select-bordered w-full" }}
-                {% elif field.field.widget.attrs.rows %}
-                    {{ field|add_class:"textarea textarea-bordered w-full" }}
+                        <span class="label-text font-semibold text-base-content/85">{{ field.label }}</span>
+                    </label>
+                    {% if field.errors %}
+                    <label class="label py-0">
+                        <span class="label-text-alt text-error font-semibold">{{ field.errors.0 }}</span>
+                    </label>
+                    {% endif %}
+                </div>
                 {% else %}
-                    {{ field|add_class:"input input-bordered w-full" }}
+                <div class="form-control w-full">
+                    <label class="label">
+                        <span class="label-text font-semibold">{{ field.label }}</span>
+                    </label>
+                    
+                    {% if "select" in field.field.widget.attrs.class or field.field.widget.input_type == "select" or field.field.widget.input_type is None %}
+                        {{ field|add_class:"select select-bordered w-full" }}
+                    {% elif field.field.widget.attrs.rows %}
+                        {{ field|add_class:"textarea textarea-bordered w-full" }}
+                    {% else %}
+                        {{ field|add_class:"input input-bordered w-full" }}
+                    {% endif %}
+                    
+                    {% if field.errors %}
+                    <label class="label">
+                        <span class="label-text-alt text-error font-semibold">{{ field.errors.0 }}</span>
+                    </label>
+                    {% endif %}
+                </div>
                 {% endif %}
-                
-                {% if field.errors %}
-                <label class="label">
-                    <span class="label-text-alt text-error font-semibold">{{ field.errors.0 }}</span>
-                </label>
-                {% endif %}
-            </div>
             {% endfor %}
             
             <div class="flex justify-end gap-3 mt-6">

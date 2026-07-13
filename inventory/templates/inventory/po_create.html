@@ -85,13 +85,13 @@
 
                             <!-- Cost Price -->
                             <div class="form-control w-full md:w-40">
-                                <label class="label"><span class="label-text font-semibold">Unit Price ($)</span></label>
+                                <label class="label"><span class="label-text font-semibold">Unit Price (₹)</span></label>
                                 <input type="number" step="0.01" name="price[]" required x-model.number="line.price" class="input input-bordered w-full" />
                             </div>
 
                             <!-- Subtotal display -->
                             <div class="w-full md:w-28 text-right font-mono font-bold text-lg pb-3">
-                                $<span x-text="(line.quantity * line.price).toFixed(2)"></span>
+                                ₹<span x-text="(line.quantity * line.price).toFixed(2)"></span>
                             </div>
                         </div>
                     </template>
@@ -100,7 +100,7 @@
                 <!-- Total Display -->
                 <div class="flex justify-end items-center gap-4 mt-6 border-t border-base-300 pt-4">
                     <span class="text-lg font-semibold">Estimated PO Total:</span>
-                    <span class="text-2xl font-black text-primary">$<span x-text="calculateTotal()"></span></span>
+                    <span class="text-2xl font-black text-primary">₹<span x-text="calculateTotal()"></span></span>
                 </div>
             </div>
         </div>

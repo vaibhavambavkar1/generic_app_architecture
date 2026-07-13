@@ -109,8 +109,8 @@
                         <tr class="hover">
                             <td class="font-mono font-bold text-sm">{{ entry.item.sku }}</td>
                             <td class="font-semibold max-w-xs truncate" title="{{ entry.item.name }}">{{ entry.item.name }}</td>
-                            <td class="text-right font-mono text-base-content/75">${{ entry.item.unit_price|floatformat:2 }}</td>
-                            <td class="text-right font-mono font-bold text-primary">${{ entry.price|floatformat:2 }}</td>
+                            <td class="text-right font-mono text-base-content/75">₹{{ entry.item.unit_price|floatformat:2 }}</td>
+                            <td class="text-right font-mono font-bold text-primary">₹{{ entry.price|floatformat:2 }}</td>
                             <td class="text-center">
                                 {% if entry.item.has_expiry_date %}
                                     <span class="badge badge-warning badge-sm font-semibold">Yes</span>

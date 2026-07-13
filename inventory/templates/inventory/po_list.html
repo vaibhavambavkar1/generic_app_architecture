@@ -37,7 +37,7 @@
                     <td class="font-mono font-bold text-primary">{{ po.po_number }}</td>
                     <td>{{ po.supplier.name }}</td>
                     <td>{{ po.created_at|date:"Y-m-d H:i" }}</td>
-                    <td>${{ po.total_amount|floatformat:2 }}</td>
+                    <td>₹{{ po.total_amount|floatformat:2 }}</td>
                     <td>
                         {% if po.workflow_state %}
                             {% if po.workflow_state.name == 'Draft' %}

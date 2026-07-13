@@ -26,7 +26,7 @@
                             <th class="text-center w-24">Ordered Qty</th>
                             <th class="text-center w-28">Received Qty</th>
                             <th class="text-right w-24">Ord Price</th>
-                            <th class="text-right w-28">Recv Price ($)</th>
+                            <th class="text-right w-28">Recv Price (₹)</th>
                             <th class="w-40">Expiry Date</th>
                         </tr>
                     </thead>
@@ -44,7 +44,7 @@
                                        value="{{ line.quantity }}"
                                        class="input input-bordered input-sm w-full text-center" />
                             </td>
-                            <td class="text-right font-mono">${{ line.unit_price|floatformat:2 }}</td>
+                            <td class="text-right font-mono">₹{{ line.unit_price|floatformat:2 }}</td>
                             <td>
                                 <input type="number" step="0.01" name="received_price_{{ line.id }}" min="0" required
                                        value="{{ line.unit_price|floatformat:2 }}"

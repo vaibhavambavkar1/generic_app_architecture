@@ -118,7 +118,7 @@
                     <td>{{ item.reorder_threshold }}</td>
                     <td>
                         <div class="flex items-center gap-1.5">
-                            <span class="font-semibold">${{ item.unit_price|floatformat:2 }}</span>
+                            <span class="font-semibold">₹{{ item.unit_price|floatformat:2 }}</span>
                             <button hx-get="{% url 'inventory:item_price_history' item.id %}"
                                 hx-target="#modal_container" hx-trigger="click"
                                 class="btn btn-ghost btn-circle btn-xs text-primary/80 hover:text-primary hover:bg-primary/10"

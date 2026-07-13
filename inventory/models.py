@@ -14,7 +14,7 @@ class Supplier(AuditableMixin):
         return self.name
 
 class InventoryItem(AuditableMixin):
-    sku = models.CharField(max_length=50, unique=True)
+    sku = models.CharField(max_length=50, unique=True, blank=True)
     name = models.CharField(max_length=150)
     description = models.TextField(blank=True)
     stock_level = models.IntegerField(default=0)
@@ -73,6 +73,15 @@ class InventoryItem(AuditableMixin):
 
     def save(self, *args, **kwargs):
         is_new = self.pk is None
+        
+        if not self.sku:
+            import uuid
+            while True:
+                candidate = f"SKU-{uuid.uuid4().hex[:8].upper()}"
+                if not InventoryItem.objects.filter(sku=candidate).exists():
+                    self.sku = candidate
+                    break
+
         sku_changed = False
         old_price = None
         
@@ -87,9 +96,8 @@ class InventoryItem(AuditableMixin):
                 pass
         
         if is_new or sku_changed or not self.barcode or not self.qr_code:
-            if self.sku:
-                self.generate_barcode()
-                self.generate_qrcode()
+            self.generate_barcode()
+            self.generate_qrcode()
                 
         super().save(*args, **kwargs)
 
@@ -111,7 +119,7 @@ class SupplierCatalogItem(AuditableMixin):
         unique_together = ('supplier', 'item')
 
     def __str__(self):
-        return f"{self.supplier.name} - {self.item.name} (${self.price})"
+        return f"{self.supplier.name} - {self.item.name} (Rs. {self.price})"
 
 class PurchaseOrder(WorkflowMixin):
     po_number = models.CharField(max_length=50, unique=True, blank=True)
