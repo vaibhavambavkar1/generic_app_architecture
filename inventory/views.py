@@ -1,4 +1,5 @@
 import io
+import os
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
@@ -6,6 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models import Sum, F, DecimalField, ExpressionWrapper
 from django.http import HttpResponse, HttpResponseRedirect, FileResponse
 from django.urls import reverse
+from django.conf import settings
 
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
@@ -14,7 +16,7 @@ from reportlab.lib import colors
 
 from .models import Supplier, InventoryItem, PurchaseOrder, POLineItem, SupplierCatalogItem
 from .forms import InventoryItemForm, SupplierForm, PurchaseOrderForm, SupplierCatalogProductForm
-from core.models import AuditLog, State, Transition
+from core.models import AuditLog, State, Transition, Organization
 from core.reports.graphs import GraphGenerator
 
 @login_required
@@ -98,24 +100,64 @@ def item_list(request):
     query = request.GET.get('q', '')
     low_stock = request.GET.get('low_stock', '')
 
-    items = InventoryItem.objects.all().prefetch_related('catalog_items__supplier')
+    items = InventoryItem.objects.all().prefetch_related('catalog_items__supplier').order_by('sku')
     if query:
         items = items.filter(name__icontains=query) | items.filter(sku__icontains=query)
     if low_stock == '1':
         items = items.filter(stock_level__lte=F('reorder_threshold'))
 
+    # Pagination
+    from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+    paginator = Paginator(items, 10)
+    page = request.GET.get('page')
+    try:
+        paginated_items = paginator.page(page)
+    except PageNotAnInteger:
+        paginated_items = paginator.page(1)
+    except EmptyPage:
+        paginated_items = paginator.page(paginator.num_pages)
+
+    # Build query string excluding 'page'
+    params = request.GET.copy()
+    if 'page' in params:
+        del params['page']
+    query_string = params.urlencode()
+
     context = {
-        'items': items,
+        'items': paginated_items,
         'query': query,
-        'low_stock': low_stock
+        'low_stock': low_stock,
+        'query_string': query_string
     }
     return render(request, 'inventory/item_list.html', context)
 
 @login_required
 def supplier_list(request):
     """List of all suppliers."""
-    suppliers = Supplier.objects.all().prefetch_related('supplied_items')
-    return render(request, 'inventory/supplier_list.html', {'suppliers': suppliers})
+    suppliers_list = Supplier.objects.all().prefetch_related('supplied_items').order_by('name')
+    
+    # Pagination
+    from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+    paginator = Paginator(suppliers_list, 10)
+    page = request.GET.get('page')
+    try:
+        paginated_suppliers = paginator.page(page)
+    except PageNotAnInteger:
+        paginated_suppliers = paginator.page(1)
+    except EmptyPage:
+        paginated_suppliers = paginator.page(paginator.num_pages)
+        
+    # Build query string excluding 'page'
+    params = request.GET.copy()
+    if 'page' in params:
+        del params['page']
+    query_string = params.urlencode()
+    
+    context = {
+        'suppliers': paginated_suppliers,
+        'query_string': query_string
+    }
+    return render(request, 'inventory/supplier_list.html', context)
 
 @login_required
 def supplier_detail(request, pk):
@@ -214,6 +256,17 @@ def po_list(request):
         
     suppliers = Supplier.objects.all()
     
+    # Pagination
+    from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+    paginator = Paginator(pos, 10)
+    page = request.GET.get('page')
+    try:
+        paginated_pos = paginator.page(page)
+    except PageNotAnInteger:
+        paginated_pos = paginator.page(1)
+    except EmptyPage:
+        paginated_pos = paginator.page(paginator.num_pages)
+        
     # Construct query string for export links
     import urllib.parse
     params = request.GET.copy()
@@ -225,10 +278,15 @@ def po_list(request):
         params['start_date'] = start_date
     if end_date and 'end_date' not in params:
         params['end_date'] = end_date
-    query_string = params.urlencode()
+        
+    # Exclude page from query_string to avoid appending page number twice in pagination links
+    pagination_params = params.copy()
+    if 'page' in pagination_params:
+        del pagination_params['page']
+    query_string = pagination_params.urlencode()
     
     context = {
-        'purchase_orders': pos,
+        'purchase_orders': paginated_pos,
         'suppliers': suppliers,
         'selected_supplier_id': int(supplier_id) if supplier_id else None,
         'start_date': start_date,
@@ -236,6 +294,78 @@ def po_list(request):
         'query_string': query_string
     }
     return render(request, 'inventory/po_list.html', context)
+
+def get_organization_header_flowables(styles):
+    """
+    Returns a list of flowables (header table, divider line, spacer) containing
+    organization details and logo to be included at the top of PDF reports.
+    """
+    from reportlab.platypus import Image as RLImage
+    
+    org = Organization.objects.first()
+    org_name = org.name if org else "Quantum Global"
+    org_address = org.address if org else "123 Business Road, Corporate Hub, India"
+    org_email = org.email if org else "info@quantumglobal.com"
+    org_phone = org.phone if org else "+91 99999 88888"
+    org_gstin = org.gstin if org else "27AAAAA0000A1Z5"
+    org_license = org.license_number if org else "LIC-998877"
+
+    logo_path = None
+    if org and org.logo and os.path.exists(org.logo.path):
+        logo_path = org.logo.path
+    if not logo_path:
+        default_logo_path = os.path.join(settings.MEDIA_ROOT, 'org_logos', 'default_logo.png')
+        if os.path.exists(default_logo_path):
+            logo_path = default_logo_path
+
+    org_details_html = f"""
+    <b>{org_name}</b><br/>
+    {org_address}<br/>
+    Phone: {org_phone} | Email: {org_email}<br/>
+    GSTIN: {org_gstin} | License: {org_license}
+    """
+    
+    org_details_style = ParagraphStyle(
+        'OrgDetails',
+        parent=styles['Normal'],
+        fontName='Helvetica',
+        fontSize=9,
+        leading=12,
+        textColor=colors.HexColor('#475569')
+    )
+    
+    org_paragraph = Paragraph(org_details_html, org_details_style)
+    
+    if logo_path:
+        try:
+            logo_flowable = RLImage(logo_path, width=50, height=50)
+            header_table_data = [[logo_flowable, org_paragraph]]
+            header_table = Table(header_table_data, colWidths=[60, 480])
+        except Exception:
+            header_table_data = [[org_paragraph]]
+            header_table = Table(header_table_data, colWidths=[540])
+    else:
+        header_table_data = [[org_paragraph]]
+        header_table = Table(header_table_data, colWidths=[540])
+
+    header_table.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 10),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 0),
+    ]))
+    
+    divider = Table([['']], colWidths=[540], rowHeights=[1])
+    divider.setStyle(TableStyle([
+        ('LINEABOVE', (0,0), (-1,-1), 1, colors.HexColor('#cbd5e1')),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 0),
+    ]))
+    
+    return [header_table, divider, Spacer(1, 10)]
 
 @login_required
 def po_export_pdf(request):
@@ -314,6 +444,7 @@ def po_export_pdf(request):
         textColor=colors.white
     )
     
+    story.extend(get_organization_header_flowables(styles))
     story.append(Paragraph("Purchase Orders Report", title_style))
     
     # Filter text
@@ -607,7 +738,8 @@ def generate_po_pdf_bytes(po):
         textColor=colors.white
     )
 
-    # 1. Document Title
+    # 1. Organization Header & Document Title
+    story.extend(get_organization_header_flowables(styles))
     story.append(Paragraph("PURCHASE ORDER", title_style))
     story.append(Spacer(1, 10))
 
@@ -1098,6 +1230,7 @@ def generate_supplier_catalog_pdf_bytes(supplier, catalog_items):
         textColor=colors.white
     )
     
+    story.extend(get_organization_header_flowables(styles))
     story.append(Paragraph(f"SUPPLIER PRODUCT CATALOG", title_style))
     story.append(Spacer(1, 10))
     

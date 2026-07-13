@@ -564,5 +564,94 @@ class InventoryWorkflowTests(TestCase):
         # Should redirect back to po_list
         self.assertRedirects(response, reverse('inventory:po_list') + '?supplier=&start_date=2026-07-01&end_date=2026-08-05')
 
+    def test_supplier_and_po_list_pagination(self):
+        """Test that supplier list, item list, and po list tables paginate at 10 items per page."""
+        self.client.force_login(self.manager_user)
+        
+        # 1. Test Supplier Pagination
+        # Create 11 suppliers total (we already have self.supplier, so create 10 more)
+        for i in range(10):
+            Supplier.objects.create(
+                name=f"Supplier Pagination Test {i}",
+                contact_email=f"supplier_pag_{i}@test.com"
+            )
+            
+        # Get page 1
+        response = self.client.get(reverse('inventory:supplier_list'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['suppliers']), 10)
+        self.assertTrue(response.context['suppliers'].has_next())
+        
+        # Get page 2
+        response = self.client.get(reverse('inventory:supplier_list'), {'page': 2})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['suppliers']), 1)
+        self.assertFalse(response.context['suppliers'].has_next())
+        
+        # 2. Test Item/Product Pagination
+        # Create 11 items total (we already have self.item, so create 10 more)
+        for i in range(10):
+            InventoryItem.objects.create(
+                sku=f"SKU-PAG-{i}",
+                name=f"Item Pagination Test {i}",
+                unit_price=10.00,
+                stock_level=5
+            )
+            
+        # Get page 1
+        response = self.client.get(reverse('inventory:item_list'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['items']), 10)
+        self.assertTrue(response.context['items'].has_next())
+        
+        # Get page 2
+        response = self.client.get(reverse('inventory:item_list'), {'page': 2})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['items']), 1)
+        self.assertFalse(response.context['items'].has_next())
+
+        # 3. Test PO Pagination
+        # Create 11 POs total (we already have self.po, so create 10 more)
+        for i in range(10):
+            PurchaseOrder.objects.create(
+                po_number=f"PO-PAG-{i}",
+                supplier=self.supplier,
+                workflow_state=self.draft,
+                total_amount=150.00
+            )
+            
+        # Get page 1
+        response = self.client.get(reverse('inventory:po_list'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['purchase_orders']), 10)
+        self.assertTrue(response.context['purchase_orders'].has_next())
+        
+        # Get page 2
+        response = self.client.get(reverse('inventory:po_list'), {'page': 2})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['purchase_orders']), 1)
+        self.assertFalse(response.context['purchase_orders'].has_next())
+
+    def test_pdf_generation_includes_organization_details(self):
+        """Test that generated PDFs include organization details when an Organization exists."""
+        from inventory.views import generate_po_pdf_bytes
+        
+        # We already have self.org created in setUp:
+        # self.org.name = "Test Corp"
+        # Let's update it to include more details
+        self.org.address = "456 Tech Boulevard, Silicon Valley"
+        self.org.phone = "+91 1234567890"
+        self.org.gstin = "27GSTIN1234A1Z5"
+        self.org.save()
+        
+        pdf_bytes = generate_po_pdf_bytes(self.po)
+        self.assertIsNotNone(pdf_bytes)
+        
+        # Convert to string to search for basic text contents (ReportLab packs strings inside the PDF stream)
+        pdf_text = pdf_bytes.decode('latin1')
+        self.assertIn("Test Corp", pdf_text)
+        self.assertIn("456 Tech Boulevard", pdf_text)
+        self.assertIn("27GSTIN1234A1Z5", pdf_text)
+
 
 
