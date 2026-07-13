@@ -3,6 +3,17 @@
 {% block title %}{{ supplier.name }} | ERP Framework{% endblock %}
 
 {% block content %}
+<!-- Toast Messages -->
+{% if messages %}
+<div class="toast toast-top toast-end z-50" x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 4000)">
+    {% for message in messages %}
+    <div class="alert alert-{% if message.tags == 'error' %}error{% elif message.tags == 'success' %}success{% else %}info{% endif %} shadow-lg">
+        <span>{{ message }}</span>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
 <div class="space-y-6">
     <!-- Breadcrumbs -->
     <div class="text-sm breadcrumbs mb-4">
@@ -15,10 +26,31 @@
     <!-- Header Block -->
     <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-            <h1 class="text-3xl font-bold tracking-tight text-primary">{{ supplier.name }}</h1>
+            <h1 class="text-3xl font-bold tracking-tight text-primary flex items-center gap-3">
+                {{ supplier.name }}
+                {% if supplier.is_active %}
+                <span class="badge badge-success font-semibold text-white">Active</span>
+                {% else %}
+                <span class="badge badge-ghost opacity-70 font-semibold">Inactive</span>
+                {% endif %}
+            </h1>
             <p class="text-base-content/60 font-medium">Detailed profile and managed catalog items.</p>
         </div>
         <div class="flex flex-wrap gap-2">
+            <form action="{% url 'inventory:supplier_toggle_status' supplier.id %}" method="POST" class="inline">
+                {% csrf_token %}
+                {% if supplier.is_active %}
+                <button type="submit" class="btn btn-warning btn-sm gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+                    Deactivate Supplier
+                </button>
+                {% else %}
+                <button type="submit" class="btn btn-success btn-sm gap-2 text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    Activate Supplier
+                </button>
+                {% endif %}
+            </form>
             <button 
                 hx-get="{% url 'inventory:supplier_catalog_modal' supplier.id %}"
                 hx-target="#modal_container"

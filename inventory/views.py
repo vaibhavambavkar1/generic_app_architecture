@@ -98,7 +98,7 @@ def item_list(request):
     query = request.GET.get('q', '')
     low_stock = request.GET.get('low_stock', '')
 
-    items = InventoryItem.objects.all()
+    items = InventoryItem.objects.all().prefetch_related('catalog_items__supplier')
     if query:
         items = items.filter(name__icontains=query) | items.filter(sku__icontains=query)
     if low_stock == '1':
@@ -128,10 +128,277 @@ def supplier_detail(request, pk):
     })
 
 @login_required
-def po_list(request):
-    """List of all purchase orders."""
+def supplier_toggle_status(request, pk):
+    """Toggle the active/inactive status of a supplier and update associated products."""
+    from django.contrib import messages
+    from django.views.decorators.http import require_POST
+    
+    supplier = get_object_or_404(Supplier, pk=pk)
+    if request.method == 'POST':
+        supplier.is_active = not supplier.is_active
+        supplier.save()
+        
+        # Update all items supplied by this supplier
+        supplier.supplied_items.all().update(is_active=supplier.is_active)
+        
+        status_str = "activated" if supplier.is_active else "deactivated"
+        messages.success(request, f"Supplier '{supplier.name}' was successfully {status_str}.")
+    
+    return redirect(reverse('inventory:supplier_detail', args=[supplier.id]))
+
+def get_filtered_pos(request):
+    supplier_id = request.GET.get('supplier')
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    
     pos = PurchaseOrder.objects.all().select_related('supplier', 'workflow_state').order_by('-created_at')
-    return render(request, 'inventory/po_list.html', {'purchase_orders': pos})
+    
+    if supplier_id:
+        pos = pos.filter(supplier_id=supplier_id)
+    if start_date:
+        pos = pos.filter(created_at__date__gte=start_date)
+    if end_date:
+        pos = pos.filter(created_at__date__lte=end_date)
+        
+    return pos, supplier_id, start_date, end_date
+
+@login_required
+def po_list(request):
+    """List of all purchase orders with filter options."""
+    pos, supplier_id, start_date, end_date = get_filtered_pos(request)
+    suppliers = Supplier.objects.all()
+    
+    # Construct query string for export links
+    import urllib.parse
+    params = request.GET.copy()
+    for k in list(params.keys()):
+        if not params[k]:
+            del params[k]
+    query_string = params.urlencode()
+    
+    context = {
+        'purchase_orders': pos,
+        'suppliers': suppliers,
+        'selected_supplier_id': int(supplier_id) if supplier_id else None,
+        'start_date': start_date,
+        'end_date': end_date,
+        'query_string': query_string
+    }
+    return render(request, 'inventory/po_list.html', context)
+
+@login_required
+def po_export_pdf(request):
+    """View to download filtered purchase orders in PDF format."""
+    from django.utils import timezone
+    pos, supplier_id, start_date, end_date = get_filtered_pos(request)
+    
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=letter,
+        rightMargin=36,
+        leftMargin=36,
+        topMargin=36,
+        bottomMargin=36
+    )
+    story = []
+    styles = getSampleStyleSheet()
+    
+    title_style = ParagraphStyle(
+        'ReportTitle',
+        parent=styles['Heading1'],
+        fontName='Helvetica-Bold',
+        fontSize=20,
+        leading=24,
+        textColor=colors.HexColor('#1e3a8a'),
+        spaceAfter=8
+    )
+    subtitle_style = ParagraphStyle(
+        'ReportSubtitle',
+        parent=styles['Normal'],
+        fontName='Helvetica-Oblique',
+        fontSize=9,
+        leading=13,
+        textColor=colors.HexColor('#475569'),
+        spaceAfter=12
+    )
+    po_header_style = ParagraphStyle(
+        'POHeader',
+        fontName='Helvetica-Bold',
+        fontSize=10,
+        leading=13,
+        textColor=colors.HexColor('#0f172a'),
+        spaceBefore=8,
+        spaceAfter=3
+    )
+    body_style = ParagraphStyle(
+        'DocBody',
+        parent=styles['Normal'],
+        fontName='Helvetica',
+        fontSize=9,
+        leading=12,
+        textColor=colors.HexColor('#1e293b')
+    )
+    body_bold = ParagraphStyle(
+        'DocBodyBold',
+        parent=body_style,
+        fontName='Helvetica-Bold'
+    )
+    header_style = ParagraphStyle(
+        'HeaderStyle',
+        parent=body_style,
+        fontName='Helvetica-Bold',
+        textColor=colors.white
+    )
+    
+    story.append(Paragraph("Purchase Orders Report", title_style))
+    
+    # Filter text
+    filter_parts = []
+    if supplier_id:
+        supplier_name = Supplier.objects.filter(id=supplier_id).values_list('name', flat=True).first()
+        filter_parts.append(f"Supplier: {supplier_name or 'All'}")
+    if start_date:
+        filter_parts.append(f"From: {start_date}")
+    if end_date:
+        filter_parts.append(f"To: {end_date}")
+    filter_text = ", ".join(filter_parts) if filter_parts else "Filters: None"
+    story.append(Paragraph(f"Generated on {timezone.now().strftime('%Y-%m-%d %H:%M')} | {filter_text}", subtitle_style))
+    
+    for po in pos:
+        story.append(Spacer(1, 8))
+        po_info = f"<b>PO Number:</b> {po.po_number} | <b>Supplier:</b> {po.supplier.name} | <b>Date:</b> {po.created_at.strftime('%Y-%m-%d')} | <b>Status:</b> {po.workflow_state.name if po.workflow_state else 'Draft'} | <b>Total:</b> Rs. {po.total_amount:.2f}"
+        story.append(Paragraph(po_info, po_header_style))
+        
+        headers = [
+            Paragraph("SKU", header_style),
+            Paragraph("Product Name", header_style),
+            Paragraph("Quantity", header_style),
+            Paragraph("Unit Price", header_style),
+            Paragraph("Subtotal", header_style)
+        ]
+        table_data = [headers]
+        for line in po.lines.all().select_related('item'):
+            table_data.append([
+                Paragraph(line.item.sku, body_style),
+                Paragraph(line.item.name, body_style),
+                Paragraph(str(line.quantity), body_style),
+                Paragraph(f"Rs. {line.unit_price:.2f}", body_style),
+                Paragraph(f"Rs. {line.subtotal:.2f}", body_style)
+            ])
+            
+        t = Table(table_data, colWidths=[100, 200, 60, 80, 100])
+        t.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#475569')),
+            ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+            ('TOPPADDING', (0,0), (-1,-1), 3),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 3),
+            ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#cbd5e1')),
+        ]))
+        story.append(t)
+        story.append(Spacer(1, 3))
+        
+    doc.build(story)
+    pdf_bytes = buffer.getvalue()
+    buffer.close()
+    
+    response = HttpResponse(pdf_bytes, content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="Purchase_Orders_Report.pdf"'
+    return response
+
+@login_required
+def po_export_excel(request):
+    """View to download filtered purchase orders in Excel format."""
+    import openpyxl
+    from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+    
+    pos, supplier_id, start_date, end_date = get_filtered_pos(request)
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Purchase Orders"
+    
+    title_font = Font(name='Arial', size=16, bold=True, color='1E3A8A')
+    header_font = Font(name='Arial', size=11, bold=True, color='FFFFFF')
+    header_fill = PatternFill(start_color='1E3A8A', end_color='1E3A8A', fill_type='solid')
+    bold_font = Font(name='Arial', size=10, bold=True)
+    normal_font = Font(name='Arial', size=10)
+    
+    # Title
+    ws.cell(row=1, column=1, value="Purchase Orders Report").font = title_font
+    
+    # Filter descriptions
+    ws.cell(row=3, column=1, value="Filters Applied:").font = bold_font
+    filter_row = 3
+    if supplier_id:
+        supplier_name = Supplier.objects.filter(id=supplier_id).values_list('name', flat=True).first()
+        ws.cell(row=filter_row, column=2, value=f"Supplier: {supplier_name}").font = normal_font
+        filter_row += 1
+    if start_date:
+        ws.cell(row=filter_row, column=2, value=f"Start Date: {start_date}").font = normal_font
+        filter_row += 1
+    if end_date:
+        ws.cell(row=filter_row, column=2, value=f"End Date: {end_date}").font = normal_font
+        filter_row += 1
+    if filter_row == 3:
+        ws.cell(row=3, column=2, value="None").font = normal_font
+        filter_row += 1
+        
+    headers = [
+        "PO Number", "Supplier", "Date Created", "Status", 
+        "Item SKU", "Item Name", "Quantity", "Unit Cost (₹)", "Line Subtotal (₹)", "PO Total Amount (₹)"
+    ]
+    
+    start_data_row = filter_row + 2
+    for col_idx, header in enumerate(headers, 1):
+        cell = ws.cell(row=start_data_row, column=col_idx, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal='center')
+        
+    row_idx = start_data_row + 1
+    for po in pos:
+        po_num = po.po_number
+        sup_name = po.supplier.name
+        po_date = po.created_at.strftime('%Y-%m-%d %H:%M')
+        po_status = po.workflow_state.name if po.workflow_state else 'Draft'
+        po_total = float(po.total_amount)
+        
+        lines = po.lines.all().select_related('item')
+        if not lines.exists():
+            ws.cell(row=row_idx, column=1, value=po_num).font = normal_font
+            ws.cell(row=row_idx, column=2, value=sup_name).font = normal_font
+            ws.cell(row=row_idx, column=3, value=po_date).font = normal_font
+            ws.cell(row=row_idx, column=4, value=po_status).font = normal_font
+            ws.cell(row=row_idx, column=10, value=po_total).font = bold_font
+            row_idx += 1
+        else:
+            for line in lines:
+                ws.cell(row=row_idx, column=1, value=po_num).font = normal_font
+                ws.cell(row=row_idx, column=2, value=sup_name).font = normal_font
+                ws.cell(row=row_idx, column=3, value=po_date).font = normal_font
+                ws.cell(row=row_idx, column=4, value=po_status).font = normal_font
+                ws.cell(row=row_idx, column=5, value=line.item.sku).font = normal_font
+                ws.cell(row=row_idx, column=6, value=line.item.name).font = normal_font
+                ws.cell(row=row_idx, column=7, value=line.quantity).font = normal_font
+                ws.cell(row=row_idx, column=8, value=float(line.unit_price)).font = normal_font
+                ws.cell(row=row_idx, column=9, value=float(line.subtotal)).font = normal_font
+                ws.cell(row=row_idx, column=10, value=po_total).font = bold_font
+                row_idx += 1
+                
+    for col in ws.columns:
+        max_len = 0
+        col_letter = openpyxl.utils.get_column_letter(col[0].column)
+        for cell in col:
+            if cell.value:
+                max_len = max(max_len, len(str(cell.value)))
+        ws.column_dimensions[col_letter].width = max(max_len + 3, 10)
+        
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="Purchase_Orders_Report.xlsx"'
+    wb.save(response)
+    return response
 
 @login_required
 def po_detail(request, pk):
@@ -159,8 +426,8 @@ def po_detail(request, pk):
 @transaction.atomic
 def po_create(request):
     """Create a new Purchase Order along with its lines."""
-    suppliers = Supplier.objects.all()
-    items = InventoryItem.objects.all().prefetch_related('catalog_items')
+    suppliers = Supplier.objects.filter(is_active=True)
+    items = InventoryItem.objects.filter(is_active=True).prefetch_related('catalog_items')
 
     if request.method == 'POST':
         po_number = request.POST.get('po_number')
@@ -525,8 +792,8 @@ def po_edit(request, pk):
     if po.workflow_state and po.workflow_state.name != 'Draft':
         return HttpResponse("Editing is only allowed for Draft Purchase Orders.", status=403)
         
-    suppliers = Supplier.objects.all()
-    items = InventoryItem.objects.all().prefetch_related('catalog_items')
+    suppliers = Supplier.objects.filter(is_active=True) | Supplier.objects.filter(id=po.supplier_id)
+    items = InventoryItem.objects.filter(is_active=True).prefetch_related('catalog_items')
     
     if request.method == 'POST':
         supplier_id = request.POST.get('supplier')
@@ -657,8 +924,7 @@ def po_email_modal(request, pk):
         "Confirm receipt and estimated delivery date by replying to this email.",
         "",
         "Best regards,",
-        "Procurement Team",
-        "ERP Framework"
+        "Procurement Team"
     ])
     default_body = "\n".join(body_lines)
     

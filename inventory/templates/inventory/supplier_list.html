@@ -36,6 +36,11 @@
                     <td class="font-bold text-primary">
                         <a href="{% url 'inventory:supplier_detail' supplier.id %}" class="hover:underline">{{ supplier.name }}</a>
                         <div class="flex flex-wrap gap-1 mt-1">
+                            {% if supplier.is_active %}
+                            <span class="badge badge-sm badge-success font-semibold text-white">Active</span>
+                            {% else %}
+                            <span class="badge badge-sm badge-ghost font-semibold opacity-70">Inactive</span>
+                            {% endif %}
                             <span class="badge badge-sm badge-ghost font-normal">{{ supplier.supplied_items.count }} items in catalog</span>
                             {% if supplier.gst_number %}
                             <span class="badge badge-sm badge-info font-normal">GST: {{ supplier.gst_number }}</span>

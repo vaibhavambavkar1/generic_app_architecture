@@ -9,6 +9,7 @@ class Supplier(AuditableMixin):
     address = models.TextField(blank=True)
     gst_number = models.CharField(max_length=20, blank=True, null=True)
     supplied_items = models.ManyToManyField('InventoryItem', through='SupplierCatalogItem', related_name='suppliers', blank=True)
+    is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return self.name
@@ -23,6 +24,7 @@ class InventoryItem(AuditableMixin):
     barcode = models.ImageField(upload_to='barcodes/', blank=True, null=True)
     qr_code = models.ImageField(upload_to='qrcodes/', blank=True, null=True)
     has_expiry_date = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
 
     def generate_barcode(self):
         import barcode

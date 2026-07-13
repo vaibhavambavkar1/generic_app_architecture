@@ -18,6 +18,57 @@
         </div>
     </div>
 
+    <!-- Filters Bar -->
+    <div class="card bg-base-200 shadow p-4">
+        <form method="GET" class="flex flex-wrap items-end gap-4">
+            <!-- Supplier Filter -->
+            <div class="form-control w-full max-w-xs">
+                <label class="label"><span class="label-text font-semibold">Filter by Supplier</span></label>
+                <select name="supplier" class="select select-bordered w-full">
+                    <option value="">All Suppliers</option>
+                    {% for supplier in suppliers %}
+                    <option value="{{ supplier.id }}" {% if selected_supplier_id == supplier.id %}selected{% endif %}>
+                        {{ supplier.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Start Date -->
+            <div class="form-control w-full max-w-xs">
+                <label class="label"><span class="label-text font-semibold">Start Date</span></label>
+                <input type="date" name="start_date" value="{{ start_date|default:'' }}" class="input input-bordered w-full" />
+            </div>
+
+            <!-- End Date -->
+            <div class="form-control w-full max-w-xs">
+                <label class="label"><span class="label-text font-semibold">End Date</span></label>
+                <input type="date" name="end_date" value="{{ end_date|default:'' }}" class="input input-bordered w-full" />
+            </div>
+
+            <!-- Buttons -->
+            <div class="flex items-center gap-2">
+                <button type="submit" class="btn btn-primary btn-sm h-12 px-6">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 8.293A1 1 0 013 7.586V4z"/></svg>
+                    Apply Filters
+                </button>
+                <a href="{% url 'inventory:po_list' %}" class="btn btn-ghost btn-sm h-12 px-6">Clear</a>
+            </div>
+
+            <!-- Export Actions -->
+            <div class="flex items-center gap-2 ml-auto">
+                <a href="{% url 'inventory:po_export_pdf' %}{% if query_string %}?{{ query_string }}{% endif %}" class="btn btn-outline btn-secondary btn-sm h-12 px-4 gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    Export PDF
+                </a>
+                <a href="{% url 'inventory:po_export_excel' %}{% if query_string %}?{{ query_string }}{% endif %}" class="btn btn-outline btn-success btn-sm h-12 px-4 gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a2 2 0 00-2-2H5a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v8m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                    Export Excel
+                </a>
+            </div>
+        </form>
+    </div>
+
     <!-- Table -->
     <div class="overflow-x-auto bg-base-200 rounded-lg shadow">
         <table class="table w-full">

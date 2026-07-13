@@ -451,5 +451,84 @@ class InventoryWorkflowTests(TestCase):
         self.assertTrue(new_item.sku.startswith('SKU-'))
         self.assertEqual(len(new_item.sku), 12) # SKU- + 8 hex chars
 
+    def test_supplier_active_inactive_behavior(self):
+        """Test that deactivating a supplier deactivates all its products, and excludes them from PO creation selection, and vice-versa on activation."""
+        self.client.force_login(self.manager_user)
+        
+        # Link item to supplier
+        SupplierCatalogItem.objects.create(supplier=self.supplier, item=self.item, price=10.00)
+        
+        # Ensure initial state is active
+        self.assertTrue(self.supplier.is_active)
+        self.assertTrue(self.item.is_active)
+        
+        # 1. Deactivate the supplier
+        toggle_url = reverse('inventory:supplier_toggle_status', args=[self.supplier.id])
+        response = self.client.post(toggle_url)
+        self.assertEqual(response.status_code, 302)
+        
+        self.supplier.refresh_from_db()
+        self.item.refresh_from_db()
+        
+        self.assertFalse(self.supplier.is_active)
+        self.assertFalse(self.item.is_active)
+        
+        # Verify excluded from po_create page context
+        response = self.client.get(reverse('inventory:po_create'))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn(self.supplier, response.context['suppliers'])
+        self.assertNotIn(self.item, response.context['items'])
+        
+        # 2. Reactivate the supplier
+        response = self.client.post(toggle_url)
+        self.assertEqual(response.status_code, 302)
+        
+        self.supplier.refresh_from_db()
+        self.item.refresh_from_db()
+        
+        self.assertTrue(self.supplier.is_active)
+        self.assertTrue(self.item.is_active)
+        
+        # Verify available in po_create page context again
+        response = self.client.get(reverse('inventory:po_create'))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(self.supplier, response.context['suppliers'])
+        self.assertIn(self.item, response.context['items'])
+
+    def test_po_export_reports_with_filters(self):
+        """Test listing and exporting Purchase Orders using supplier and datewise filters in PDF and Excel format."""
+        self.client.force_login(self.manager_user)
+        
+        # Create another supplier and PO for filter verification
+        other_supplier = Supplier.objects.create(name="Other Supplier", contact_email="other@supplier.com")
+        other_po = PurchaseOrder.objects.create(
+            po_number="PO-TEST-888",
+            supplier=other_supplier,
+            workflow_state=self.draft,
+            total_amount=200.00
+        )
+        
+        # 1. Test Filtered PO List View
+        response = self.client.get(reverse('inventory:po_list'), {'supplier': self.supplier.id})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(self.po, response.context['purchase_orders'])
+        self.assertNotIn(other_po, response.context['purchase_orders'])
+        
+        # 2. Test PDF export with supplier filter
+        pdf_url = reverse('inventory:po_export_pdf') + f"?supplier={self.supplier.id}"
+        response = self.client.get(pdf_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'application/pdf')
+        self.assertTrue(response.has_header('Content-Disposition'))
+        self.assertIn('attachment', response['Content-Disposition'])
+        
+        # 3. Test Excel export with supplier filter
+        excel_url = reverse('inventory:po_export_excel') + f"?supplier={self.supplier.id}"
+        response = self.client.get(excel_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        self.assertTrue(response.has_header('Content-Disposition'))
+        self.assertIn('attachment', response['Content-Disposition'])
+
 
 
