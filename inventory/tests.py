@@ -530,5 +530,39 @@ class InventoryWorkflowTests(TestCase):
         self.assertTrue(response.has_header('Content-Disposition'))
         self.assertIn('attachment', response['Content-Disposition'])
 
+    def test_po_export_validation_rules(self):
+        """Test validation rules enforcing max 31-day range and complete start/end date selection."""
+        self.client.force_login(self.manager_user)
+        
+        # 1. Date range > 31 days (e.g., 2026-07-01 to 2026-08-05 is 35 days)
+        response = self.client.get(reverse('inventory:po_list'), {
+            'start_date': '2026-07-01',
+            'end_date': '2026-08-05'
+        })
+        self.assertEqual(response.status_code, 200)
+        # Verify empty queryset is returned and message is set
+        self.assertEqual(len(response.context['purchase_orders']), 0)
+        
+        # 2. Start date after end date
+        response = self.client.get(reverse('inventory:po_list'), {
+            'start_date': '2026-07-15',
+            'end_date': '2026-07-10'
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['purchase_orders']), 0)
+        
+        # 3. Only one date selected
+        response = self.client.get(reverse('inventory:po_list'), {
+            'start_date': '2026-07-01'
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['purchase_orders']), 0)
+        
+        # 4. Export URL redirect on invalid date range
+        export_url = reverse('inventory:po_export_pdf') + "?start_date=2026-07-01&end_date=2026-08-05"
+        response = self.client.get(export_url)
+        # Should redirect back to po_list
+        self.assertRedirects(response, reverse('inventory:po_list') + '?supplier=&start_date=2026-07-01&end_date=2026-08-05')
+
 
 

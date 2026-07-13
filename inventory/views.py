@@ -151,21 +151,67 @@ def get_filtered_pos(request):
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
     
+    from datetime import datetime, timedelta
+    import calendar
+    from django.utils import timezone
+    
+    start_dt = None
+    end_dt = None
+    error_message = None
+    
+    # Parse dates
+    if start_date:
+        try:
+            start_dt = datetime.strptime(start_date, "%Y-%m-%d").date()
+        except ValueError:
+            error_message = "Invalid start date format. Use YYYY-MM-DD."
+    if end_date:
+        try:
+            end_dt = datetime.strptime(end_date, "%Y-%m-%d").date()
+        except ValueError:
+            error_message = "Invalid end date format. Use YYYY-MM-DD."
+            
+    # If no dates are specified, default to the current month (first to last day)
+    if not start_date and not end_date:
+        today = timezone.now().date()
+        start_dt = today.replace(day=1)
+        last_day = calendar.monthrange(today.year, today.month)[1]
+        end_dt = today.replace(day=last_day)
+        start_date = start_dt.strftime("%Y-%m-%d")
+        end_date = end_dt.strftime("%Y-%m-%d")
+    
+    # Validate date range requirements
+    if not error_message:
+        if start_dt and end_dt:
+            if (end_dt - start_dt).days > 31:
+                error_message = "Date range cannot exceed 31 days. Please select a shorter range."
+            elif (end_dt - start_dt).days < 0:
+                error_message = "Start date must be before or equal to end date."
+        else:
+            # If one is provided and the other is missing
+            error_message = "Both Start Date and End Date must be selected."
+            
     pos = PurchaseOrder.objects.all().select_related('supplier', 'workflow_state').order_by('-created_at')
     
     if supplier_id:
         pos = pos.filter(supplier_id=supplier_id)
-    if start_date:
-        pos = pos.filter(created_at__date__gte=start_date)
-    if end_date:
-        pos = pos.filter(created_at__date__lte=end_date)
         
-    return pos, supplier_id, start_date, end_date
+    if not error_message and start_dt and end_dt:
+        pos = pos.filter(created_at__date__range=[start_dt, end_dt])
+    else:
+        # If there's an error, don't return any PO records to avoid slow database scans
+        pos = pos.none()
+        
+    return pos, supplier_id, start_date, end_date, error_message
 
 @login_required
 def po_list(request):
     """List of all purchase orders with filter options."""
-    pos, supplier_id, start_date, end_date = get_filtered_pos(request)
+    pos, supplier_id, start_date, end_date, error_message = get_filtered_pos(request)
+    if error_message:
+        from django.contrib import messages
+        messages.error(request, error_message)
+        
     suppliers = Supplier.objects.all()
     
     # Construct query string for export links
@@ -174,6 +220,11 @@ def po_list(request):
     for k in list(params.keys()):
         if not params[k]:
             del params[k]
+    # Set dates in the params so the export links have them even if the user didn't enter them (defaulting to current month)
+    if start_date and 'start_date' not in params:
+        params['start_date'] = start_date
+    if end_date and 'end_date' not in params:
+        params['end_date'] = end_date
     query_string = params.urlencode()
     
     context = {
@@ -190,8 +241,20 @@ def po_list(request):
 def po_export_pdf(request):
     """View to download filtered purchase orders in PDF format."""
     from django.utils import timezone
-    pos, supplier_id, start_date, end_date = get_filtered_pos(request)
+    pos, supplier_id, start_date, end_date, error_message = get_filtered_pos(request)
     
+    if error_message:
+        from django.contrib import messages
+        messages.error(request, error_message)
+        # Redirect back to list page preserving current filter params
+        import urllib.parse
+        q_params = urllib.parse.urlencode({
+            'supplier': supplier_id or '',
+            'start_date': start_date or '',
+            'end_date': end_date or ''
+        })
+        return redirect(reverse('inventory:po_list') + '?' + q_params)
+        
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
         buffer,
@@ -313,8 +376,19 @@ def po_export_excel(request):
     import openpyxl
     from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
     
-    pos, supplier_id, start_date, end_date = get_filtered_pos(request)
+    pos, supplier_id, start_date, end_date, error_message = get_filtered_pos(request)
     
+    if error_message:
+        from django.contrib import messages
+        messages.error(request, error_message)
+        import urllib.parse
+        q_params = urllib.parse.urlencode({
+            'supplier': supplier_id or '',
+            'start_date': start_date or '',
+            'end_date': end_date or ''
+        })
+        return redirect(reverse('inventory:po_list') + '?' + q_params)
+        
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Purchase Orders"
