@@ -16,9 +16,12 @@
         <form hx-post="{% url 'core:save_report' %}" hx-target="#saved-reports-section" class="flex gap-2 w-full sm:w-auto">
             {% csrf_token %}
             <input type="hidden" name="report_id" value="{{ report_id }}">
-            <input type="hidden" name="config_json" value="{{ config_json }}">
-            <input type="text" name="report_name" placeholder="Save configuration as..." class="input input-bordered input-xs max-w-xs text-xs" required>
-            <button type="submit" class="btn btn-primary btn-xs">Save Report</button>
+            <input type="hidden" name="config_json" value='{{ config_json }}'>
+            {% if saved_report_id %}
+            <input type="hidden" name="saved_report_id" value="{{ saved_report_id }}">
+            {% endif %}
+            <input type="text" name="report_name" value="{{ saved_report_name }}" placeholder="Save configuration as..." class="input input-bordered input-xs max-w-xs text-xs" required>
+            <button type="submit" class="btn btn-primary btn-xs">{% if saved_report_id %}Update{% else %}Save{% endif %} Report</button>
         </form>
     </div>
 

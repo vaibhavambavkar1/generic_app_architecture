@@ -21,6 +21,7 @@ urlpatterns = [
     path('reports/preview/', views.report_preview, name='report_preview'),
     path('reports/save/', views.save_report, name='save_report'),
     path('reports/saved/<int:pk>/', views.execute_saved_report, name='execute_saved_report'),
+    path('reports/saved/<int:pk>/delete/', views.delete_saved_report, name='delete_saved_report'),
     path('reports/export/', views.export_report, name='export_report'),
 ]
 

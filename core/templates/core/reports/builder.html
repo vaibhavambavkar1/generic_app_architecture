@@ -1,7 +1,7 @@
 {% extends "core/base.html" %}
 
 {% block content %}
-<div class="space-y-6" x-data="{ reportSelected: false }">
+<div class="space-y-6" x-data="{ reportSelected: {% if edit_report %}true{% else %}false{% endif %} }">
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
             <h1 class="text-3xl font-bold text-base-content">Dynamic Report Builder</h1>
@@ -20,21 +20,26 @@
                 
                 <form id="report-builder-form" 
                       hx-post="{% url 'core:report_preview' %}" 
+                      hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
                       hx-target="#report-preview" 
-                      hx-trigger="change, keyup delay:800ms">
+                      hx-trigger="submit, change{% if edit_report %}, load{% endif %}, keyup delay:800ms">
                     
+                    {% if edit_report %}
+                    <input type="hidden" name="saved_report_id" value="{{ edit_report.id }}">
+                    {% endif %}
+
                     <!-- 1. Select Module -->
                     <div class="form-control w-full">
                         <label class="label"><span class="label-text font-bold">Select Module</span></label>
                         <select name="report_id" 
                                 class="select select-bordered w-full"
-                                hx-get="{% url 'core:load_report_fields' %}"
+                                hx-get="{% url 'core:load_report_fields' %}{% if edit_report %}?saved_report_id={{ edit_report.id }}{% endif %}"
                                 hx-target="#fields-config-container"
-                                hx-trigger="change"
+                                hx-trigger="change{% if edit_report %}, load{% endif %}"
                                 @change="reportSelected = ($event.target.value !== '')">
                             <option value="">-- Choose Module --</option>
                             {% for r_id, r in reports.items %}
-                            <option value="{{ r_id }}">{{ r.name }}</option>
+                            <option value="{{ r_id }}" {% if edit_report.report_id == r_id %}selected{% endif %}>{{ r.name }}</option>
                             {% endfor %}
                         </select>
                     </div>

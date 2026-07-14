@@ -210,9 +210,15 @@ def report_builder(request):
     reports = ReportRegistry.get_all_reports()
     saved_reports = SavedReport.objects.all().order_by('-created_at')
     
+    edit_report = None
+    edit_id = request.GET.get('edit')
+    if edit_id:
+        edit_report = get_object_or_404(SavedReport, pk=edit_id)
+        
     return render(request, 'core/reports/builder.html', {
         'reports': reports,
-        'saved_reports': saved_reports
+        'saved_reports': saved_reports,
+        'edit_report': edit_report
     })
 
 @login_required
@@ -222,6 +228,14 @@ def load_report_fields(request):
     for the selected report.
     """
     report_id = request.GET.get('report_id')
+    saved_report_id = request.GET.get('saved_report_id')
+    
+    saved_config = {}
+    if saved_report_id:
+        saved_report = get_object_or_404(SavedReport, pk=saved_report_id)
+        report_id = saved_report.report_id
+        saved_config = saved_report.config
+        
     if not report_id:
         return HttpResponse("")
         
@@ -235,7 +249,9 @@ def load_report_fields(request):
         'report': report,
         'fields': report.get_fields(),
         'group_by_fields': report.get_group_by_fields(),
-        'aggregates': report.get_aggregates()
+        'aggregates': report.get_aggregates(),
+        'saved_config': saved_config,
+        'saved_report_id': saved_report_id
     })
 
 @login_required
@@ -385,11 +401,21 @@ def report_preview(request):
         for alias in config.get('formulas', {}).keys():
             headers[alias] = f"Formula: {alias}"
             
+        saved_report_id = request.POST.get('saved_report_id')
+        saved_report_name = ""
+        if saved_report_id:
+            try:
+                saved_report_name = SavedReport.objects.get(pk=saved_report_id).name
+            except SavedReport.DoesNotExist:
+                pass
+
         return render(request, 'core/reports/partials/preview_table.html', {
             'data': data,
             'headers': headers,
             'report_id': report_id,
-            'config_json': json.dumps(config)
+            'config_json': json.dumps(config),
+            'saved_report_id': saved_report_id,
+            'saved_report_name': saved_report_name
         })
     except Exception as e:
         return render(request, 'core/auth/partials/error_message.html', {
@@ -400,11 +426,12 @@ def report_preview(request):
 @require_POST
 def save_report(request):
     """
-    Saves a report configuration to database.
+    Saves or updates a report configuration in the database.
     """
     name = request.POST.get('report_name')
     report_id = request.POST.get('report_id')
     config_json = request.POST.get('config_json')
+    saved_report_id = request.POST.get('saved_report_id')
     
     if not name or not report_id or not config_json:
         return render(request, 'core/auth/partials/error_message.html', {
@@ -413,18 +440,27 @@ def save_report(request):
         
     try:
         config = json.loads(config_json)
-        SavedReport.objects.create(
-            name=name,
-            report_id=report_id,
-            config=config,
-            created_by=request.user
-        )
+        if saved_report_id:
+            # Update existing report
+            saved_report = get_object_or_404(SavedReport, pk=saved_report_id)
+            saved_report.name = name
+            saved_report.config = config
+            saved_report.save()
+            msg = "Report configuration updated successfully!"
+        else:
+            # Create new report
+            SavedReport.objects.create(
+                name=name,
+                report_id=report_id,
+                config=config,
+                created_by=request.user
+            )
+            msg = "Report configuration saved successfully!"
         
-        # Return toast success or redirect list using HTMX trigger header
         saved_reports = SavedReport.objects.all().order_by('-created_at')
         response = render(request, 'core/reports/partials/saved_reports_list.html', {
             'saved_reports': saved_reports,
-            'toast_message': "Report configuration saved successfully!",
+            'toast_message': msg,
             'toast_type': 'success'
         })
         response['HX-Trigger'] = 'reportSaved'
@@ -534,4 +570,21 @@ def export_report(request):
         return HttpResponseBadRequest("Unsupported format")
     except Exception as e:
         return HttpResponse(f"Export failed: {str(e)}", status=500)
+
+
+@login_required
+@require_POST
+def delete_saved_report(request, pk):
+    """
+    Deletes a saved report configuration from the database.
+    """
+    saved_report = get_object_or_404(SavedReport, pk=pk)
+    saved_report.delete()
+    
+    saved_reports = SavedReport.objects.all().order_by('-created_at')
+    return render(request, 'core/reports/partials/saved_reports_list.html', {
+        'saved_reports': saved_reports,
+        'toast_message': "Report configuration deleted successfully!",
+        'toast_type': 'success'
+    })
 

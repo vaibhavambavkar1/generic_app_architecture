@@ -1,12 +1,23 @@
-<div class="space-y-6" x-data="{ filterCount: 0, aggregateCount: 0, formulaCount: 0 }">
-    
+<div class="space-y-6" x-data="{ 
+    filterCount: {% if saved_config.filters %}{{ saved_config.filters|length }}{% else %}0{% endif %}, 
+    aggregateCount: {% if saved_config.aggregates %}{{ saved_config.aggregates|length }}{% else %}0{% endif %}, 
+    formulas: [
+        {% for alias, expr in saved_config.formulas.items %}
+        { alias: '{{ alias|escapejs }}', expr: '{{ expr|escapejs }}' }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ]
+}">
+    {% if saved_report_id %}
+    <input type="hidden" name="saved_report_id" value="{{ saved_report_id }}">
+    {% endif %}
+
     <!-- 2. Available Fields -->
     <div class="form-control">
         <label class="label"><span class="label-text font-bold">Select Fields to Display</span></label>
         <div class="grid grid-cols-2 gap-2 bg-base-300/30 p-3 rounded-lg border border-base-300">
             {% for f_name, f_label in fields.items %}
             <label class="label cursor-pointer justify-start gap-3">
-                <input type="checkbox" name="fields" value="{{ f_name }}" checked class="checkbox checkbox-primary checkbox-sm">
+                <input type="checkbox" name="fields" value="{{ f_name }}" {% if not saved_config or f_name in saved_config.fields %}checked{% endif %} class="checkbox checkbox-primary checkbox-sm">
                 <span class="label-text text-xs">{{ f_label }}</span>
             </label>
             {% endfor %}
@@ -28,7 +39,11 @@
             </button>
         </div>
         <div id="filters-container" class="space-y-2">
-            <!-- Dynamic filter rows injected here -->
+            {% if saved_config.filters %}
+                {% for filter in saved_config.filters %}
+                    {% include "core/reports/partials/filter_row.html" with index=forloop.counter fields=report.get_fields selected_field=filter.field selected_operator=filter.operator selected_value=filter.value %}
+                {% endfor %}
+            {% endif %}
         </div>
     </div>
 
@@ -39,7 +54,7 @@
         <div class="grid grid-cols-2 gap-2 bg-base-300/30 p-3 rounded-lg border border-base-300">
             {% for f in group_by_fields %}
             <label class="label cursor-pointer justify-start gap-3">
-                <input type="checkbox" name="group_by" value="{{ f }}" class="checkbox checkbox-secondary checkbox-sm">
+                <input type="checkbox" name="group_by" value="{{ f }}" {% if f in saved_config.group_by %}checked{% endif %} class="checkbox checkbox-secondary checkbox-sm">
                 <span class="label-text text-xs">{{ f }}</span>
             </label>
             {% endfor %}
@@ -62,7 +77,11 @@
             </button>
         </div>
         <div id="aggregates-container" class="space-y-2">
-            <!-- Dynamic aggregate rows injected here -->
+            {% if saved_config.aggregates %}
+                {% for agg in saved_config.aggregates %}
+                    {% include "core/reports/partials/aggregate_row.html" with index=forloop.counter fields=report.get_fields selected_field=agg.field selected_function=agg.function selected_alias=agg.alias %}
+                {% endfor %}
+            {% endif %}
         </div>
     </div>
 
@@ -72,17 +91,17 @@
             <span class="label-text font-bold">Formulas (Derived Columns)</span>
             <button type="button" 
                     class="btn btn-outline btn-xs btn-accent gap-1"
-                    @click="formulaCount++">
+                    @click="formulas.push({alias: '', expr: ''})">
                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
                 Add Formula
             </button>
         </div>
         <div class="space-y-2">
-            <template x-for="i in formulaCount" :key="i">
+            <template x-for="(item, idx) in formulas" :key="idx">
                 <div class="flex gap-2 items-center bg-base-300/40 p-2 rounded-lg border border-base-300">
-                    <input type="text" name="formula_alias" placeholder="Alias (e.g. total_cost)" class="input input-bordered input-xs w-1/3 text-xs" required>
-                    <input type="text" name="formula_expression" placeholder="Expression (e.g. stock_level * unit_price)" class="input input-bordered input-xs w-2/3 text-xs" required>
-                    <button type="button" class="btn btn-error btn-xs btn-square text-white" @click="formulaCount--">×</button>
+                    <input type="text" name="formula_alias" :value="item.alias" placeholder="Alias (e.g. total_cost)" class="input input-bordered input-xs w-1/3 text-xs" required>
+                    <input type="text" name="formula_expression" :value="item.expr" placeholder="Expression (e.g. stock_level * unit_price)" class="input input-bordered input-xs w-2/3 text-xs" required>
+                    <button type="button" class="btn btn-error btn-xs btn-square text-white" @click="formulas.splice(idx, 1)">×</button>
                 </div>
             </template>
         </div>
@@ -95,15 +114,15 @@
             <select name="sort_field" class="select select-bordered select-sm w-full">
                 <option value="">-- None --</option>
                 {% for f_name, f_label in fields.items %}
-                <option value="{{ f_name }}">{{ f_label }}</option>
+                <option value="{{ f_name }}" {% if saved_config.sorting.0.field == f_name %}selected{% endif %}>{{ f_label }}</option>
                 {% endfor %}
             </select>
         </div>
         <div class="form-control">
             <label class="label-text text-xs font-bold mb-1">Direction</label>
             <select name="sort_direction" class="select select-bordered select-sm w-full">
-                <option value="asc">Ascending</option>
-                <option value="desc">Descending</option>
+                <option value="asc" {% if saved_config.sorting.0.direction == "asc" %}selected{% endif %}>Ascending</option>
+                <option value="desc" {% if saved_config.sorting.0.direction == "desc" %}selected{% endif %}>Descending</option>
             </select>
         </div>
     </div>

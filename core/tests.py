@@ -212,3 +212,22 @@ class ReportUITestsCase(TestCase):
         response = self.client.get(reverse('core:execute_saved_report', args=[saved.pk]))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Admin List")
+
+        # Edit/Update Report Configuration
+        update_data = {
+            'report_id': 'user_report',
+            'report_name': 'Updated Admin List',
+            'config_json': '{"fields": ["username"]}',
+            'saved_report_id': saved.pk
+        }
+        response = self.client.post(reverse('core:save_report'), data=update_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Updated Admin List")
+        saved.refresh_from_db()
+        self.assertEqual(saved.name, 'Updated Admin List')
+        self.assertEqual(saved.config['fields'], ['username'])
+
+        # Delete Report Configuration
+        delete_response = self.client.post(reverse('core:delete_saved_report', args=[saved.pk]))
+        self.assertEqual(delete_response.status_code, 200)
+        self.assertFalse(SavedReport.objects.filter(pk=saved.pk).exists())
