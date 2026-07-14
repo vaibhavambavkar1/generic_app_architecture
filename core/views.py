@@ -236,8 +236,13 @@ def load_report_fields(request):
     saved_config = {}
     if saved_report_id:
         saved_report = get_object_or_404(SavedReport, pk=saved_report_id)
-        report_id = saved_report.report_id
-        saved_config = saved_report.config
+        # Check if the user selected a different report from the dropdown
+        if not report_id or report_id == saved_report.report_id:
+            report_id = saved_report.report_id
+            saved_config = saved_report.config
+        else:
+            # Module changed - drop the saved report editing context and load clean state for the new module
+            saved_report_id = None
         
     if not report_id:
         return HttpResponse("")
