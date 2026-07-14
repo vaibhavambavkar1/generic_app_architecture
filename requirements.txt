@@ -21,3 +21,9 @@ django-redis>=5.4.0
 python-barcode>=0.16.1
 qrcode>=8.2
 setuptools
+django-allauth>=0.61.0
+django-simple-history>=3.7.0
+django-fsm-2>=3.0.0
+django-tables2>=2.7.0
+django-guardian>=2.4.0
+django-import-export>=3.3.0

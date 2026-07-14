@@ -125,13 +125,14 @@ class ReportEngineTestCase(TestCase):
             ]
         }
         data = engine.execute('user_report', self.user, config, use_cache=False)
-        # Should have 2 groups: is_staff=True (3 users) and is_staff=False (1 user)
+        # Should have 2 groups: is_staff=True (3 users) and is_staff=False (1 user, or 2 if Guardian AnonymousUser is present)
         self.assertEqual(len(data), 2)
         for row in data:
             if row['is_staff']:
                 self.assertEqual(row['user_count'], 3)
             else:
-                self.assertEqual(row['user_count'], 1)
+                expected_count = 2 if User.objects.filter(username='AnonymousUser').exists() else 1
+                self.assertEqual(row['user_count'], expected_count)
 
     def test_report_exports(self):
         engine = ReportEngine()

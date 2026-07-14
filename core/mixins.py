@@ -1,6 +1,7 @@
 import json
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
+from simple_history.models import HistoricalRecords
 
 class AuditableMixin(models.Model):
     """
@@ -8,6 +9,8 @@ class AuditableMixin(models.Model):
     Usage: Inherit this alongside models.Model.
     Important: Set `_audit_user_id` on the instance before save to track the user.
     """
+    history = HistoricalRecords(inherit=True)
+
     class Meta:
         abstract = True
 

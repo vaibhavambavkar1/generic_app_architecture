@@ -1,6 +1,7 @@
 from django.db import models
 from core.mixins import AuditableMixin
 from core.models import WorkflowMixin
+from django_fsm import transition
 
 class Supplier(AuditableMixin):
     name = models.CharField(max_length=150, unique=True)
@@ -169,6 +170,21 @@ class PurchaseOrder(WorkflowMixin):
             self.po_number = f"{prefix}{next_sequence:04d}"
             
         super().save(*args, **kwargs)
+
+    @transition(field='status', source='Draft', target='Submitted')
+    def fsm_submit(self):
+        """Transition PO to Submitted status"""
+        pass
+
+    @transition(field='status', source='Submitted', target='Approved')
+    def fsm_approve(self):
+        """Transition PO to Approved status"""
+        pass
+
+    @transition(field='status', source='Approved', target='Received')
+    def fsm_receive(self):
+        """Transition PO to Received status"""
+        pass
 
     def __str__(self):
         return f"{self.po_number} - {self.supplier.name}"

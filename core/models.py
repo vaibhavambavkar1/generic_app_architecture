@@ -108,6 +108,7 @@ class ApprovalRoute(models.Model):
         return user.groups.filter(id=self.required_group.id).exists()
 
 from core.mixins import AuditableMixin
+from django_fsm import FSMField
 
 class WorkflowMixin(AuditableMixin):
     """
@@ -120,6 +121,7 @@ class WorkflowMixin(AuditableMixin):
         blank=True,
         related_name='%(class)s_instances'
     )
+    status = FSMField(default='Draft')
     
     class Meta:
         abstract = True
@@ -174,9 +176,34 @@ class WorkflowMixin(AuditableMixin):
         # 2. State Change
         old_state = self.workflow_state
         self.workflow_state = transition.to_state
+        
+        # Execute django-fsm transition if one exists
+        source_state_name = old_state.name if old_state else 'Draft'
+        self.status = source_state_name  # Ensure FSM state is synchronized
+        target_state_name = transition.to_state.name
+        
+        fsm_transition_called = False
+        for attr_name in dir(self):
+            try:
+                attr = getattr(self, attr_name)
+            except AttributeError:
+                continue
+            if hasattr(attr, '_django_fsm'):
+                transitions_dict = attr._django_fsm.transitions
+                for source, transition_meta in transitions_dict.items():
+                    if (source == source_state_name or source == '*') and transition_meta.target == target_state_name:
+                        attr()  # Call the fsm decorated method
+                        fsm_transition_called = True
+                        break
+                if fsm_transition_called:
+                    break
+                    
+        if not fsm_transition_called:
+            self.status = target_state_name
+            
         if user:
             self._audit_user_id = user.id
-        self.save(update_fields=['workflow_state'])
+        self.save(update_fields=['workflow_state', 'status'])
         
         # 3. Emit Event (Event Bus)
         EventBus.publish(

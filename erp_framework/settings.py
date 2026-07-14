@@ -50,6 +50,10 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'import_export',
+    'simple_history',
+    'guardian',
+    'allauth',
+    'allauth.account',
 ]
 
 MIDDLEWARE = [
@@ -58,11 +62,13 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
     'core.middleware.ThreadLocalUserMiddleware',
     'core.middleware.OrganizationEnforcementMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_htmx.middleware.HtmxMiddleware',
+    'simple_history.middleware.HistoryRequestMiddleware',
     #'core.middleware.LicenseEnforcementMiddleware',
     'core.middleware.ExceptionLoggingMiddleware',
 ]
@@ -179,6 +185,12 @@ SIMPLE_JWT = {
 
 LOGIN_URL = 'core:login'
 LOGOUT_REDIRECT_URL = 'core:login'
+
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+    'guardian.backends.ObjectPermissionBackend',
+)
 
 DAISY_SETTINGS = {
     # Branding
