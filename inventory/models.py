@@ -11,6 +11,11 @@ class Supplier(AuditableMixin):
     supplied_items = models.ManyToManyField('InventoryItem', through='SupplierCatalogItem', related_name='suppliers', blank=True)
     is_active = models.BooleanField(default=True)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['is_active']),
+        ]
+
     def __str__(self):
         return self.name
 
@@ -109,6 +114,13 @@ class InventoryItem(AuditableMixin):
                 price=self.unit_price
             )
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['is_active']),
+            models.Index(fields=['stock_level']),
+            models.Index(fields=['unit_price']),
+        ]
+
     def __str__(self):
         return f"{self.name} ({self.sku})"
 
@@ -119,6 +131,9 @@ class SupplierCatalogItem(AuditableMixin):
 
     class Meta:
         unique_together = ('supplier', 'item')
+        indexes = [
+            models.Index(fields=['price']),
+        ]
 
     def __str__(self):
         return f"{self.supplier.name} - {self.item.name} (Rs. {self.price})"
@@ -128,6 +143,11 @@ class PurchaseOrder(WorkflowMixin):
     supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE, related_name='purchase_orders')
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['created_at']),
+        ]
 
     def save(self, *args, **kwargs):
         if not self.po_number:
@@ -162,6 +182,11 @@ class POLineItem(AuditableMixin):
     received_unit_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     expiry_date = models.DateField(null=True, blank=True)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['expiry_date']),
+        ]
+
     @property
     def subtotal(self):
         return self.quantity * self.unit_price
@@ -182,6 +207,10 @@ class InventoryItemPriceLog(models.Model):
 
     class Meta:
         ordering = ['-changed_at']
+        indexes = [
+            models.Index(fields=['item', '-changed_at']),
+            models.Index(fields=['changed_at']),
+        ]
 
     def __str__(self):
         return f"{self.item.sku} - {self.price} at {self.changed_at}"
