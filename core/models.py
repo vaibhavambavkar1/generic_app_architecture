@@ -231,3 +231,82 @@ class UserProfile(models.Model):
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
         UserProfile.objects.create(user=instance)
+
+
+class BaseMasterData(AuditableMixin):
+    """
+    Abstract base model representing core Master Data (e.g. Customers, Suppliers, Products).
+    """
+    name = models.CharField(max_length=255)
+    code = models.CharField(max_length=100, unique=True, blank=True)
+    description = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        abstract = True
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+
+class BaseCatalogItem(AuditableMixin):
+    """
+    Abstract base model representing catalog items mapping suppliers/clients to products.
+    """
+    price = models.DecimalField(max_digits=12, decimal_places=2)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        abstract = True
+
+
+class BaseInventoryItem(BaseMasterData):
+    """
+    Abstract base model representing inventory items with stock tracking features.
+    """
+    stock_level = models.IntegerField(default=0)
+    reorder_threshold = models.IntegerField(default=10)
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+
+    class Meta:
+        abstract = True
+
+
+class Attachment(AuditableMixin):
+    """
+    Generic reusable Attachment model linked to any entity via ContentTypes.
+    """
+    file = models.FileField(upload_to='attachments/')
+    filename = models.CharField(max_length=255, blank=True)
+    file_size = models.PositiveIntegerField(help_text="File size in bytes", blank=True, null=True)
+    
+    # Generic relationship fields
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey('content_type', 'object_id')
+    
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        null=True, 
+        blank=True, 
+        on_delete=models.SET_NULL,
+        related_name='uploaded_attachments'
+    )
+
+    class Meta:
+        ordering = ['-uploaded_at']
+
+    def save(self, *args, **kwargs):
+        if self.file and not self.filename:
+            import os
+            self.filename = os.path.basename(self.file.name)
+        if self.file and not self.file_size:
+            try:
+                self.file_size = self.file.size
+            except Exception:
+                pass
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.filename} ({self.file_size} bytes) attached to {self.content_type.model} #{self.object_id}"

@@ -25,8 +25,16 @@ class ApprovalRouteInline(admin.TabularInline):
     model = ApprovalRoute
     extra = 1
 
+from .models import Attachment
+
 @admin.register(Transition)
 class TransitionAdmin(admin.ModelAdmin):
     list_display = ('name', 'workflow', 'from_state', 'to_state')
     list_filter = ('workflow',)
     inlines = [ApprovalRouteInline]
+
+@admin.register(Attachment)
+class AttachmentAdmin(admin.ModelAdmin):
+    list_display = ('filename', 'file_size', 'content_type', 'object_id', 'uploaded_at', 'uploaded_by')
+    list_filter = ('content_type', 'uploaded_at')
+    search_fields = ('filename',)
