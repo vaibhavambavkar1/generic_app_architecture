@@ -1,18 +1,18 @@
-{% if toast_message %}
-<div class="toast toast-top toast-end z-50">
-    <div class="alert alert-{{ toast_type }}">
-        <span>{{ toast_message }}</span>
-    </div>
-    <script>
-        setTimeout(() => {
-            const toast = document.querySelector('.toast');
-            if (toast) toast.remove();
-        }, 3000);
-    </script>
-</div>
-{% endif %}
-
 <div class="overflow-x-auto" id="saved-reports-list-container">
+    {% if toast_message %}
+    <div class="toast toast-top toast-end z-50">
+        <div class="alert alert-{{ toast_type }}">
+            <span>{{ toast_message }}</span>
+        </div>
+        <script>
+            setTimeout(() => {
+                const toast = document.querySelector('.toast');
+                if (toast) toast.remove();
+            }, 3000);
+        </script>
+    </div>
+    {% endif %}
+
     <table class="table table-compact w-full">
         <thead>
             <tr>
