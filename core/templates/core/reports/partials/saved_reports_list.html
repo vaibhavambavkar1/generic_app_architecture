@@ -12,7 +12,7 @@
 </div>
 {% endif %}
 
-<div class="overflow-x-auto">
+<div class="overflow-x-auto" id="saved-reports-list-container">
     <table class="table table-compact w-full">
         <thead>
             <tr>
@@ -39,14 +39,35 @@
                             Edit
                         </a>
                         <button class="btn btn-xs btn-outline btn-error gap-1"
-                                hx-post="{% url 'core:delete_saved_report' report.pk %}"
-                                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
-                                hx-confirm="Are you sure you want to delete this report configuration?"
-                                hx-target="#saved-reports-section">
+                                onclick="document.getElementById('delete_modal_{{ report.pk }}').showModal()">
                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                             Delete
                         </button>
                     </div>
+
+                    <!-- Delete Confirmation Modal Component -->
+                    <dialog id="delete_modal_{{ report.pk }}" class="modal">
+                      <div class="modal-box bg-base-200 border border-base-300">
+                        <h3 class="font-bold text-lg text-error flex items-center gap-2">
+                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                            Confirm Deletion
+                        </h3>
+                        <p class="py-4 text-sm text-base-content/85">Are you sure you want to delete the report configuration <strong>"{{ report.name }}"</strong>? This action cannot be undone.</p>
+                        <div class="modal-action">
+                          <form method="dialog" class="flex gap-2">
+                            <button class="btn btn-sm btn-ghost">Cancel</button>
+                            <button class="btn btn-sm btn-error text-white"
+                                    hx-post="{% url 'core:delete_saved_report' report.pk %}"
+                                    hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                                    hx-target="#saved-reports-list-container"
+                                    hx-swap="outerHTML"
+                                    onclick="this.closest('dialog').close()">
+                                Delete
+                            </button>
+                          </form>
+                        </div>
+                      </div>
+                    </dialog>
                 </td>
             </tr>
             {% empty %}

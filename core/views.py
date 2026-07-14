@@ -213,7 +213,10 @@ def report_builder(request):
     edit_report = None
     edit_id = request.GET.get('edit')
     if edit_id:
-        edit_report = get_object_or_404(SavedReport, pk=edit_id)
+        try:
+            edit_report = SavedReport.objects.get(pk=edit_id)
+        except SavedReport.DoesNotExist:
+            return redirect('core:report_builder')
         
     return render(request, 'core/reports/builder.html', {
         'reports': reports,
@@ -581,6 +584,14 @@ def delete_saved_report(request, pk):
     saved_report = get_object_or_404(SavedReport, pk=pk)
     saved_report.delete()
     
+    # Check if the deleted report is currently being edited in the Referer URL
+    referer = request.META.get('HTTP_REFERER', '')
+    if f'?edit={pk}' in referer or f'&edit={pk}' in referer:
+        response = HttpResponse("")
+        from django.urls import reverse
+        response['HX-Redirect'] = reverse('core:report_builder')
+        return response
+        
     saved_reports = SavedReport.objects.all().order_by('-created_at')
     return render(request, 'core/reports/partials/saved_reports_list.html', {
         'saved_reports': saved_reports,
