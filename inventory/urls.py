@@ -31,6 +31,7 @@ urlpatterns = [
     path('pos/<int:pk>/delete/', views.po_delete, name='po_delete'),
     path('pos/<int:pk>/edit/', views.po_edit, name='po_edit'),
     path('pos/create/', views.po_create, name='po_create'),
+    path('pos/auto-generate/', views.auto_generate_pos, name='auto_generate_pos'),
     path('pos/<int:pk>/receive-modal/<int:transition_id>/', views.po_receive_modal, name='po_receive_modal'),
     path('pos/<int:pk>/receive-submit/<int:transition_id>/', views.po_receive_submit, name='po_receive_submit'),
     path('pos/<int:pk>/email-modal/', views.po_email_modal, name='po_email_modal'),

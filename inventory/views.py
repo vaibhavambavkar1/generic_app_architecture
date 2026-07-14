@@ -3,6 +3,7 @@ import os
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
+from django.contrib import messages
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Sum, F, DecimalField, ExpressionWrapper
 from django.http import HttpResponse, HttpResponseRedirect, FileResponse
@@ -1449,6 +1450,86 @@ def export_supplier_catalog_excel(request, pk):
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     wb.save(response)
     return response
+
+@login_required
+@transaction.atomic
+def auto_generate_pos(request):
+    """
+    Auto-generates Purchase Orders for all active products with a reorder alert.
+    Orders the quantity matching the item's reorder threshold (minimum stock level).
+    POs are prepared supplier-wise; deactivated/disabled suppliers are ignored.
+    """
+    if request.method != 'POST':
+        return HttpResponseRedirect(reverse('inventory:dashboard'))
+
+    # Find active products that have reached/fallen below their reorder threshold
+    alert_items = InventoryItem.objects.filter(
+        is_active=True,
+        stock_level__lte=F('reorder_threshold')
+    )
+
+    # Find all catalog entries for these items from active suppliers
+    catalog_entries = SupplierCatalogItem.objects.filter(
+        item__in=alert_items,
+        supplier__is_active=True
+    ).select_related('supplier', 'item')
+
+    # Group by supplier
+    from collections import defaultdict
+    supplier_groups = defaultdict(list)
+    for entry in catalog_entries:
+        supplier_groups[entry.supplier].append(entry)
+
+    if not supplier_groups:
+        messages.warning(request, "No low-stock items with active suppliers were found.")
+        if request.headers.get('HX-Request'):
+            response = HttpResponse()
+            response['HX-Redirect'] = reverse('inventory:dashboard')
+            return response
+        return redirect('inventory:dashboard')
+
+    # Get the initial draft state for Purchase Orders
+    draft_state = State.objects.filter(
+        workflow__model_name='inventory.PurchaseOrder',
+        is_initial=True
+    ).first()
+
+    po_count = 0
+    for supplier, entries in supplier_groups.items():
+        # Create a new PurchaseOrder
+        po = PurchaseOrder.objects.create(
+            supplier=supplier,
+            workflow_state=draft_state,
+        )
+
+        total_amount = 0.00
+        for entry in entries:
+            qty = entry.item.reorder_threshold
+            price = entry.price
+
+            POLineItem.objects.create(
+                purchase_order=po,
+                item=entry.item,
+                quantity=qty,
+                unit_price=price
+            )
+            total_amount += float(qty) * float(price)
+
+        po.total_amount = total_amount
+        po.save()
+        po_count += 1
+
+    messages.success(
+        request,
+        f"Successfully auto-generated {po_count} Purchase Order(s) for products with reorder alerts."
+    )
+
+    if request.headers.get('HX-Request'):
+        response = HttpResponse()
+        response['HX-Redirect'] = reverse('inventory:po_list')
+        return response
+
+    return redirect('inventory:po_list')
 
 
 

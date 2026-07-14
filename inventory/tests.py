@@ -663,5 +663,78 @@ class InventoryWorkflowTests(TestCase):
             self.assertEqual(response.status_code, 200)
             mock_header.assert_called_once()
 
+    def test_auto_generate_pos(self):
+        """Test auto-generating POs for low-stock products from active suppliers."""
+        self.client.force_login(self.manager_user)
+
+        # 1. Setup a low-stock active item
+        low_stock_item = InventoryItem.objects.create(
+            sku="LOW-SKU-999",
+            name="Low Stock Widget",
+            stock_level=5,
+            reorder_threshold=15,
+            unit_price=20.00
+        )
+        SupplierCatalogItem.objects.create(
+            supplier=self.supplier,
+            item=low_stock_item,
+            price=18.50
+        )
+
+        # 2. Setup an item with adequate stock (should be ignored)
+        high_stock_item = InventoryItem.objects.create(
+            sku="HIGH-SKU-999",
+            name="High Stock Widget",
+            stock_level=100,
+            reorder_threshold=15,
+            unit_price=20.00
+        )
+        SupplierCatalogItem.objects.create(
+            supplier=self.supplier,
+            item=high_stock_item,
+            price=18.50
+        )
+
+        # 3. Setup a low-stock item for an inactive supplier (should be ignored)
+        inactive_supplier = Supplier.objects.create(
+            name="Inactive Supplier",
+            contact_email="inactive@supplier.com",
+            is_active=False
+        )
+        another_low_item = InventoryItem.objects.create(
+            sku="LOW-SKU-888",
+            name="Another Low Stock",
+            stock_level=2,
+            reorder_threshold=10,
+            unit_price=5.00
+        )
+        SupplierCatalogItem.objects.create(
+            supplier=inactive_supplier,
+            item=another_low_item,
+            price=4.50
+        )
+
+        # Run auto-generation POST request
+        initial_po_count = PurchaseOrder.objects.count()
+        response = self.client.post(reverse('inventory:auto_generate_pos'))
+        self.assertEqual(response.status_code, 302)  # Should redirect to po_list
+        
+        # Verify 1 new PO is created (for self.supplier, and not for inactive_supplier)
+        self.assertEqual(PurchaseOrder.objects.count(), initial_po_count + 1)
+        
+        # Verify PO contents
+        new_po = PurchaseOrder.objects.latest('id')
+        self.assertEqual(new_po.supplier, self.supplier)
+        self.assertTrue(new_po.workflow_state.is_initial)
+        self.assertEqual(new_po.workflow_state.name, 'Draft')
+        
+        # Verify PO line item has low_stock_item, quantity matches reorder_threshold, and price matches catalog
+        self.assertEqual(new_po.lines.count(), 1)
+        line = new_po.lines.first()
+        self.assertEqual(line.item, low_stock_item)
+        self.assertEqual(line.quantity, 15)  # Matches reorder_threshold
+        self.assertEqual(float(line.unit_price), 18.50)  # Matches catalog price
+        self.assertEqual(float(new_po.total_amount), 15 * 18.50)
+
 
 
