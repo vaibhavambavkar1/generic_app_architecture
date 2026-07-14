@@ -9,3 +9,8 @@ class InventoryConfig(AppConfig):
         from core.sdk.registry import PluginRegistry
         from .plugins import InventoryPlugin
         PluginRegistry.register(InventoryPlugin)
+
+        from core.reports.registry import ReportRegistry
+        from .reports import InventoryItemReport, PurchaseOrderReport
+        ReportRegistry.register('inventory_items', InventoryItemReport)
+        ReportRegistry.register('purchase_orders', PurchaseOrderReport)

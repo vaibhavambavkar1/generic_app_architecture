@@ -1,0 +1,118 @@
+<div class="space-y-6" x-data="{ filterCount: 0, aggregateCount: 0, formulaCount: 0 }">
+    
+    <!-- 2. Available Fields -->
+    <div class="form-control">
+        <label class="label"><span class="label-text font-bold">Select Fields to Display</span></label>
+        <div class="grid grid-cols-2 gap-2 bg-base-300/30 p-3 rounded-lg border border-base-300">
+            {% for f_name, f_label in fields.items %}
+            <label class="label cursor-pointer justify-start gap-3">
+                <input type="checkbox" name="fields" value="{{ f_name }}" checked class="checkbox checkbox-primary checkbox-sm">
+                <span class="label-text text-xs">{{ f_label }}</span>
+            </label>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- 3. Choose Filters -->
+    <div>
+        <div class="flex justify-between items-center mb-2">
+            <span class="label-text font-bold">Filters</span>
+            <button type="button" 
+                    class="btn btn-outline btn-xs btn-primary gap-1"
+                    hx-get="{% url 'core:add_filter_row' %}?report_id={{ report_id }}"
+                    hx-vals='js:{index: ++filterCount}'
+                    hx-target="#filters-container"
+                    hx-swap="beforeend">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                Add Filter
+            </button>
+        </div>
+        <div id="filters-container" class="space-y-2">
+            <!-- Dynamic filter rows injected here -->
+        </div>
+    </div>
+
+    <!-- 4. Choose Group By -->
+    {% if group_by_fields %}
+    <div class="form-control">
+        <label class="label"><span class="label-text font-bold">Group By (Optional)</span></label>
+        <div class="grid grid-cols-2 gap-2 bg-base-300/30 p-3 rounded-lg border border-base-300">
+            {% for f in group_by_fields %}
+            <label class="label cursor-pointer justify-start gap-3">
+                <input type="checkbox" name="group_by" value="{{ f }}" class="checkbox checkbox-secondary checkbox-sm">
+                <span class="label-text text-xs">{{ f }}</span>
+            </label>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 5. Choose Aggregate -->
+    <div>
+        <div class="flex justify-between items-center mb-2">
+            <span class="label-text font-bold">Aggregates (requires Group By)</span>
+            <button type="button" 
+                    class="btn btn-outline btn-xs btn-secondary gap-1"
+                    hx-get="{% url 'core:add_aggregate_row' %}?report_id={{ report_id }}"
+                    hx-vals='js:{index: ++aggregateCount}'
+                    hx-target="#aggregates-container"
+                    hx-swap="beforeend">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                Add Aggregate
+            </button>
+        </div>
+        <div id="aggregates-container" class="space-y-2">
+            <!-- Dynamic aggregate rows injected here -->
+        </div>
+    </div>
+
+    <!-- 6. Formulas -->
+    <div>
+        <div class="flex justify-between items-center mb-2">
+            <span class="label-text font-bold">Formulas (Derived Columns)</span>
+            <button type="button" 
+                    class="btn btn-outline btn-xs btn-accent gap-1"
+                    @click="formulaCount++">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                Add Formula
+            </button>
+        </div>
+        <div class="space-y-2">
+            <template x-for="i in formulaCount" :key="i">
+                <div class="flex gap-2 items-center bg-base-300/40 p-2 rounded-lg border border-base-300">
+                    <input type="text" name="formula_alias" placeholder="Alias (e.g. total_cost)" class="input input-bordered input-xs w-1/3 text-xs" required>
+                    <input type="text" name="formula_expression" placeholder="Expression (e.g. stock_level * unit_price)" class="input input-bordered input-xs w-2/3 text-xs" required>
+                    <button type="button" class="btn btn-error btn-xs btn-square text-white" @click="formulaCount--">×</button>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <!-- 7. Sort Options -->
+    <div class="grid grid-cols-2 gap-2">
+        <div class="form-control">
+            <label class="label-text text-xs font-bold mb-1">Sort Field</label>
+            <select name="sort_field" class="select select-bordered select-sm w-full">
+                <option value="">-- None --</option>
+                {% for f_name, f_label in fields.items %}
+                <option value="{{ f_name }}">{{ f_label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-control">
+            <label class="label-text text-xs font-bold mb-1">Direction</label>
+            <select name="sort_direction" class="select select-bordered select-sm w-full">
+                <option value="asc">Ascending</option>
+                <option value="desc">Descending</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Live Preview Trigger Button (for mobile, manual triggers) -->
+    <div class="pt-2">
+        <button type="submit" class="btn btn-primary btn-sm w-full gap-2">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 7.89H18"></path></svg>
+            Generate Report
+        </button>
+    </div>
+</div>

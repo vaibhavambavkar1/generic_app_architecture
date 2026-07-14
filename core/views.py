@@ -192,3 +192,346 @@ def organization_setup(request):
         'org': org
     })
 
+
+from core.reports.registry import ReportRegistry
+from core.reports.engine import ReportEngine, ChartBuilder
+from core.reports.exporter import ReportExporter
+from core.models import SavedReport
+from django.contrib import messages
+from django.shortcuts import redirect
+import json
+
+@login_required
+def report_builder(request):
+    """
+    Renders the dynamic report builder dashboard, showing the select module dropdown
+    and saved reports list.
+    """
+    reports = ReportRegistry.get_all_reports()
+    saved_reports = SavedReport.objects.all().order_by('-created_at')
+    
+    return render(request, 'core/reports/builder.html', {
+        'reports': reports,
+        'saved_reports': saved_reports
+    })
+
+@login_required
+def load_report_fields(request):
+    """
+    HTMX view returning fields, filters, group by and aggregates builders
+    for the selected report.
+    """
+    report_id = request.GET.get('report_id')
+    if not report_id:
+        return HttpResponse("")
+        
+    try:
+        report = ReportRegistry.get_report(report_id)
+    except KeyError:
+        return HttpResponse("Report not found", status=404)
+        
+    return render(request, 'core/reports/partials/config_form.html', {
+        'report_id': report_id,
+        'report': report,
+        'fields': report.get_fields(),
+        'group_by_fields': report.get_group_by_fields(),
+        'aggregates': report.get_aggregates()
+    })
+
+@login_required
+def add_filter_row(request):
+    """
+    HTMX view adding an inline filter input row dynamically.
+    """
+    report_id = request.GET.get('report_id')
+    report = ReportRegistry.get_report(report_id)
+    index = int(request.GET.get('index', 0))
+    
+    return render(request, 'core/reports/partials/filter_row.html', {
+        'index': index,
+        'fields': report.get_fields(),
+        'operators': [
+            ('eq', 'Equals'),
+            ('ne', 'Not Equals'),
+            ('gt', 'Greater Than'),
+            ('gte', 'Greater Than or Equal'),
+            ('lt', 'Less Than'),
+            ('lte', 'Less Than or Equal'),
+            ('contains', 'Contains'),
+        ]
+    })
+
+@login_required
+def add_aggregate_row(request):
+    """
+    HTMX view adding an inline aggregate input row dynamically.
+    """
+    report_id = request.GET.get('report_id')
+    report = ReportRegistry.get_report(report_id)
+    index = int(request.GET.get('index', 0))
+    
+    return render(request, 'core/reports/partials/aggregate_row.html', {
+        'index': index,
+        'fields': report.get_fields(),
+        'functions': [
+            ('sum', 'Sum'),
+            ('avg', 'Average'),
+            ('min', 'Minimum'),
+            ('max', 'Maximum'),
+            ('count', 'Count'),
+        ]
+    })
+
+def _parse_report_config(request):
+    """
+    Helper to extract report configurations from request post parameters.
+    """
+    fields = request.POST.getlist('fields')
+    
+    # Parse Filters
+    filters = []
+    filter_fields = request.POST.getlist('filter_field')
+    filter_ops = request.POST.getlist('filter_operator')
+    filter_vals = request.POST.getlist('filter_value')
+    for i in range(len(filter_fields)):
+        if filter_fields[i] and filter_ops[i]:
+            val = filter_vals[i]
+            # Coerce boolean strings
+            if val.lower() == 'true':
+                val = True
+            elif val.lower() == 'false':
+                val = False
+            elif val.isdigit():
+                val = int(val)
+            else:
+                try:
+                    val = float(val)
+                except ValueError:
+                    pass
+            filters.append({
+                'field': filter_fields[i],
+                'operator': filter_ops[i],
+                'value': val
+            })
+            
+    # Parse Group By
+    group_by = request.POST.getlist('group_by')
+    
+    # Parse Aggregates
+    aggregates = []
+    agg_fields = request.POST.getlist('agg_field')
+    agg_funcs = request.POST.getlist('agg_function')
+    agg_aliases = request.POST.getlist('agg_alias')
+    for i in range(len(agg_fields)):
+        if agg_fields[i] and agg_funcs[i] and agg_aliases[i]:
+            aggregates.append({
+                'field': agg_fields[i],
+                'function': agg_funcs[i],
+                'alias': agg_aliases[i]
+            })
+            
+    # Parse Formulas
+    formulas = {}
+    formula_aliases = request.POST.getlist('formula_alias')
+    formula_exprs = request.POST.getlist('formula_expression')
+    for i in range(len(formula_aliases)):
+        if formula_aliases[i] and formula_exprs[i]:
+            formulas[formula_aliases[i]] = formula_exprs[i]
+            
+    # Parse Sorting
+    sorting = []
+    sort_field = request.POST.get('sort_field')
+    sort_dir = request.POST.get('sort_direction', 'asc')
+    if sort_field:
+        sorting.append({'field': sort_field, 'direction': sort_dir})
+        
+    return {
+        'fields': fields,
+        'filters': filters,
+        'group_by': group_by,
+        'aggregates': aggregates,
+        'formulas': formulas,
+        'sorting': sorting
+    }
+
+@login_required
+def report_preview(request):
+    """
+    HTMX endpoint that builds and executes the report, yielding an HTML table preview.
+    """
+    if request.method != 'POST':
+        return HttpResponseBadRequest("POST required")
+        
+    report_id = request.POST.get('report_id')
+    config = _parse_report_config(request)
+    
+    engine = ReportEngine()
+    try:
+        data = engine.execute(report_id, request.user, config, use_cache=False)
+        report = ReportRegistry.get_report(report_id)
+        
+        # Determine headers for preview table
+        headers = {}
+        if config.get('group_by') or config.get('aggregates'):
+            # Group by and aggregate field headers
+            for g in config.get('group_by'):
+                headers[g] = report.get_fields().get(g, g)
+            for agg in config.get('aggregates'):
+                headers[agg['alias']] = f"{agg['function'].upper()}({agg['field']}) as {agg['alias']}"
+        else:
+            for f in config.get('fields'):
+                headers[f] = report.get_fields().get(f, f)
+                
+        for alias in config.get('formulas', {}).keys():
+            headers[alias] = f"Formula: {alias}"
+            
+        return render(request, 'core/reports/partials/preview_table.html', {
+            'data': data,
+            'headers': headers,
+            'report_id': report_id,
+            'config_json': json.dumps(config)
+        })
+    except Exception as e:
+        return render(request, 'core/auth/partials/error_message.html', {
+            'error': f"Report execution failed: {str(e)}"
+        })
+
+@login_required
+@require_POST
+def save_report(request):
+    """
+    Saves a report configuration to database.
+    """
+    name = request.POST.get('report_name')
+    report_id = request.POST.get('report_id')
+    config_json = request.POST.get('config_json')
+    
+    if not name or not report_id or not config_json:
+        return render(request, 'core/auth/partials/error_message.html', {
+            'error': "Missing required inputs to save the report."
+        })
+        
+    try:
+        config = json.loads(config_json)
+        SavedReport.objects.create(
+            name=name,
+            report_id=report_id,
+            config=config,
+            created_by=request.user
+        )
+        
+        # Return toast success or redirect list using HTMX trigger header
+        saved_reports = SavedReport.objects.all().order_by('-created_at')
+        response = render(request, 'core/reports/partials/saved_reports_list.html', {
+            'saved_reports': saved_reports,
+            'toast_message': "Report configuration saved successfully!",
+            'toast_type': 'success'
+        })
+        response['HX-Trigger'] = 'reportSaved'
+        return response
+    except Exception as e:
+        return render(request, 'core/auth/partials/error_message.html', {
+            'error': f"Failed to save report: {str(e)}"
+        })
+
+@login_required
+def execute_saved_report(request, pk):
+    """
+    Renders/executes a saved report by its primary key.
+    """
+    saved_report = get_object_or_404(SavedReport, pk=pk)
+    report_id = saved_report.report_id
+    config = saved_report.config
+    
+    engine = ReportEngine()
+    try:
+        data = engine.execute(report_id, request.user, config, use_cache=True)
+        report = ReportRegistry.get_report(report_id)
+        
+        # Build headers
+        headers = {}
+        if config.get('group_by') or config.get('aggregates'):
+            for g in config.get('group_by'):
+                headers[g] = report.get_fields().get(g, g)
+            for agg in config.get('aggregates'):
+                headers[agg['alias']] = agg['alias']
+        else:
+            for f in config.get('fields'):
+                headers[f] = report.get_fields().get(f, f)
+                
+        for alias in config.get('formulas', {}).keys():
+            headers[alias] = alias
+
+        return render(request, 'core/reports/runner.html', {
+            'saved_report': saved_report,
+            'data': data,
+            'headers': headers,
+            'report_id': report_id,
+            'config_json': json.dumps(config)
+        })
+    except Exception as e:
+        return render(request, 'core/auth/partials/error_message.html', {
+            'error': f"Failed to run report: {str(e)}"
+        })
+
+@login_required
+def export_report(request):
+    """
+    Export current report state to CSV, Excel, PDF, or JSON.
+    """
+    report_id = request.GET.get('report_id')
+    export_format = request.GET.get('format', 'csv')
+    config_str = request.GET.get('config')
+    
+    if not report_id or not config_str:
+        return HttpResponseBadRequest("Missing required report parameters.")
+        
+    try:
+        config = json.loads(config_str)
+        engine = ReportEngine()
+        data = engine.execute(report_id, request.user, config, use_cache=True)
+        report = ReportRegistry.get_report(report_id)
+        
+        # Build headers mapping
+        headers = {}
+        if config.get('group_by') or config.get('aggregates'):
+            for g in config.get('group_by'):
+                headers[g] = report.get_fields().get(g, g)
+            for agg in config.get('aggregates'):
+                headers[agg['alias']] = agg['alias']
+        else:
+            for f in config.get('fields'):
+                headers[f] = report.get_fields().get(f, f)
+        for alias in config.get('formulas', {}).keys():
+            headers[alias] = alias
+
+        filename = f"report_{report_id}"
+        
+        if export_format == 'csv':
+            buf = ReportExporter.to_csv(data, headers)
+            response = HttpResponse(buf.getvalue(), content_type='text/csv')
+            response['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
+            return response
+            
+        elif export_format == 'excel':
+            buf = ReportExporter.to_excel(data, headers)
+            response = HttpResponse(buf.getvalue(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            response['Content-Disposition'] = f'attachment; filename="{filename}.xlsx"'
+            return response
+            
+        elif export_format == 'pdf':
+            buf = ReportExporter.to_pdf(data, headers, title=report.name)
+            response = HttpResponse(buf.getvalue(), content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="{filename}.pdf"'
+            return response
+            
+        elif export_format == 'json':
+            buf = ReportExporter.to_json(data)
+            response = HttpResponse(buf.getvalue(), content_type='application/json')
+            response['Content-Disposition'] = f'attachment; filename="{filename}.json"'
+            return response
+            
+        return HttpResponseBadRequest("Unsupported format")
+    except Exception as e:
+        return HttpResponse(f"Export failed: {str(e)}", status=500)
+

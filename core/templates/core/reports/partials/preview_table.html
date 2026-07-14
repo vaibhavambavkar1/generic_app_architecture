@@ -1,0 +1,54 @@
+{% load core_tags %}
+
+<div class="space-y-4">
+    <!-- Actions Bar -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-base-100 p-3 rounded-lg border border-base-300">
+        <!-- Exports -->
+        <div class="flex flex-wrap gap-2">
+            <span class="text-xs font-semibold text-base-content/60 self-center">Export:</span>
+            <a href="{% url 'core:export_report' %}?report_id={{ report_id }}&format=csv&config={{ config_json|urlencode }}" class="btn btn-outline btn-xs btn-neutral" target="_blank">CSV</a>
+            <a href="{% url 'core:export_report' %}?report_id={{ report_id }}&format=excel&config={{ config_json|urlencode }}" class="btn btn-outline btn-xs btn-success" target="_blank">Excel</a>
+            <a href="{% url 'core:export_report' %}?report_id={{ report_id }}&format=pdf&config={{ config_json|urlencode }}" class="btn btn-outline btn-xs btn-error text-white" target="_blank">PDF</a>
+            <a href="{% url 'core:export_report' %}?report_id={{ report_id }}&format=json&config={{ config_json|urlencode }}" class="btn btn-outline btn-xs btn-info" target="_blank">JSON</a>
+        </div>
+
+        <!-- Save Report Form -->
+        <form hx-post="{% url 'core:save_report' %}" hx-target="#saved-reports-section" class="flex gap-2 w-full sm:w-auto">
+            {% csrf_token %}
+            <input type="hidden" name="report_id" value="{{ report_id }}">
+            <input type="hidden" name="config_json" value="{{ config_json }}">
+            <input type="text" name="report_name" placeholder="Save configuration as..." class="input input-bordered input-xs max-w-xs text-xs" required>
+            <button type="submit" class="btn btn-primary btn-xs">Save Report</button>
+        </form>
+    </div>
+
+    <!-- Data Table -->
+    <div class="overflow-x-auto max-h-[500px] border border-base-300 rounded-lg">
+        <table class="table table-xs table-pin-rows table-pin-cols w-full">
+            <thead>
+                <tr class="bg-base-300">
+                    {% for key, label in headers.items %}
+                    <th>{{ label }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in data %}
+                <tr class="hover">
+                    {% for key, label in headers.items %}
+                    <td>
+                        {{ row|dict_key:key }}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="{{ headers|length }}" class="text-center py-10 text-base-content/50">
+                        No rows matched the criteria.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>

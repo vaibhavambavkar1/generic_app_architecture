@@ -310,3 +310,24 @@ class Attachment(AuditableMixin):
 
     def __str__(self):
         return f"{self.filename} ({self.file_size} bytes) attached to {self.content_type.model} #{self.object_id}"
+
+
+class SavedReport(AuditableMixin):
+    """
+    Model to store configured report parameters so they can be re-run or pinned to dashboards.
+    """
+    name = models.CharField(max_length=255)
+    report_id = models.CharField(max_length=100)
+    config = models.JSONField(default=dict)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='saved_reports'
+    )
+
+    def __str__(self):
+        return f"{self.name} ({self.report_id})"

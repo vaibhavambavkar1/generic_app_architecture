@@ -33,8 +33,16 @@ class TransitionAdmin(admin.ModelAdmin):
     list_filter = ('workflow',)
     inlines = [ApprovalRouteInline]
 
+from .models import SavedReport
+
 @admin.register(Attachment)
 class AttachmentAdmin(admin.ModelAdmin):
     list_display = ('filename', 'file_size', 'content_type', 'object_id', 'uploaded_at', 'uploaded_by')
     list_filter = ('content_type', 'uploaded_at')
     search_fields = ('filename',)
+
+@admin.register(SavedReport)
+class SavedReportAdmin(admin.ModelAdmin):
+    list_display = ('name', 'report_id', 'created_at', 'created_by')
+    list_filter = ('report_id', 'created_at')
+    search_fields = ('name',)

@@ -12,6 +12,16 @@ urlpatterns = [
     path('license/activate/', views.activate_license, name='activate_license'),
     path('profile/', views.profile_view, name='profile'),
     path('organization/setup/', views.organization_setup, name='organization_create'),
+    
+    # Reports Routes
+    path('reports/builder/', views.report_builder, name='report_builder'),
+    path('reports/fields/', views.load_report_fields, name='load_report_fields'),
+    path('reports/filter-row/', views.add_filter_row, name='add_filter_row'),
+    path('reports/aggregate-row/', views.add_aggregate_row, name='add_aggregate_row'),
+    path('reports/preview/', views.report_preview, name='report_preview'),
+    path('reports/save/', views.save_report, name='save_report'),
+    path('reports/saved/<int:pk>/', views.execute_saved_report, name='execute_saved_report'),
+    path('reports/export/', views.export_report, name='export_report'),
 ]
 
 # HTML Auth URLs

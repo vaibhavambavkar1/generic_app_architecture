@@ -1,0 +1,61 @@
+{% extends "core/base.html" %}
+{% load core_tags %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header with Back Button and Export Options -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-base-200 p-6 rounded-2xl border border-base-300 shadow-lg">
+        <div>
+            <div class="flex items-center gap-3">
+                <a href="{% url 'core:report_builder' %}" class="btn btn-sm btn-circle btn-ghost">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                </a>
+                <h1 class="text-3xl font-bold text-base-content">{{ saved_report.name }}</h1>
+            </div>
+            <p class="text-base-content/70 mt-1 ml-10">Running saved configuration for module: <span class="badge badge-neutral">{{ saved_report.report_id }}</span></p>
+        </div>
+        
+        <div class="flex flex-wrap gap-2 sm:self-center ml-10 sm:ml-0">
+            <span class="text-xs font-semibold text-base-content/60 self-center mr-1">Export:</span>
+            <a href="{% url 'core:export_report' %}?report_id={{ report_id }}&format=csv&config={{ config_json|urlencode }}" class="btn btn-outline btn-sm btn-neutral" target="_blank">CSV</a>
+            <a href="{% url 'core:export_report' %}?report_id={{ report_id }}&format=excel&config={{ config_json|urlencode }}" class="btn btn-outline btn-sm btn-success" target="_blank">Excel</a>
+            <a href="{% url 'core:export_report' %}?report_id={{ report_id }}&format=pdf&config={{ config_json|urlencode }}" class="btn btn-outline btn-sm btn-error text-white" target="_blank">PDF</a>
+            <a href="{% url 'core:export_report' %}?report_id={{ report_id }}&format=json&config={{ config_json|urlencode }}" class="btn btn-outline btn-sm btn-info" target="_blank">JSON</a>
+        </div>
+    </div>
+
+    <!-- Data Table Card -->
+    <div class="card bg-base-200 shadow-xl border border-base-300">
+        <div class="card-body p-6">
+            <div class="overflow-x-auto rounded-lg border border-base-300">
+                <table class="table table-compact w-full">
+                    <thead>
+                        <tr class="bg-base-300">
+                            {% for key, label in headers.items %}
+                            <th>{{ label }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in data %}
+                        <tr class="hover">
+                            {% for key, label in headers.items %}
+                            <td>
+                                {{ row|dict_key:key }}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="{{ headers|length }}" class="text-center py-10 text-base-content/50">
+                                No records found.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

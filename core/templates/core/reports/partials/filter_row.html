@@ -1,0 +1,18 @@
+<div class="flex gap-1 items-center bg-base-300/30 p-2 rounded border border-base-300 filter-row">
+    <select name="filter_field" class="select select-bordered select-xs w-1/3 text-xs" required>
+        <option value="">-- Field --</option>
+        {% for f_name, f_label in fields.items %}
+        <option value="{{ f_name }}">{{ f_label }}</option>
+        {% endfor %}
+    </select>
+    
+    <select name="filter_operator" class="select select-bordered select-xs w-1/4 text-xs" required>
+        {% for op_name, op_label in operators %}
+        <option value="{{ op_name }}">{{ op_label }}</option>
+        {% endfor %}
+    </select>
+    
+    <input type="text" name="filter_value" placeholder="Value" class="input input-bordered input-xs w-1/3 text-xs" required>
+    
+    <button type="button" class="btn btn-error btn-xs btn-square text-white" onclick="this.closest('.filter-row').remove(); document.getElementById('report-builder-form').dispatchEvent(new Event('change'))">×</button>
+</div>

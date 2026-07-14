@@ -61,3 +61,154 @@ class OrganizationTestCase(TestCase):
         # Now dashboard should load successfully without redirection
         response = self.client.get('/inventory/')
         self.assertEqual(response.status_code, 200)
+
+
+from core.reports import BaseReport, ReportRegistry, ReportEngine, ReportExporter, ChartBuilder
+
+class UserReport(BaseReport):
+    name = "user_report"
+    description = "Test report for users"
+    model = User
+
+    def get_fields(self):
+        return {
+            'username': 'Username',
+            'is_staff': 'Is Staff',
+            'id': 'ID'
+        }
+
+class ReportEngineTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_superuser(username='admin', password='password123', email='admin@example.com')
+        self.staff_user1 = User.objects.create_user(username='staff1', is_staff=True, password='password123')
+        self.staff_user2 = User.objects.create_user(username='staff2', is_staff=True, password='password123')
+        self.regular_user = User.objects.create_user(username='regular', is_staff=False, password='password123')
+        
+        # Register report
+        ReportRegistry.register('user_report', UserReport)
+
+    def test_report_execution_and_filtering(self):
+        engine = ReportEngine()
+        config = {
+            'filters': [
+                {'field': 'is_staff', 'operator': 'eq', 'value': True}
+            ],
+            'fields': ['username', 'id'],
+            'sorting': [{'field': 'username', 'direction': 'asc'}]
+        }
+        
+        # Run report
+        data = engine.execute('user_report', self.user, config, use_cache=False)
+        
+        # 3 users should match (admin, staff1, staff2)
+        self.assertEqual(len(data), 3)
+        self.assertEqual(data[0]['username'], 'admin')
+
+    def test_report_formulas(self):
+        engine = ReportEngine()
+        config = {
+            'fields': ['username', 'id'],
+            'formulas': {
+                'double_id': 'id * 2'
+            }
+        }
+        data = engine.execute('user_report', self.user, config, use_cache=False)
+        for row in data:
+            self.assertEqual(row['double_id'], row['id'] * 2)
+
+    def test_report_group_by_and_aggregation(self):
+        engine = ReportEngine()
+        config = {
+            'group_by': ['is_staff'],
+            'aggregates': [
+                {'field': 'id', 'function': 'count', 'alias': 'user_count'}
+            ]
+        }
+        data = engine.execute('user_report', self.user, config, use_cache=False)
+        # Should have 2 groups: is_staff=True (3 users) and is_staff=False (1 user)
+        self.assertEqual(len(data), 2)
+        for row in data:
+            if row['is_staff']:
+                self.assertEqual(row['user_count'], 3)
+            else:
+                self.assertEqual(row['user_count'], 1)
+
+    def test_report_exports(self):
+        engine = ReportEngine()
+        config = {
+            'fields': ['username', 'is_staff']
+        }
+        data = engine.execute('user_report', self.user, config, use_cache=False)
+        headers = {'username': 'Username', 'is_staff': 'Is Staff'}
+        
+        # CSV Export
+        csv_file = ReportExporter.to_csv(data, headers)
+        self.assertTrue(csv_file.getvalue().startswith(b'Username,Is Staff'))
+
+        # JSON Export
+        json_file = ReportExporter.to_json(data)
+        self.assertTrue(json_file.getvalue().startswith(b'['))
+
+        # Excel Export
+        xls_file = ReportExporter.to_excel(data, headers)
+        self.assertTrue(xls_file.getvalue().startswith(b'PK'))
+
+        # PDF Export
+        pdf_file = ReportExporter.to_pdf(data, headers)
+        self.assertTrue(pdf_file.getvalue().startswith(b'%PDF'))
+
+
+class ReportUITestsCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_superuser(username='admin', password='password123', email='admin@example.com')
+        from core.models import Organization
+        self.org = Organization.objects.create(
+            name="Org 1",
+            owner_name="Owner 1",
+            email="org1@example.com"
+        )
+        self.client = Client()
+        self.client.login(username='admin', password='password123')
+        ReportRegistry.register('user_report', UserReport)
+
+    def test_report_builder_view(self):
+        response = self.client.get(reverse('core:report_builder'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Dynamic Report Builder")
+
+    def test_load_report_fields_view(self):
+        response = self.client.get(reverse('core:load_report_fields') + '?report_id=user_report')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Select Fields to Display")
+
+    def test_add_filter_row_view(self):
+        response = self.client.get(reverse('core:add_filter_row') + '?report_id=user_report&index=1')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "filter_field")
+
+    def test_report_preview_view(self):
+        post_data = {
+            'report_id': 'user_report',
+            'fields': ['username', 'id'],
+        }
+        response = self.client.post(reverse('core:report_preview'), data=post_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "admin")
+
+    def test_save_and_execute_report_view(self):
+        post_data = {
+            'report_id': 'user_report',
+            'report_name': 'Admin List',
+            'config_json': '{"fields": ["username", "id"]}'
+        }
+        response = self.client.post(reverse('core:save_report'), data=post_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Admin List")
+        
+        from core.models import SavedReport
+        saved = SavedReport.objects.get(name='Admin List')
+        self.assertEqual(saved.report_id, 'user_report')
+
+        response = self.client.get(reverse('core:execute_saved_report', args=[saved.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Admin List")

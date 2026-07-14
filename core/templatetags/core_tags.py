@@ -15,6 +15,13 @@ def add_class(field, css_class):
     """Adds a CSS class to a Django form field widget."""
     return field.as_widget(attrs={"class": css_class})
 
+@register.filter
+def dict_key(d, key):
+    """Returns the value of a dict for a given key."""
+    if isinstance(d, dict):
+        return d.get(key, '')
+    return getattr(d, key, '')
+
 from django.utils.safestring import mark_safe
 
 @register.simple_tag
