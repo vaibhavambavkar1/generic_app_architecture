@@ -736,5 +736,79 @@ class InventoryWorkflowTests(TestCase):
         self.assertEqual(float(line.unit_price), 18.50)  # Matches catalog price
         self.assertEqual(float(new_po.total_amount), 15 * 18.50)
 
+    def test_auto_generate_pos_reuses_draft_po(self):
+        """Test that auto-generating POs reuses an existing draft PO for the supplier and doesn't duplicate items."""
+        self.client.force_login(self.manager_user)
+
+        # 1. Create a draft PO for self.supplier
+        draft_state = State.objects.filter(workflow__model_name='inventory.PurchaseOrder', is_initial=True).first()
+        existing_draft_po = PurchaseOrder.objects.create(
+            po_number="PO-EXISTING-DRAFT",
+            supplier=self.supplier,
+            workflow_state=draft_state,
+            total_amount=0.00
+        )
+
+        # 2. Add an item that is already in this draft PO
+        item_already_ordered = InventoryItem.objects.create(
+            sku="LOW-SKU-ORDERED",
+            name="Already Ordered",
+            stock_level=5,
+            reorder_threshold=15,
+            unit_price=20.00
+        )
+        SupplierCatalogItem.objects.create(
+            supplier=self.supplier,
+            item=item_already_ordered,
+            price=18.50
+        )
+        # Create line item in the existing draft PO
+        POLineItem.objects.create(
+            purchase_order=existing_draft_po,
+            item=item_already_ordered,
+            quantity=15,
+            unit_price=18.50
+        )
+        existing_draft_po.total_amount = 15 * 18.50
+        existing_draft_po.save()
+
+        # 3. Create another alert item that is NOT in the draft PO yet
+        item_new_alert = InventoryItem.objects.create(
+            sku="LOW-SKU-NEW",
+            name="New Alert Widget",
+            stock_level=2,
+            reorder_threshold=10,
+            unit_price=10.00
+        )
+        SupplierCatalogItem.objects.create(
+            supplier=self.supplier,
+            item=item_new_alert,
+            price=9.00
+        )
+
+        initial_po_count = PurchaseOrder.objects.count()
+
+        # Run auto-generation
+        response = self.client.post(reverse('inventory:auto_generate_pos'))
+        self.assertEqual(response.status_code, 302)
+
+        # Assert no new PO was created (the existing one was reused!)
+        self.assertEqual(PurchaseOrder.objects.count(), initial_po_count)
+
+        # Retrieve the updated PO
+        updated_po = PurchaseOrder.objects.get(id=existing_draft_po.id)
+        
+        # Verify lines: it should have exactly 2 line items (item_already_ordered, item_new_alert)
+        self.assertEqual(updated_po.lines.count(), 2)
+        
+        # Verify there are no duplicate lines for item_already_ordered
+        item_ids = list(updated_po.lines.values_list('item_id', flat=True))
+        self.assertEqual(item_ids.count(item_already_ordered.id), 1)
+        self.assertEqual(item_ids.count(item_new_alert.id), 1)
+
+        # Verify recalculation of total amount
+        expected_total = (15 * 18.50) + (10 * 9.00)
+        self.assertEqual(float(updated_po.total_amount), expected_total)
+
 
 

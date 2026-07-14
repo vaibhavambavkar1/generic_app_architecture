@@ -1494,35 +1494,66 @@ def auto_generate_pos(request):
         is_initial=True
     ).first()
 
-    po_count = 0
+    po_created_count = 0
+    po_updated_count = 0
     for supplier, entries in supplier_groups.items():
-        # Create a new PurchaseOrder
-        po = PurchaseOrder.objects.create(
+        # Check if there is an existing draft PurchaseOrder for this supplier
+        po = PurchaseOrder.objects.filter(
             supplier=supplier,
-            workflow_state=draft_state,
-        )
+            workflow_state=draft_state
+        ).first()
 
-        total_amount = 0.00
-        for entry in entries:
-            qty = entry.item.reorder_threshold
-            price = entry.price
-
-            POLineItem.objects.create(
-                purchase_order=po,
-                item=entry.item,
-                quantity=qty,
-                unit_price=price
+        is_new = False
+        if not po:
+            po = PurchaseOrder.objects.create(
+                supplier=supplier,
+                workflow_state=draft_state,
             )
-            total_amount += float(qty) * float(price)
+            is_new = True
 
-        po.total_amount = total_amount
-        po.save()
-        po_count += 1
+        # Track existing items in the PO to prevent duplicate line items
+        existing_item_ids = set(po.lines.values_list('item_id', flat=True))
+        added_new_lines = False
 
-    messages.success(
-        request,
-        f"Successfully auto-generated {po_count} Purchase Order(s) for products with reorder alerts."
-    )
+        for entry in entries:
+            if entry.item.id not in existing_item_ids:
+                qty = entry.item.reorder_threshold
+                price = entry.price
+
+                POLineItem.objects.create(
+                    purchase_order=po,
+                    item=entry.item,
+                    quantity=qty,
+                    unit_price=price
+                )
+                existing_item_ids.add(entry.item.id)
+                added_new_lines = True
+
+        if added_new_lines or is_new:
+            # Recalculate total amount for the PurchaseOrder
+            total = sum(float(line.quantity) * float(line.unit_price) for line in po.lines.all())
+            po.total_amount = total
+            po.save()
+            if is_new:
+                po_created_count += 1
+            else:
+                po_updated_count += 1
+
+    if po_created_count > 0 or po_updated_count > 0:
+        msg_parts = []
+        if po_created_count > 0:
+            msg_parts.append(f"created {po_created_count} new")
+        if po_updated_count > 0:
+            msg_parts.append(f"updated {po_updated_count} existing draft")
+        messages.success(
+            request,
+            f"Successfully processed Purchase Orders: {', '.join(msg_parts)}."
+        )
+    else:
+        messages.info(
+            request,
+            "All alert items are already present in existing draft Purchase Orders."
+        )
 
     if request.headers.get('HX-Request'):
         response = HttpResponse()
