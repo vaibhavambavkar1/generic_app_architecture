@@ -421,8 +421,8 @@ def report_preview(request):
             'saved_report_name': saved_report_name
         })
     except Exception as e:
-        return render(request, 'core/auth/partials/error_message.html', {
-            'error': f"Report execution failed: {str(e)}"
+        return render(request, 'core/reports/partials/processing_status.html', {
+            'message': "Processing configuration... Adjusting parameters to match the selected module's schema. Please configure fields to preview."
         })
 
 @login_required

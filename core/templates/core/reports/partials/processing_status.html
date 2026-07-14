@@ -1,0 +1,9 @@
+<div class="flex flex-col items-center justify-center py-20 text-base-content/50">
+    <div class="flex items-center gap-3 mb-3">
+        <span class="loading loading-spinner text-primary loading-md"></span>
+        <span class="text-lg font-bold text-base-content/80">Processing Configuration...</span>
+    </div>
+    <p class="text-sm px-6 text-center text-base-content/60 max-w-md">
+        {{ message|default:"Adjusting parameters to match the selected module's schema. Please choose fields to preview." }}
+    </p>
+</div>

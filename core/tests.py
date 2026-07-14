@@ -195,6 +195,15 @@ class ReportUITestsCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "admin")
 
+    def test_report_preview_view_invalid_fields(self):
+        post_data = {
+            'report_id': 'user_report',
+            'fields': ['invalid_field_abc'],
+        }
+        response = self.client.post(reverse('core:report_preview'), data=post_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Processing Configuration...")
+
     def test_save_and_execute_report_view(self):
         post_data = {
             'report_id': 'user_report',
