@@ -656,8 +656,85 @@ def global_search(request):
             po_number__icontains=query
         ).order_by('-created_at')[:5]
 
+
     return render(request, 'core/components/search_results.html', {
         'results': results,
         'query': query
     })
+
+from .models import Workflow, Transition, ApprovalRoute
+from django.contrib.auth.models import Group
+
+@login_required
+def workflow_dashboard(request):
+    """
+    Administrative dashboard to manage Workflows, Transitions, and RBAC / Guardian configurations.
+    """
+    # Fetch all workflows with their states and transitions
+    workflows = Workflow.objects.prefetch_related('states', 'transitions__approvals').all()
+    
+    return render(request, 'core/workflow_dashboard.html', {
+        'workflows': workflows
+    })
+
+@login_required
+@require_POST
+def update_approval_route(request, transition_id):
+    """
+    HTMX view to update the RBAC settings (Group / Guardian Permission) for a transition.
+    """
+    transition = get_object_or_404(Transition, id=transition_id)
+    
+    # We assume one approval route per transition for this simple dashboard
+    approval_route, created = ApprovalRoute.objects.get_or_create(transition=transition)
+    
+    group_id = request.POST.get('required_group')
+    permission = request.POST.get('required_permission')
+    
+    if group_id:
+        approval_route.required_group_id = group_id
+    else:
+        approval_route.required_group = None
+        
+    approval_route.required_permission = permission or ''
+    approval_route.save()
+    
+    # Return the updated row fragment
+    groups = Group.objects.all()
+    return render(request, 'core/components/workflow/transition_row.html', {
+        'transition': transition,
+        'route': approval_route,
+        'groups': groups
+    })
+
+@login_required
+def edit_transition_row(request, transition_id):
+    """
+    HTMX view to render the inline edit form for a transition's RBAC settings.
+    """
+    transition = get_object_or_404(Transition, id=transition_id)
+    approval_route = transition.approvals.first()
+    groups = Group.objects.all()
+    
+    return render(request, 'core/components/workflow/transition_row_edit.html', {
+        'transition': transition,
+        'route': approval_route,
+        'groups': groups
+    })
+
+@login_required
+def cancel_edit_transition_row(request, transition_id):
+    """
+    HTMX view to render the read-only row for a transition.
+    """
+    transition = get_object_or_404(Transition, id=transition_id)
+    approval_route = transition.approvals.first()
+    groups = Group.objects.all()
+    
+    return render(request, 'core/components/workflow/transition_row.html', {
+        'transition': transition,
+        'route': approval_route,
+        'groups': groups
+    })
+
 

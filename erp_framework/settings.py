@@ -260,3 +260,6 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': crontab(hour=2, minute=0), # Every day at 2:00 AM
     },
 }
+
+# Django Tables 2 Template
+DJANGO_TABLES2_TEMPLATE = 'django_tables2/tailwind.html'

@@ -25,6 +25,12 @@ urlpatterns = [
     path('reports/export/', views.export_report, name='export_report'),
     path('audit-logs/', views.AuditLogListView.as_view(), name='audit_logs'),
     path('search/', views.global_search, name='global_search'),
+    
+    # Workflow & RBAC Administration
+    path('workflow-dashboard/', views.workflow_dashboard, name='workflow_dashboard'),
+    path('workflow/transition/<int:transition_id>/edit/', views.edit_transition_row, name='edit_transition_row'),
+    path('workflow/transition/<int:transition_id>/cancel/', views.cancel_edit_transition_row, name='cancel_edit_transition_row'),
+    path('workflow/transition/<int:transition_id>/update/', views.update_approval_route, name='update_approval_route'),
 ]
 
 # HTML Auth URLs
