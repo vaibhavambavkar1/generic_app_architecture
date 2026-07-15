@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'guardian',
     'allauth',
     'allauth.account',
+    'django_tables2',
 ]
 
 MIDDLEWARE = [
@@ -243,3 +244,19 @@ CACHES = {
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
+
+# Email Configuration
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# Celery Beat Schedule
+from celery.schedules import crontab
+CELERY_BEAT_SCHEDULE = {
+    'check-low-stock-levels-daily': {
+        'task': 'inventory.tasks.check_low_stock_levels',
+        'schedule': crontab(hour=8, minute=0), # Every day at 8:00 AM
+    },
+    'auto-transition-overdue-pos-daily': {
+        'task': 'inventory.tasks.auto_transition_overdue_pos',
+        'schedule': crontab(hour=2, minute=0), # Every day at 2:00 AM
+    },
+}

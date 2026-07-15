@@ -7,6 +7,37 @@
         </button>
     </div>
 
+    <!-- Global Search -->
+    <div class="flex-1 max-w-md mx-4 relative" x-data="{ open: false, query: '' }">
+        <div class="relative w-full">
+            <input 
+                type="text" 
+                name="q" 
+                x-model="query"
+                placeholder="Global search (SKU, PO, Supplier)..." 
+                class="input input-bordered w-full pr-10 text-sm h-10" 
+                hx-get="{% url 'core:global_search' %}" 
+                hx-trigger="keyup changed delay:300ms, search" 
+                hx-target="#search-results-dropdown" 
+                hx-swap="innerHTML"
+                @focus="open = true"
+                @click.away="open = false"
+            />
+            <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-base-content/50">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+            </span>
+        </div>
+        <!-- Dropdown container -->
+        <div 
+            id="search-results-dropdown" 
+            class="absolute left-0 mt-2 w-full z-50 bg-base-200 border border-base-300 shadow-xl rounded-xl overflow-hidden" 
+            x-show="open && query.trim() !== ''"
+            x-transition>
+        </div>
+    </div>
+
     <div class="flex-none gap-2">
         <!-- Theme Toggle Swap -->
         <label class="swap swap-rotate btn btn-ghost btn-circle text-base-content mr-2">

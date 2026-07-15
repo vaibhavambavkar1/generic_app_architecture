@@ -146,6 +146,9 @@ class PurchaseOrder(WorkflowMixin):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        permissions = (
+            ("approve_purchaseorder", "Can approve purchase order"),
+        )
         indexes = [
             models.Index(fields=['created_at']),
         ]

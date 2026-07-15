@@ -3,11 +3,11 @@
 {% block title %}Inventory Dashboard | ERP Framework{% endblock %}
 
 {% block content %}
-<div class="space-y-8">
+<div class="space-y-6">
     <!-- Header -->
     <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
-            <h1 class="text-3xl font-bold tracking-tight">Inventory Overview</h1>
+            <h1 class="text-3xl font-bold tracking-tight text-base-content">Inventory Overview</h1>
             <p class="text-base-content/60">Real-time indicators, stock levels, and supply operations.</p>
         </div>
         <div class="flex gap-2">
@@ -27,71 +27,77 @@
         </div>
     </div>
 
-    <!-- Stats Panel -->
-    <div class="stats stats-vertical lg:stats-horizontal shadow bg-base-200 w-full">
-        <!-- Stat 1 -->
-        <div class="stat">
-            <div class="stat-figure text-primary">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-8 h-8 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
-            </div>
-            <div class="stat-title text-base-content/70">Total Products</div>
-            <div class="stat-value text-primary">{{ total_items }}</div>
-            <div class="stat-desc"><a href="{% url 'inventory:item_list' %}" class="link link-hover text-xs">View all products</a></div>
-        </div>
-        
-        <!-- Stat 2 -->
-        <div class="stat">
-            <div class="stat-figure text-warning">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-8 h-8 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-            </div>
-            <div class="stat-title text-base-content/70">Low Stock SKU Alerts</div>
-            <div class="stat-value text-warning">{{ low_stock_items }}</div>
-            <div class="stat-desc"><a href="{% url 'inventory:item_list' %}?low_stock=1" class="link link-hover text-xs text-warning">View low stock items</a></div>
-        </div>
-        
-        <!-- Stat 3 -->
-        <div class="stat">
-            <div class="stat-figure text-success">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-8 h-8 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-            </div>
-            <div class="stat-title text-base-content/70">Active Suppliers</div>
-            <div class="stat-value text-success">{{ total_suppliers }}</div>
-            <div class="stat-desc"><a href="{% url 'inventory:supplier_list' %}" class="link link-hover text-xs">View suppliers list</a></div>
-        </div>
-
-        <!-- Stat 4 -->
-        <div class="stat">
-            <div class="stat-figure text-info">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-8 h-8 stroke-current" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12"/><path d="M6 8h12"/><path d="m6 13 8.5 8"/><path d="M6 13h3a6 6 0 0 0 6-6V7H6"/></svg>
-            </div>
-            <div class="stat-title text-base-content/70">Warehouse Stock Value</div>
-            <div class="stat-value text-info">₹{{ stock_value|floatformat:2 }}</div>
-            <div class="stat-desc">Valued at unit cost price</div>
-        </div>
-    </div>
-
-    <!-- Charts Container -->
-    <div class="space-y-8">
-        <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
-            <!-- Stock Levels Bar Chart -->
-            <div class="card bg-base-200 shadow p-6">
-                <div class="card-body p-0">
-                    {{ stock_chart|safe }}
-                </div>
-            </div>
-
-            <!-- PO Status Donut Chart -->
-            <div class="card bg-base-200 shadow p-6">
-                <div class="card-body p-0">
-                    {{ po_chart|safe }}
+    <!-- GridStack Container -->
+    <div class="grid-stack mt-4">
+        <!-- Widget 1: Stats -->
+        <div class="grid-stack-item" gs-x="0" gs-y="0" gs-w="12" gs-h="2" gs-no-resize="true" gs-no-move="true">
+            <div class="grid-stack-item-content">
+                <div class="stats stats-vertical lg:stats-horizontal shadow bg-base-200 w-full h-full">
+                    <div class="stat">
+                        <div class="stat-figure text-primary">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-8 h-8 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                        </div>
+                        <div class="stat-title text-base-content/70 text-xs">Total Products</div>
+                        <div class="stat-value text-primary text-2xl">{{ total_items }}</div>
+                        <div class="stat-desc text-[10px]"><a href="{% url 'inventory:item_list' %}" class="link link-hover">View all products</a></div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-figure text-warning">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-8 h-8 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        </div>
+                        <div class="stat-title text-base-content/70 text-xs">Low Stock SKU Alerts</div>
+                        <div class="stat-value text-warning text-2xl">{{ low_stock_items }}</div>
+                        <div class="stat-desc text-[10px]"><a href="{% url 'inventory:item_list' %}?low_stock=1" class="link link-hover text-warning">View low stock items</a></div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-figure text-success">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-8 h-8 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        </div>
+                        <div class="stat-title text-base-content/70 text-xs">Active Suppliers</div>
+                        <div class="stat-value text-success text-2xl">{{ total_suppliers }}</div>
+                        <div class="stat-desc text-[10px]"><a href="{% url 'inventory:supplier_list' %}" class="link link-hover">View suppliers list</a></div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-figure text-info">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-8 h-8 stroke-current" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12"/><path d="M6 8h12"/><path d="m6 13 8.5 8"/><path d="M6 13h3a6 6 0 0 0 6-6V7H6"/></svg>
+                        </div>
+                        <div class="stat-title text-base-content/70 text-xs">Warehouse Stock Value</div>
+                        <div class="stat-value text-info text-2xl">₹{{ stock_value|floatformat:2 }}</div>
+                        <div class="stat-desc text-[10px]">Valued at unit cost price</div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Demand Forecasting Regression Chart -->
-        <div class="card bg-base-200 shadow p-6 w-full">
-            <div class="card-body p-0">
-                {{ forecast_chart|safe }}
+        <!-- Widget 2: ECharts Stock Levels -->
+        <div class="grid-stack-item" gs-x="0" gs-y="2" gs-w="6" gs-h="5">
+            <div class="grid-stack-item-content card bg-base-200 shadow p-4 flex flex-col justify-between">
+                <h3 class="text-sm font-semibold mb-2">Stock Levels by Product</h3>
+                <div id="stock-echart" class="w-full flex-1 min-h-[220px]"></div>
+            </div>
+        </div>
+
+        <!-- Widget 3: ECharts PO Status -->
+        <div class="grid-stack-item" gs-x="6" gs-y="2" gs-w="6" gs-h="5">
+            <div class="grid-stack-item-content card bg-base-200 shadow p-4 flex flex-col justify-between">
+                <h3 class="text-sm font-semibold mb-2">Purchase Orders by Status</h3>
+                <div id="po-echart" class="w-full flex-1 min-h-[220px]"></div>
+            </div>
+        </div>
+
+        <!-- Widget 4: FullCalendar PO Timeline -->
+        <div class="grid-stack-item" gs-x="0" gs-y="7" gs-w="6" gs-h="6">
+            <div class="grid-stack-item-content card bg-base-200 shadow p-4 flex flex-col justify-between">
+                <h3 class="text-sm font-semibold mb-2">Purchase Order Timeline</h3>
+                <div id="calendar-widget" class="w-full flex-1 min-h-[300px] text-xs"></div>
+            </div>
+        </div>
+
+        <!-- Widget 5: ECharts Demand Forecasting -->
+        <div class="grid-stack-item" gs-x="6" gs-y="7" gs-w="6" gs-h="6">
+            <div class="grid-stack-item-content card bg-base-200 shadow p-4 flex flex-col justify-between">
+                <h3 class="text-sm font-semibold mb-2">Procurement Demand Trend & Forecast</h3>
+                <div id="forecast-echart" class="w-full flex-1 min-h-[300px]"></div>
             </div>
         </div>
     </div>
@@ -120,4 +126,123 @@
         </div>
     </dialog>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize GridStack
+        var grid = GridStack.init({
+            cellHeight: 70,
+            acceptWidgets: true,
+            margin: 10
+        });
+
+        // Parse JSON feeds from Django
+        const stockData = {{ stock_echart_json|safe }};
+        const poData = {{ po_echart_json|safe }};
+        const forecastData = {{ forecast_echart_json|safe }};
+        const calendarEvents = {{ calendar_events_json|safe }};
+
+        // Determine Theme (Light / Dark) for ECharts styling
+        const isDark = document.documentElement.classList.contains('dark');
+        const textColor = isDark ? '#a6adbb' : '#1f2937';
+
+        // 1. Stock Levels ECharts
+        const stockChart = echarts.init(document.getElementById('stock-echart'));
+        stockChart.setOption({
+            tooltip: { trigger: 'axis' },
+            xAxis: {
+                type: 'category',
+                data: stockData.categories,
+                axisLabel: { color: textColor, rotate: 30, fontSize: 10 }
+            },
+            yAxis: {
+                type: 'value',
+                axisLabel: { color: textColor }
+            },
+            series: [{
+                data: stockData.values,
+                type: 'bar',
+                smooth: true,
+                itemStyle: { color: '#3b82f6' }
+            }]
+        });
+
+        // 2. PO Status ECharts
+        const poChart = echarts.init(document.getElementById('po-echart'));
+        poChart.setOption({
+            tooltip: { trigger: 'item' },
+            legend: { top: 'bottom', textStyle: { color: textColor } },
+            series: [{
+                name: 'Purchase Orders',
+                type: 'pie',
+                radius: ['40%', '70%'],
+                avoidLabelOverlap: false,
+                itemStyle: { borderRadius: 10, borderColor: isDark ? '#1d232a' : '#fff', borderWidth: 2 },
+                label: { show: false },
+                data: poData
+            }]
+        });
+
+        // 3. Forecast ECharts
+        const forecastChart = echarts.init(document.getElementById('forecast-echart'));
+        forecastChart.setOption({
+            tooltip: { trigger: 'axis' },
+            legend: { data: ['Historical', 'Forecasted'], textStyle: { color: textColor } },
+            xAxis: {
+                type: 'category',
+                data: forecastData.extended_dates,
+                axisLabel: { color: textColor, rotate: 30, fontSize: 10 }
+            },
+            yAxis: {
+                type: 'value',
+                axisLabel: { color: textColor }
+            },
+            series: [
+                {
+                    name: 'Historical',
+                    type: 'line',
+                    data: forecastData.extended_dates.map((d, i) => i < forecastData.dates.length ? forecastData.values[i] : null),
+                    smooth: true,
+                    lineStyle: { width: 3 },
+                    itemStyle: { color: '#10b981' }
+                },
+                {
+                    name: 'Forecasted',
+                    type: 'line',
+                    data: forecastData.extended_dates.map((d, i) => i >= forecastData.dates.length - 1 ? forecastData.extended_values[i] : null),
+                    smooth: true,
+                    lineStyle: { width: 3, type: 'dashed' },
+                    itemStyle: { color: '#f59e0b' }
+                }
+            ]
+        });
+
+        // 4. Initialize FullCalendar
+        const calendarEl = document.getElementById('calendar-widget');
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            height: '100%',
+            headerToolbar: {
+                left: 'prev,next',
+                center: 'title',
+                right: ''
+            },
+            events: calendarEvents,
+            eventClick: function(info) {
+                if (info.event.url) {
+                    window.location.href = info.event.url;
+                    info.jsEvent.preventDefault();
+                }
+            }
+        });
+        calendar.render();
+
+        // Responsive charts on resize
+        window.addEventListener('resize', function() {
+            stockChart.resize();
+            poChart.resize();
+            forecastChart.resize();
+        });
+    });
+</script>
 {% endblock %}

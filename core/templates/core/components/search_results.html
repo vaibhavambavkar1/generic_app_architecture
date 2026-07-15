@@ -1,0 +1,56 @@
+<div class="p-2 max-h-96 overflow-y-auto space-y-3">
+    {% if not results.items and not results.suppliers and not results.pos %}
+    <p class="text-xs text-base-content/50 p-4 text-center">No results found for "{{ query }}"</p>
+    {% else %}
+        <!-- Products -->
+        {% if results.items %}
+        <div>
+            <div class="text-[10px] uppercase font-bold text-base-content/40 px-2 py-1">Products</div>
+            <ul class="space-y-1">
+                {% for item in results.items %}
+                <li>
+                    <a href="{% url 'inventory:item_update' item.id %}" class="flex justify-between items-center px-2 py-1.5 hover:bg-base-300 rounded-lg text-sm transition-colors duration-150">
+                        <span class="font-medium text-base-content">{{ item.name }}</span>
+                        <span class="font-mono text-xs text-primary">{{ item.sku }}</span>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <!-- Suppliers -->
+        {% if results.suppliers %}
+        <div>
+            <div class="text-[10px] uppercase font-bold text-base-content/40 px-2 py-1">Suppliers</div>
+            <ul class="space-y-1">
+                {% for supplier in results.suppliers %}
+                <li>
+                    <a href="{% url 'inventory:supplier_detail' supplier.id %}" class="flex justify-between items-center px-2 py-1.5 hover:bg-base-300 rounded-lg text-sm transition-colors duration-150">
+                        <span class="font-medium text-base-content">{{ supplier.name }}</span>
+                        <span class="text-xs text-base-content/60">{{ supplier.contact_email }}</span>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <!-- Purchase Orders -->
+        {% if results.pos %}
+        <div>
+            <div class="text-[10px] uppercase font-bold text-base-content/40 px-2 py-1">Purchase Orders</div>
+            <ul class="space-y-1">
+                {% for po in results.pos %}
+                <li>
+                    <a href="{% url 'inventory:po_detail' po.id %}" class="flex justify-between items-center px-2 py-1.5 hover:bg-base-300 rounded-lg text-sm transition-colors duration-150">
+                        <span class="font-bold text-primary font-mono">{{ po.po_number }}</span>
+                        <span class="badge badge-sm badge-outline">{{ po.status }}</span>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    {% endif %}
+</div>

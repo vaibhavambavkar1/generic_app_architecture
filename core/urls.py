@@ -23,6 +23,8 @@ urlpatterns = [
     path('reports/saved/<int:pk>/', views.execute_saved_report, name='execute_saved_report'),
     path('reports/saved/<int:pk>/delete/', views.delete_saved_report, name='delete_saved_report'),
     path('reports/export/', views.export_report, name='export_report'),
+    path('audit-logs/', views.AuditLogListView.as_view(), name='audit_logs'),
+    path('search/', views.global_search, name='global_search'),
 ]
 
 # HTML Auth URLs

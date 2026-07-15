@@ -1,5 +1,6 @@
 import io
 import os
+import json
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
@@ -84,6 +85,48 @@ def dashboard(request):
         title="Procurement Demand Trend & Forecast"
     )
 
+    # Prepare data for ECharts
+    stock_echart_data = {
+        'categories': [item.name for item in items_qs],
+        'values': [int(item.stock_level) for item in items_qs],
+    }
+    
+    po_echart_data = [
+        {'name': item['status_name'], 'value': float(item['total'] or 0.00)}
+        for item in po_states_data
+    ]
+    
+    forecast_dates = [item['date'] for item in plotly_data]
+    forecast_values = [item['total_qty'] for item in plotly_data]
+    forecast_extended_dates = list(forecast_dates)
+    forecast_extended_values = list(forecast_values)
+    if len(forecast_values) > 1:
+        diff = (forecast_values[-1] - forecast_values[0]) / len(forecast_values)
+        import datetime
+        last_date = datetime.datetime.strptime(forecast_dates[-1], "%Y-%m-%d").date()
+        for i in range(1, 4):
+            next_date = last_date + datetime.timedelta(days=i * 7)
+            forecast_extended_dates.append(next_date.strftime("%Y-%m-%d"))
+            forecast_extended_values.append(max(0.0, forecast_values[-1] + diff * i))
+
+    forecast_echart_data = {
+        'dates': forecast_dates,
+        'values': forecast_values,
+        'extended_dates': forecast_extended_dates,
+        'extended_values': forecast_extended_values,
+    }
+    
+    # Calendar events from POs
+    po_list = PurchaseOrder.objects.all().select_related('supplier')
+    calendar_events = []
+    for po in po_list:
+        calendar_events.append({
+            'title': f"{po.po_number} ({po.supplier.name})",
+            'start': po.created_at.strftime('%Y-%m-%d'),
+            'url': reverse('inventory:po_detail', args=[po.pk]),
+            'color': '#3b82f6' if po.status == 'Approved' else '#10b981' if po.status == 'Received' else '#f59e0b',
+        })
+
     context = {
         'total_items': total_items,
         'low_stock_items': low_stock_items,
@@ -91,7 +134,11 @@ def dashboard(request):
         'stock_value': stock_value,
         'stock_chart': stock_chart,
         'po_chart': po_chart,
-        'forecast_chart': forecast_chart
+        'forecast_chart': forecast_chart,
+        'stock_echart_json': json.dumps(stock_echart_data),
+        'po_echart_json': json.dumps(po_echart_data),
+        'forecast_echart_json': json.dumps(forecast_echart_data),
+        'calendar_events_json': json.dumps(calendar_events),
     }
     return render(request, 'inventory/dashboard.html', context)
 

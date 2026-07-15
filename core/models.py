@@ -101,11 +101,21 @@ class AuditLog(models.Model):
 class ApprovalRoute(models.Model):
     transition = models.ForeignKey(Transition, related_name='approvals', on_delete=models.CASCADE)
     required_group = models.ForeignKey('auth.Group', on_delete=models.SET_NULL, null=True, blank=True)
+    required_permission = models.CharField(max_length=255, blank=True, help_text="e.g., 'inventory.approve_purchaseorder'")
     
-    def can_approve(self, user):
-        if not self.required_group:
-            return True
-        return user.groups.filter(id=self.required_group.id).exists()
+    def can_approve(self, user, obj=None):
+        if self.required_permission:
+            # Guardian: Check for object-level permission, or global permission
+            if obj and user.has_perm(self.required_permission, obj):
+                return True
+            if user.has_perm(self.required_permission):
+                return True
+            return False
+            
+        if self.required_group:
+            return user.groups.filter(id=self.required_group.id).exists()
+            
+        return True
 
 from core.mixins import AuditableMixin
 from django_fsm import FSMField
@@ -142,7 +152,7 @@ class WorkflowMixin(AuditableMixin):
             approvals = transition.approvals.all()
             can_approve = True
             for approval in approvals:
-                if not approval.can_approve(user):
+                if not approval.can_approve(user, obj=self):
                     can_approve = False
                     break
             

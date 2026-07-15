@@ -241,3 +241,50 @@ class ReportUITestsCase(TestCase):
         delete_response = self.client.post(reverse('core:delete_saved_report', args=[saved.pk]))
         self.assertEqual(delete_response.status_code, 200)
         self.assertFalse(SavedReport.objects.filter(pk=saved.pk).exists())
+
+
+class CoreSystemViewsTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_superuser(username='admin', password='password123', email='admin@example.com')
+        from core.models import Organization, AuditLog
+        from django.contrib.contenttypes.models import ContentType
+        self.org = Organization.objects.create(
+            name="Org 1",
+            owner_name="Owner 1",
+            email="org1@example.com"
+        )
+        self.client = Client()
+        self.client.login(username='admin', password='password123')
+
+        # Create dummy AuditLog
+        ct = ContentType.objects.get_for_model(Organization)
+        AuditLog.objects.create(
+            user=self.user,
+            action='CREATE',
+            content_type=ct,
+            object_id=self.org.id,
+            new_values={'name': 'Org 1'}
+        )
+
+    def test_audit_log_list_view(self):
+        response = self.client.get(reverse('core:audit_logs'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "System Audit Logs")
+        self.assertContains(response, "Create")
+
+    def test_global_search_view(self):
+        # Test empty query
+        response = self.client.get(reverse('core:global_search'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "No results found")
+
+        # Test matched query on Supplier
+        from inventory.models import Supplier
+        Supplier.objects.create(
+            name="Mega Corp Supplier",
+            contact_email="mega@corp.com",
+            phone="9876543210"
+        )
+        response = self.client.get(reverse('core:global_search') + "?q=Mega")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Mega Corp Supplier")

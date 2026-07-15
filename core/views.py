@@ -39,8 +39,17 @@ def execute_transition(request, app_label, model_name, object_id, transition_id)
         'toast_type': toast_type,
         'is_transition_response': True,
     }
+    response = render(request, 'core/components/workflow/action_buttons.html', context)
     
-    return render(request, 'core/components/workflow/action_buttons.html', context)
+    if toast_type == 'success' and model_name.lower() == 'purchaseorder' and transition.to_state.name in ['Approved', 'Received']:
+        import json
+        from django.urls import reverse
+        download_url = reverse('inventory:po_download_pdf', args=[instance.id])
+        response['HX-Trigger'] = json.dumps({
+            "showReceiptPrompt": {"url": download_url}
+        })
+        
+    return response
 
 from django.http import FileResponse, HttpResponse
 from .backup import BackupManager
@@ -602,5 +611,53 @@ def delete_saved_report(request, pk):
         'saved_reports': saved_reports,
         'toast_message': "Report configuration deleted successfully!",
         'toast_type': 'success'
+    })
+
+
+from django_tables2 import SingleTableView
+from .tables import AuditLogTable
+from .models import AuditLog
+
+class AuditLogListView(SingleTableView):
+    model = AuditLog
+    table_class = AuditLogTable
+    template_name = "core/audit_logs.html"
+    paginated_by = 15
+
+
+@login_required
+def global_search(request):
+    """
+    Unified global search queries across Suppliers, Products, and Purchase Orders.
+    Returns results dynamically to the topbar search dropdown.
+    """
+    from django.db import models
+    from inventory.models import Supplier, InventoryItem, PurchaseOrder
+
+    query = request.GET.get('q', '').strip()
+    results = {
+        'items': [],
+        'suppliers': [],
+        'pos': []
+    }
+    if query:
+        # Search InventoryItem
+        results['items'] = InventoryItem.objects.filter(
+            models.Q(name__icontains=query) | models.Q(sku__icontains=query)
+        ).order_by('name')[:5]
+
+        # Search Supplier
+        results['suppliers'] = Supplier.objects.filter(
+            models.Q(name__icontains=query) | models.Q(contact_email__icontains=query) | models.Q(phone__icontains=query)
+        ).order_by('name')[:5]
+
+        # Search PurchaseOrder
+        results['pos'] = PurchaseOrder.objects.filter(
+            po_number__icontains=query
+        ).order_by('-created_at')[:5]
+
+    return render(request, 'core/components/search_results.html', {
+        'results': results,
+        'query': query
     })
 

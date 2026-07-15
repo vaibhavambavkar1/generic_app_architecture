@@ -1,0 +1,19 @@
+{% extends "core/base.html" %}
+{% load render_table from django_tables2 %}
+
+{% block title %}System Audit Logs | ERP Framework{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div>
+        <h1 class="text-3xl font-bold tracking-tight text-base-content">System Audit Logs</h1>
+        <p class="text-base-content/60">Comprehensive audit trail of all model updates, creations, and deletions.</p>
+    </div>
+
+    <!-- Tables Container -->
+    <div class="bg-base-200 p-6 rounded-2xl shadow-xl border border-base-300 overflow-x-auto">
+        {% render_table table %}
+    </div>
+</div>
+{% endblock %}
