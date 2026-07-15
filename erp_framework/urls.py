@@ -26,6 +26,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('core/', include('core.urls')),
     path('inventory/', include('inventory.urls')),
+    path('crm/', include('crm.urls')),
 ]
 
 if settings.DEBUG:

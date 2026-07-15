@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'core',
     'inventory',
+    'crm',
     'django_htmx',
     'django_celery_beat',
     'rest_framework',
