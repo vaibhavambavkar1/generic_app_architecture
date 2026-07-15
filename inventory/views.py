@@ -1610,5 +1610,49 @@ def auto_generate_pos(request):
     return redirect('inventory:po_list')
 
 
+@login_required
+def label_export_modal(request):
+    """
+    HTMX view: renders the label export configuration modal.
+    Allows selection of products, label type, and copies per label.
+    """
+    items = InventoryItem.objects.filter(is_active=True).order_by('name')
+    return render(request, 'inventory/label_export_modal.html', {
+        'items': items
+    })
 
 
+@login_required
+def export_labels_pdf(request):
+    """
+    Generates a printable A4 PDF label sheet with barcodes and/or QR codes.
+    Supports bulk selection, per-product copy count, and label type choice.
+    """
+    from .label_generator import generate_label_sheet_pdf
+
+    # Parse form data
+    item_ids = request.POST.getlist('item_ids')
+    label_type = request.POST.get('label_type', 'both')  # 'barcode', 'qr', 'both'
+    copies = int(request.POST.get('copies', 1))
+
+    if not item_ids:
+        # If no items selected, export all active items
+        items = InventoryItem.objects.filter(is_active=True).order_by('name')
+    else:
+        items = InventoryItem.objects.filter(id__in=item_ids, is_active=True).order_by('name')
+
+    if not items.exists():
+        return HttpResponse("No active products found to generate labels.", status=400)
+
+    # Clamp copies to a reasonable range
+    copies = max(1, min(copies, 50))
+
+    pdf_buffer = generate_label_sheet_pdf(items, label_type=label_type, copies=copies)
+
+    response = FileResponse(
+        pdf_buffer,
+        content_type='application/pdf',
+        filename=f'product_labels_{label_type}.pdf',
+    )
+    response['Content-Disposition'] = f'attachment; filename="product_labels_{label_type}.pdf"'
+    return response

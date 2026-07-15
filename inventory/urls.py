@@ -10,6 +10,8 @@ urlpatterns = [
     path('items/<int:pk>/edit/', views.item_update, name='item_update'),
     path('items/<int:pk>/delete/', views.item_delete, name='item_delete'),
     path('items/<int:pk>/price-history/', views.item_price_history, name='item_price_history'),
+    path('items/labels/modal/', views.label_export_modal, name='label_export_modal'),
+    path('items/labels/export/', views.export_labels_pdf, name='export_labels_pdf'),
     
     path('suppliers/', views.supplier_list, name='supplier_list'),
     path('suppliers/create/', views.supplier_create, name='supplier_create'),
