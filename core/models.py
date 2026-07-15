@@ -123,6 +123,9 @@ from django_fsm import FSMField
 class WorkflowMixin(AuditableMixin):
     """
     Abstract mixin for fat models to integrate with the Workflow Engine.
+    
+    FSM method mappings are cached at the class level via __init_subclass__
+    to avoid expensive dir() introspection on every transition call.
     """
     workflow_state = models.ForeignKey(
         State, 
@@ -133,8 +136,45 @@ class WorkflowMixin(AuditableMixin):
     )
     status = FSMField(default='Draft')
     
+    # Class-level cache: {(source_state, target_state): method_name}
+    _fsm_transition_map = None
+    
     class Meta:
         abstract = True
+
+    def __init_subclass__(cls, **kwargs):
+        """
+        Hook called when a concrete model subclasses WorkflowMixin.
+        Builds a cached mapping of FSM-decorated methods keyed by
+        (source_state, target_state) for O(1) lookup during transitions.
+        """
+        super().__init_subclass__(**kwargs)
+        # Defer cache building — the class may not be fully defined yet.
+        # We'll build it lazily on first use via _get_fsm_transition_map().
+        cls._fsm_transition_map = None
+
+    @classmethod
+    def _get_fsm_transition_map(cls):
+        """
+        Lazily builds and caches the FSM transition map for this model class.
+        Returns dict: {(source_state, target_state): method_name}
+        """
+        if cls._fsm_transition_map is not None:
+            return cls._fsm_transition_map
+
+        transition_map = {}
+        for attr_name in dir(cls):
+            try:
+                attr = getattr(cls, attr_name)
+            except AttributeError:
+                continue
+            if callable(attr) and hasattr(attr, '_django_fsm'):
+                transitions_dict = attr._django_fsm.transitions
+                for source, transition_meta in transitions_dict.items():
+                    transition_map[(source, transition_meta.target)] = attr_name
+
+        cls._fsm_transition_map = transition_map
+        return transition_map
 
     def get_workflow_name(self):
         """Derive the workflow identifier based on the model name."""
@@ -187,28 +227,21 @@ class WorkflowMixin(AuditableMixin):
         old_state = self.workflow_state
         self.workflow_state = transition.to_state
         
-        # Execute django-fsm transition if one exists
+        # Execute django-fsm transition if one exists (O(1) cached lookup)
         source_state_name = old_state.name if old_state else 'Draft'
         self.status = source_state_name  # Ensure FSM state is synchronized
         target_state_name = transition.to_state.name
         
-        fsm_transition_called = False
-        for attr_name in dir(self):
-            try:
-                attr = getattr(self, attr_name)
-            except AttributeError:
-                continue
-            if hasattr(attr, '_django_fsm'):
-                transitions_dict = attr._django_fsm.transitions
-                for source, transition_meta in transitions_dict.items():
-                    if (source == source_state_name or source == '*') and transition_meta.target == target_state_name:
-                        attr()  # Call the fsm decorated method
-                        fsm_transition_called = True
-                        break
-                if fsm_transition_called:
-                    break
-                    
-        if not fsm_transition_called:
+        fsm_map = self.__class__._get_fsm_transition_map()
+        fsm_method_name = fsm_map.get((source_state_name, target_state_name))
+        if not fsm_method_name:
+            # Fallback: check wildcard source ('*')
+            fsm_method_name = fsm_map.get(('*', target_state_name))
+        
+        if fsm_method_name:
+            fsm_method = getattr(self, fsm_method_name)
+            fsm_method()  # Call the fsm decorated method
+        else:
             self.status = target_state_name
             
         if user:

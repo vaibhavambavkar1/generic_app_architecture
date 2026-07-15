@@ -1,4 +1,4 @@
-from core.reports.registry import BaseReport
+from core.reports.registry import BaseReport, ReportRegistry
 from .models import InventoryItem, PurchaseOrder
 
 class InventoryItemReport(BaseReport):
@@ -35,3 +35,9 @@ class PurchaseOrderReport(BaseReport):
 
     def get_group_by_fields(self):
         return ['supplier__name']
+
+
+# Auto-register when this module is imported by autodiscover_plugins()
+ReportRegistry.register('inventory_items', InventoryItemReport)
+ReportRegistry.register('purchase_orders', PurchaseOrderReport)
+

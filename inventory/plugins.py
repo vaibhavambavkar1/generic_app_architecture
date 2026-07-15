@@ -1,4 +1,5 @@
-from core.sdk.registry import BasePlugin
+from core.sdk.registry import BasePlugin, PluginRegistry
+
 
 class InventoryPlugin(BasePlugin):
     identifier = "inventory"
@@ -11,3 +12,8 @@ class InventoryPlugin(BasePlugin):
             {"label": "Suppliers", "url": "/inventory/suppliers/"},
             {"label": "Purchase Orders", "url": "/inventory/pos/"},
         ]
+
+
+# Auto-register when this module is imported by autodiscover_plugins()
+PluginRegistry.register(InventoryPlugin)
+

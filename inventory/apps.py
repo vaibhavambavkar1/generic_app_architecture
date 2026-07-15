@@ -5,12 +5,5 @@ class InventoryConfig(AppConfig):
     name = 'inventory'
 
     def ready(self):
+        # Import rules module to ensure RuleEngine conditions/actions are registered
         import inventory.rules
-        from core.sdk.registry import PluginRegistry
-        from .plugins import InventoryPlugin
-        PluginRegistry.register(InventoryPlugin)
-
-        from core.reports.registry import ReportRegistry
-        from .reports import InventoryItemReport, PurchaseOrderReport
-        ReportRegistry.register('inventory_items', InventoryItemReport)
-        ReportRegistry.register('purchase_orders', PurchaseOrderReport)
