@@ -1,0 +1,65 @@
+{% extends "core/base.html" %}
+
+{% block title %}Stock Ledger | ERP Framework{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+            <h1 class="text-3xl font-bold tracking-tight">Stock Ledger</h1>
+            <p class="text-base-content/60">Append-only audit trail of all inventory movements.</p>
+        </div>
+    </div>
+
+    <!-- Filter Form -->
+    <div class="bg-base-200 p-4 rounded-lg shadow">
+        <form method="GET" class="flex flex-wrap gap-4 items-end" hx-get="{% url 'inventory:stock_ledger' %}" hx-target="body" hx-push-url="true">
+            <div class="form-control">
+                <label class="label"><span class="label-text">Product ID</span></label>
+                <input type="text" name="product_id" value="{{ request.GET.product_id }}" class="input input-bordered input-sm" placeholder="e.g. 1" />
+            </div>
+            <div class="form-control">
+                <label class="label"><span class="label-text">Warehouse ID</span></label>
+                <input type="text" name="warehouse_id" value="{{ request.GET.warehouse_id }}" class="input input-bordered input-sm" placeholder="e.g. 2" />
+            </div>
+            <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
+        </form>
+    </div>
+
+    <!-- Table -->
+    <div class="overflow-x-auto bg-base-100 rounded-lg shadow border border-base-200">
+        <table class="table table-zebra w-full text-sm">
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Product</th>
+                    <th>Warehouse</th>
+                    <th>Type</th>
+                    <th>Ref Doc</th>
+                    <th class="text-right">Qty</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in entries %}
+                <tr>
+                    <td class="whitespace-nowrap text-base-content/70">{{ entry.timestamp|date:"Y-m-d H:i:s" }}</td>
+                    <td class="font-medium">{{ entry.product.name }} <br><span class="text-xs text-base-content/50">{{ entry.product.sku }}</span></td>
+                    <td>{{ entry.warehouse.name }}</td>
+                    <td><span class="badge badge-outline">{{ entry.get_transaction_type_display }}</span></td>
+                    <td>{{ entry.reference_document }}</td>
+                    <td class="text-right font-mono font-bold {% if entry.quantity > 0 %}text-success{% else %}text-error{% endif %}">
+                        {% if entry.quantity > 0 %}+{% endif %}{{ entry.quantity }}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center p-8 text-base-content/50">
+                        No ledger entries found.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,77 @@
+<dialog id="stock_adjustment_modal" class="modal modal-bottom sm:modal-middle" open>
+    <div class="modal-box bg-base-100 border border-base-300 shadow-xl rounded-2xl max-w-lg">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="font-bold text-xl text-primary flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                New Stock Adjustment
+            </h3>
+            <button class="btn btn-sm btn-circle btn-ghost" onclick="closeAdjustmentModal()">✕</button>
+        </div>
+
+        <form method="POST" action="{% url 'inventory:stock_adjustment_create' %}" 
+              hx-post="{% url 'inventory:stock_adjustment_create' %}" 
+              hx-swap="none"
+              class="space-y-4" 
+              onsubmit="setTimeout(closeAdjustmentModal, 300)">
+            {% csrf_token %}
+            
+            <div class="form-control w-full">
+                <label class="label font-semibold pb-1">
+                    <span class="label-text">Warehouse</span>
+                </label>
+                {{ form.warehouse }}
+                {% if form.warehouse.errors %}
+                <label class="label"><span class="label-text-alt text-error">{{ form.warehouse.errors.0 }}</span></label>
+                {% endif %}
+            </div>
+
+            <div class="form-control w-full">
+                <label class="label font-semibold pb-1">
+                    <span class="label-text">Product</span>
+                </label>
+                {{ form.product }}
+                {% if form.product.errors %}
+                <label class="label"><span class="label-text-alt text-error">{{ form.product.errors.0 }}</span></label>
+                {% endif %}
+            </div>
+
+            <div class="form-control w-full">
+                <label class="label font-semibold pb-1">
+                    <span class="label-text">Quantity Adjusted</span>
+                </label>
+                {{ form.quantity_adjusted }}
+                <label class="label pt-1"><span class="label-text-alt text-base-content/70">Use positive values to add stock, negative values to remove.</span></label>
+                {% if form.quantity_adjusted.errors %}
+                <label class="label"><span class="label-text-alt text-error">{{ form.quantity_adjusted.errors.0 }}</span></label>
+                {% endif %}
+            </div>
+
+            <div class="form-control w-full">
+                <label class="label font-semibold pb-1">
+                    <span class="label-text">Reason</span>
+                </label>
+                {{ form.reason }}
+                {% if form.reason.errors %}
+                <label class="label"><span class="label-text-alt text-error">{{ form.reason.errors.0 }}</span></label>
+                {% endif %}
+            </div>
+
+            <div class="modal-action mt-6">
+                <button type="button" class="btn btn-ghost" onclick="closeAdjustmentModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Create Draft</button>
+            </div>
+        </form>
+    </div>
+</dialog>
+
+<script>
+    function closeAdjustmentModal() {
+        const modal = document.getElementById('stock_adjustment_modal');
+        if (modal) {
+            modal.removeAttribute('open');
+            setTimeout(() => modal.remove(), 200);
+        }
+    }
+</script>

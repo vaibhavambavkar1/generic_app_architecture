@@ -38,4 +38,15 @@ urlpatterns = [
     path('pos/<int:pk>/receive-submit/<int:transition_id>/', views.po_receive_submit, name='po_receive_submit'),
     path('pos/<int:pk>/email-modal/', views.po_email_modal, name='po_email_modal'),
     path('pos/<int:pk>/email-submit/', views.po_email_submit, name='po_email_submit'),
+    
+    # Phase 2: Inventory & Stock Control
+    path('warehouses/', views.warehouse_list, name='warehouse_list'),
+    path('ledger/', views.stock_ledger, name='stock_ledger'),
+    path('adjustments/', views.stock_adjustment_list, name='stock_adjustment_list'),
+    path('adjustments/create/', views.stock_adjustment_create, name='stock_adjustment_create'),
+    path('adjustments/<int:pk>/', views.stock_adjustment_detail, name='stock_adjustment_detail'),
+    path('adjustments/<int:pk>/approve-modal/', views.stock_adjustment_approve_modal, name='stock_adjustment_approve_modal'),
+    path('transfers/', views.warehouse_transfer_list, name='warehouse_transfer_list'),
+    path('transfers/create/', views.warehouse_transfer_create, name='warehouse_transfer_create'),
+    path('transfers/<int:pk>/', views.warehouse_transfer_detail, name='warehouse_transfer_detail'),
 ]

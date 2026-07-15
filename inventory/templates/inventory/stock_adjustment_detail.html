@@ -1,0 +1,70 @@
+{% extends "core/base.html" %}
+
+{% block title %}Stock Adjustment #{{ adjustment.id }} | ERP Framework{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+            <h1 class="text-3xl font-bold tracking-tight">Adjustment #{{ adjustment.id }}</h1>
+            <p class="text-base-content/60">Review and approve stock modifications.</p>
+        </div>
+        <div class="flex gap-2">
+            <a href="{% url 'inventory:stock_adjustment_list' %}" class="btn btn-ghost btn-sm">Back to List</a>
+            {% if adjustment.status == 'Draft' %}
+            <button class="btn btn-success btn-sm" 
+                    hx-get="{% url 'inventory:stock_adjustment_approve_modal' adjustment.pk %}" 
+                    hx-target="body" 
+                    hx-swap="beforeend">
+                Approve Adjustment
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="bg-base-100 p-6 rounded-lg shadow border border-base-200">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <h3 class="font-bold text-lg mb-4">Details</h3>
+                <dl class="space-y-2 text-sm">
+                    <div class="flex justify-between border-b border-base-200 pb-1">
+                        <dt class="text-base-content/70">Product:</dt>
+                        <dd class="font-medium">{{ adjustment.product.name }} ({{ adjustment.product.sku }})</dd>
+                    </div>
+                    <div class="flex justify-between border-b border-base-200 pb-1">
+                        <dt class="text-base-content/70">Warehouse:</dt>
+                        <dd class="font-medium">{{ adjustment.warehouse.name }}</dd>
+                    </div>
+                    <div class="flex justify-between border-b border-base-200 pb-1">
+                        <dt class="text-base-content/70">Quantity Adjusted:</dt>
+                        <dd class="font-mono font-bold {% if adjustment.quantity_adjusted > 0 %}text-success{% else %}text-error{% endif %}">
+                            {% if adjustment.quantity_adjusted > 0 %}+{% endif %}{{ adjustment.quantity_adjusted }}
+                        </dd>
+                    </div>
+                    <div class="flex justify-between border-b border-base-200 pb-1">
+                        <dt class="text-base-content/70">Status:</dt>
+                        <dd>
+                            <span class="badge {% if adjustment.status == 'Approved' %}badge-success{% else %}badge-warning{% endif %} badge-sm">{{ adjustment.status }}</span>
+                        </dd>
+                    </div>
+                    <div class="flex flex-col mt-2 pt-2 border-t border-base-200">
+                        <dt class="text-base-content/70 mb-1">Reason:</dt>
+                        <dd class="bg-base-200 p-3 rounded text-base-content/80">{{ adjustment.reason }}</dd>
+                    </div>
+                </dl>
+            </div>
+            
+            <div>
+                <h3 class="font-bold text-lg mb-4">Workflow History</h3>
+                <div class="bg-base-200 rounded p-4 text-sm">
+                    <p class="text-base-content/60 italic mb-2">Audit trail of status changes will appear here.</p>
+                    <ul class="steps steps-vertical">
+                        <li class="step step-primary">Draft Created</li>
+                        <li class="step {% if adjustment.status == 'Approved' %}step-success{% endif %}">Approved & Ledger Updated</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

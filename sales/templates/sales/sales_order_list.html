@@ -1,0 +1,52 @@
+{% extends "core/base.html" %}
+
+{% block title %}Sales Orders | ERP Framework{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+            <h1 class="text-3xl font-bold tracking-tight">Sales Orders</h1>
+            <p class="text-base-content/60">Manage confirmed customer orders.</p>
+        </div>
+        <div class="flex gap-2">
+            <button class="btn btn-primary btn-sm">New Order</button>
+        </div>
+    </div>
+
+    <div class="overflow-x-auto bg-base-100 rounded-lg shadow border border-base-200">
+        <table class="table w-full">
+            <thead>
+                <tr>
+                    <th>SO #</th>
+                    <th>Customer</th>
+                    <th>Dispatch Date</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th class="text-right">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr class="hover">
+                    <td class="font-bold">{{ order.so_number }}</td>
+                    <td>{{ order.customer.name }}</td>
+                    <td>{{ order.expected_dispatch_date }}</td>
+                    <td class="font-mono">₹{{ order.total_amount }}</td>
+                    <td>
+                        <span class="badge {% if order.status == 'Confirmed' %}badge-success{% else %}badge-info{% endif %} badge-sm">{{ order.status }}</span>
+                    </td>
+                    <td class="text-right">
+                        <a href="{% url 'sales:sales_order_detail' order.pk %}" class="btn btn-ghost btn-xs">View</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center p-8 text-base-content/50">No sales orders found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

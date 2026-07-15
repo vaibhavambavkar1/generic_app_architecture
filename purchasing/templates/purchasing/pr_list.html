@@ -1,0 +1,55 @@
+{% extends "core/base.html" %}
+
+{% block title %}Purchase Requests | ERP Framework{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+            <h1 class="text-3xl font-bold tracking-tight">Purchase Requests</h1>
+            <p class="text-base-content/60">Manage internal requests for goods.</p>
+        </div>
+        <div class="flex gap-2">
+            <button class="btn btn-primary btn-sm" 
+                    hx-get="{% url 'purchasing:pr_create' %}" 
+                    hx-target="body" 
+                    hx-swap="beforeend">
+                New Request
+            </button>
+        </div>
+    </div>
+
+    <div class="overflow-x-auto bg-base-100 rounded-lg shadow border border-base-200">
+        <table class="table w-full">
+            <thead>
+                <tr>
+                    <th>PR #</th>
+                    <th>Department</th>
+                    <th>Expected Date</th>
+                    <th>Status</th>
+                    <th class="text-right">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pr in prs %}
+                <tr class="hover">
+                    <td class="font-bold">{{ pr.request_number }}</td>
+                    <td>{{ pr.department }}</td>
+                    <td>{{ pr.expected_date }}</td>
+                    <td>
+                        <span class="badge {% if pr.status == 'Approved' %}badge-success{% elif pr.status == 'Draft' %}badge-warning{% else %}badge-info{% endif %} badge-sm">{{ pr.status }}</span>
+                    </td>
+                    <td class="text-right">
+                        <a href="{% url 'purchasing:pr_detail' pr.pk %}" class="btn btn-ghost btn-xs">View</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center p-8 text-base-content/50">No purchase requests found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends "core/base.html" %}
+
+{% block title %}Quotations | ERP Framework{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+            <h1 class="text-3xl font-bold tracking-tight">Quotations</h1>
+            <p class="text-base-content/60">Manage customer price quotes.</p>
+        </div>
+        <div class="flex gap-2">
+            <button class="btn btn-primary btn-sm">New Quote</button>
+        </div>
+    </div>
+
+    <div class="overflow-x-auto bg-base-100 rounded-lg shadow border border-base-200">
+        <table class="table w-full">
+            <thead>
+                <tr>
+                    <th>Quote #</th>
+                    <th>Customer</th>
+                    <th>Valid Until</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th class="text-right">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for quote in quotes %}
+                <tr class="hover">
+                    <td class="font-bold">{{ quote.quote_number }}</td>
+                    <td>{{ quote.customer.name }}</td>
+                    <td>{{ quote.valid_until }}</td>
+                    <td class="font-mono">₹{{ quote.total_amount }}</td>
+                    <td>
+                        <span class="badge {% if quote.status == 'Accepted' %}badge-success{% else %}badge-info{% endif %} badge-sm">{{ quote.status }}</span>
+                    </td>
+                    <td class="text-right">
+                        <a href="{% url 'sales:quotation_detail' quote.pk %}" class="btn btn-ghost btn-xs">View</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center p-8 text-base-content/50">No quotations found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

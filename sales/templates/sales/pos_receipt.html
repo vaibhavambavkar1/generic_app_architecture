@@ -1,0 +1,78 @@
+{% extends "core/base.html" %}
+
+{% block title %}Receipt | ERP Framework{% endblock %}
+
+{% block content %}
+<div class="flex justify-center py-10">
+    <div class="bg-base-100 p-8 rounded-xl shadow-2xl w-full max-w-sm font-mono border-t-8 border-t-primary">
+        <div class="text-center mb-6 border-b border-dashed border-base-300 pb-6">
+            <h1 class="text-2xl font-bold tracking-tight uppercase">Your Store Name</h1>
+            <p class="text-sm text-base-content/60 mt-1">123 ERP Framework Ave.<br>City, State 12345</p>
+        </div>
+        
+        <div class="text-sm mb-6 space-y-1">
+            <div class="flex justify-between">
+                <span>Receipt #:</span>
+                <span class="font-bold">{{ invoice.invoice_number }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span>Date:</span>
+                <span>{{ invoice.date|date:"Y-m-d H:i" }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span>Payment:</span>
+                <span>{{ invoice.get_payment_method_display }}</span>
+            </div>
+        </div>
+
+        <div class="border-y border-dashed border-base-300 py-4 mb-4">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-left border-b border-base-200">
+                        <th class="pb-2 font-normal">Item</th>
+                        <th class="pb-2 text-right font-normal">Qty</th>
+                        <th class="pb-2 text-right font-normal">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in invoice.lines.all %}
+                    <tr>
+                        <td class="py-2 pr-2">
+                            <div class="truncate w-32">{{ item.product.name }}</div>
+                            <div class="text-[10px] text-base-content/50">@ ₹{{ item.unit_price }}</div>
+                        </td>
+                        <td class="py-2 text-right align-top">{{ item.quantity }}</td>
+                        <td class="py-2 text-right align-top">₹{{ item.line_total }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="space-y-1 text-sm">
+            <div class="flex justify-between">
+                <span class="text-base-content/70">Subtotal:</span>
+                <span>₹{{ invoice.subtotal }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-base-content/70">Tax:</span>
+                <span>₹{{ invoice.tax_amount }}</span>
+            </div>
+            <div class="flex justify-between text-lg font-bold mt-2 pt-2 border-t border-base-200">
+                <span>TOTAL:</span>
+                <span>₹{{ invoice.total_amount }}</span>
+            </div>
+        </div>
+
+        <div class="mt-8 text-center border-t border-dashed border-base-300 pt-6">
+            <p class="text-sm font-bold uppercase tracking-widest text-base-content/70 mb-2">Thank you!</p>
+            <p class="text-xs text-base-content/50">Please keep receipt for returns</p>
+        </div>
+
+        <div class="mt-6 flex gap-2">
+            <button class="btn btn-outline btn-sm flex-1" onclick="window.print()">Print</button>
+            <a href="{% url 'sales:pos_terminal' %}" class="btn btn-primary btn-sm flex-1">New Sale</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

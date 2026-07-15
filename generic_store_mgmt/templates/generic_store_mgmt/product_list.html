@@ -1,0 +1,71 @@
+{% extends "core/base.html" %}
+
+{% block title %}Products List | ERP Framework{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+            <h1 class="text-3xl font-bold tracking-tight">Products</h1>
+            <p class="text-base-content/60">Manage all items across the store.</p>
+        </div>
+        <div class="flex gap-2">
+            <a href="#" class="btn btn-primary btn-sm">New Product</a>
+        </div>
+    </div>
+
+    <!-- Search Form -->
+    <div class="bg-base-200 p-4 rounded-lg shadow flex flex-col md:flex-row gap-4 justify-between items-center">
+        <form method="GET" class="flex w-full md:w-1/2 gap-2" hx-get="{% url 'generic_store_mgmt:product_list' %}" hx-target="body" hx-push-url="true">
+            <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Search by name or SKU..." class="input input-bordered w-full" />
+            <button type="submit" class="btn btn-secondary">Search</button>
+        </form>
+    </div>
+
+    <!-- Table -->
+    <div class="overflow-x-auto bg-base-100 rounded-lg shadow border border-base-200">
+        <table class="table w-full">
+            <thead>
+                <tr>
+                    <th>SKU</th>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Brand</th>
+                    <th>Status</th>
+                    <th class="text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                <tr class="hover">
+                    <td class="font-mono text-sm">{{ product.sku }}</td>
+                    <td class="font-bold">{{ product.name }}</td>
+                    <td>{{ product.category.name|default:"-" }}</td>
+                    <td>{{ product.brand.name|default:"-" }}</td>
+                    <td>
+                        {% if product.is_active %}
+                            <span class="badge badge-success badge-sm">Active</span>
+                        {% else %}
+                            <span class="badge badge-error badge-sm">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-right">
+                        <a href="#" class="btn btn-ghost btn-xs text-primary">Edit</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center p-8 text-base-content/50">
+                        {% if request.GET.q %}
+                            No products found matching "{{ request.GET.q }}".
+                        {% else %}
+                            No products found.
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,91 @@
+{% extends "core/base.html" %}
+
+{% block title %}Executive Dashboard | ERP Framework{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+            <h1 class="text-3xl font-bold tracking-tight">Executive Dashboard</h1>
+            <p class="text-base-content/60">High-level financial and operational overview.</p>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="stat bg-base-100 shadow rounded-lg border border-base-200">
+            <div class="stat-title">30-Day POS Revenue</div>
+            <div class="stat-value text-success">₹{{ revenue_30d|floatformat:2 }}</div>
+            <div class="stat-desc">From completed POS invoices</div>
+        </div>
+        <div class="stat bg-base-100 shadow rounded-lg border border-base-200">
+            <div class="stat-title">Open Payables</div>
+            <div class="stat-value text-error">₹{{ total_payables|floatformat:2 }}</div>
+            <div class="stat-desc">Owed to suppliers (Ledger)</div>
+        </div>
+        <div class="stat bg-base-100 shadow rounded-lg border border-base-200">
+            <div class="stat-title">Inventory Value</div>
+            <div class="stat-value text-primary">₹{{ total_inventory_value|floatformat:2 }}</div>
+            <div class="stat-desc">Total asset ledger balance</div>
+        </div>
+    </div>
+
+    <!-- Chart & Reports -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-base-100 shadow rounded-lg border border-base-200 p-4">
+            <h3 class="font-bold text-lg mb-4">Last 7 Days Sales Trend</h3>
+            <canvas id="salesChart" height="250"></canvas>
+        </div>
+        
+        <div class="bg-base-100 shadow rounded-lg border border-base-200 p-4 flex flex-col gap-4">
+            <h3 class="font-bold text-lg">Detailed Reports</h3>
+            <a href="{% url 'reports:sales_report' %}" class="btn btn-outline btn-block justify-start text-left h-auto py-4">
+                <div>
+                    <div class="font-bold">Top Products Sales Report</div>
+                    <div class="text-xs opacity-70 font-normal">View best-selling products by quantity and revenue.</div>
+                </div>
+            </a>
+            <a href="{% url 'reports:inventory_report' %}" class="btn btn-outline btn-block justify-start text-left h-auto py-4">
+                <div>
+                    <div class="font-bold">Real-time Stock Levels</div>
+                    <div class="text-xs opacity-70 font-normal">Aggregated ledger stock balances per warehouse.</div>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const ctx = document.getElementById('salesChart');
+        if (ctx) {
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: {{ chart_labels|safe }},
+                    datasets: [{
+                        label: 'Daily Revenue (₹)',
+                        data: {{ chart_data|safe }},
+                        borderColor: '#4ADE80',
+                        backgroundColor: 'rgba(74, 222, 128, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

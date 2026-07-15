@@ -1,0 +1,40 @@
+<dialog id="je_modal" class="modal modal-bottom sm:modal-middle" open>
+    <div class="modal-box bg-base-100 border border-base-300 shadow-xl rounded-2xl max-w-lg">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="font-bold text-xl text-primary">New Journal Entry</h3>
+            <button class="btn btn-sm btn-circle btn-ghost" onclick="closeJEModal()">✕</button>
+        </div>
+
+        <form method="POST" action="{% url 'finance:journal_create' %}" 
+              class="space-y-4">
+            {% csrf_token %}
+            
+            {% for field in form %}
+            <div class="form-control w-full">
+                <label class="label font-semibold pb-1">
+                    <span class="label-text">{{ field.label }}</span>
+                </label>
+                {{ field }}
+                {% if field.errors %}
+                <label class="label"><span class="label-text-alt text-error">{{ field.errors.0 }}</span></label>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            <div class="modal-action mt-6">
+                <button type="button" class="btn btn-ghost" onclick="closeJEModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Create Draft JE</button>
+            </div>
+        </form>
+    </div>
+</dialog>
+
+<script>
+    function closeJEModal() {
+        const modal = document.getElementById('je_modal');
+        if (modal) {
+            modal.removeAttribute('open');
+            setTimeout(() => modal.remove(), 200);
+        }
+    }
+</script>

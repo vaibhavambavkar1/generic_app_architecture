@@ -233,3 +233,114 @@ class InventoryItemPriceLog(models.Model):
 
     def __str__(self):
         return f"{self.item.sku} - {self.price} at {self.changed_at}"
+
+# ==========================================
+# RETAIL / POS STORE INVENTORY (PHASE 2)
+# ==========================================
+
+from generic_store_mgmt.models import Product
+
+class Warehouse(AuditableMixin):
+    name = models.CharField(max_length=150, unique=True)
+    location = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
+    
+    def __str__(self):
+        return self.name
+
+class Batch(AuditableMixin):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='batches')
+    batch_number = models.CharField(max_length=100)
+    manufacturing_date = models.DateField(null=True, blank=True)
+    expiry_date = models.DateField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ('product', 'batch_number')
+
+    def __str__(self):
+        return f"{self.product.name} - Batch: {self.batch_number}"
+
+class SerialNumber(AuditableMixin):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='serial_numbers')
+    serial = models.CharField(max_length=100, unique=True)
+    is_sold = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.product.name} - SN: {self.serial}"
+
+class StockLedger(models.Model):
+    TRANSACTION_TYPES = (
+        ('OPENING', 'Opening Stock'),
+        ('PURCHASE', 'Purchase (GRN)'),
+        ('SALES', 'Sales (POS)'),
+        ('RETURN', 'Sales Return'),
+        ('TRANSFER', 'Warehouse Transfer'),
+        ('ADJUST', 'Stock Adjustment'),
+    )
+    product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name='ledger_entries')
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT, related_name='ledger_entries')
+    batch = models.ForeignKey(Batch, on_delete=models.SET_NULL, null=True, blank=True)
+    transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPES)
+    
+    # Positive for IN, Negative for OUT
+    quantity = models.IntegerField()
+    
+    # E.g. "PO-20231012-0001", "INV-1002"
+    reference_document = models.CharField(max_length=100, blank=True)
+    
+    timestamp = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['product', 'warehouse']),
+            models.Index(fields=['timestamp']),
+        ]
+
+    def __str__(self):
+        return f"{self.transaction_type} | {self.product.name} | Qty: {self.quantity}"
+
+class StockAdjustment(WorkflowMixin):
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT)
+    product = models.ForeignKey(Product, on_delete=models.PROTECT)
+    reason = models.CharField(max_length=255, help_text="e.g. Damage, Expiry, Audit count mismatch")
+    quantity_adjusted = models.IntegerField(help_text="Can be positive or negative")
+    
+    @transition(field='status', source='Draft', target='Approved')
+    def approve_adjustment(self):
+        # Insert a ledger entry on approval
+        StockLedger.objects.create(
+            product=self.product,
+            warehouse=self.warehouse,
+            transaction_type='ADJUST',
+            quantity=self.quantity_adjusted,
+            reference_document=f"ADJ-{self.id}"
+        )
+
+class WarehouseTransfer(WorkflowMixin):
+    from_warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT, related_name='transfers_out')
+    to_warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT, related_name='transfers_in')
+    product = models.ForeignKey(Product, on_delete=models.PROTECT)
+    quantity = models.PositiveIntegerField()
+    
+    @transition(field='status', source='Draft', target='In Transit')
+    def dispatch_transfer(self):
+        # Outgoing ledger entry
+        StockLedger.objects.create(
+            product=self.product,
+            warehouse=self.from_warehouse,
+            transaction_type='TRANSFER',
+            quantity=-self.quantity,
+            reference_document=f"TRF-{self.id}-OUT"
+        )
+        
+    @transition(field='status', source='In Transit', target='Completed')
+    def receive_transfer(self):
+        # Incoming ledger entry
+        StockLedger.objects.create(
+            product=self.product,
+            warehouse=self.to_warehouse,
+            transaction_type='TRANSFER',
+            quantity=self.quantity,
+            reference_document=f"TRF-{self.id}-IN"
+        )

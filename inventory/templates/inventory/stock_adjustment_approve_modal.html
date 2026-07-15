@@ -1,0 +1,54 @@
+<dialog id="adjustment_approve_modal" class="modal modal-bottom sm:modal-middle" open>
+    <div class="modal-box bg-base-100 border border-base-300 shadow-xl rounded-2xl max-w-lg">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="font-bold text-xl text-success flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Confirm Approval
+            </h3>
+            <button class="btn btn-sm btn-circle btn-ghost" onclick="closeApproveModal()">✕</button>
+        </div>
+
+        <form method="POST" action="{% url 'inventory:stock_adjustment_detail' adjustment.pk %}" 
+              hx-post="{% url 'inventory:stock_adjustment_detail' adjustment.pk %}" 
+              hx-swap="none"
+              class="space-y-4" 
+              onsubmit="setTimeout(closeApproveModal, 300)">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="approve">
+            
+            <p class="text-base-content/80">
+                Are you sure you want to approve this stock adjustment?
+            </p>
+            
+            <div class="bg-base-200 p-4 rounded-lg text-sm">
+                <ul class="list-disc list-inside space-y-1">
+                    <li><strong>Product:</strong> {{ adjustment.product.name }}</li>
+                    <li><strong>Warehouse:</strong> {{ adjustment.warehouse.name }}</li>
+                    <li><strong>Adjustment:</strong> {% if adjustment.quantity_adjusted > 0 %}+{% endif %}{{ adjustment.quantity_adjusted }} units</li>
+                </ul>
+            </div>
+            
+            <div class="alert alert-warning shadow-sm py-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                <span>Warning: This action will permanently modify the Stock Ledger and cannot be undone.</span>
+            </div>
+
+            <div class="modal-action mt-6">
+                <button type="button" class="btn btn-ghost" onclick="closeApproveModal()">Cancel</button>
+                <button type="submit" class="btn btn-success">Yes, Approve & Update Ledger</button>
+            </div>
+        </form>
+    </div>
+</dialog>
+
+<script>
+    function closeApproveModal() {
+        const modal = document.getElementById('adjustment_approve_modal');
+        if (modal) {
+            modal.removeAttribute('open');
+            setTimeout(() => modal.remove(), 200);
+        }
+    }
+</script>

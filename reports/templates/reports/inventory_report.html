@@ -1,0 +1,44 @@
+{% extends "core/base.html" %}
+
+{% block title %}Real-time Stock Levels | ERP Framework{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+            <h1 class="text-3xl font-bold tracking-tight">Real-time Stock Levels</h1>
+            <p class="text-base-content/60">Aggregated quantities from the Stock Ledger.</p>
+        </div>
+        <div class="flex gap-2">
+            <a href="{% url 'reports:dashboard' %}" class="btn btn-ghost btn-sm">Back to Dashboard</a>
+        </div>
+    </div>
+
+    <div class="overflow-x-auto bg-base-100 rounded-lg shadow border border-base-200">
+        <table class="table w-full">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Warehouse</th>
+                    <th class="text-right">Available Stock</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for stock in stock_levels %}
+                <tr class="hover">
+                    <td class="font-bold">{{ stock.product_name }}</td>
+                    <td>{{ stock.warehouse_name }}</td>
+                    <td class="text-right font-mono font-bold {% if stock.current_stock <= 0 %}text-error{% endif %}">
+                        {{ stock.current_stock }}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3" class="text-center p-8 text-base-content/50">No stock ledger records found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

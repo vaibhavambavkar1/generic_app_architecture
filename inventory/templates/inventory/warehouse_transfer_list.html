@@ -1,0 +1,54 @@
+{% extends "core/base.html" %}
+
+{% block title %}Warehouse Transfers | ERP Framework{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+            <h1 class="text-3xl font-bold tracking-tight">Warehouse Transfers</h1>
+            <p class="text-base-content/60">Move stock securely between warehouse locations.</p>
+        </div>
+        <div class="flex gap-2">
+            <a href="{% url 'inventory:warehouse_transfer_create' %}" class="btn btn-primary btn-sm">New Transfer</a>
+        </div>
+    </div>
+
+    <div class="overflow-x-auto bg-base-100 rounded-lg shadow border border-base-200">
+        <table class="table w-full">
+            <thead>
+                <tr>
+                    <th>TRF #</th>
+                    <th>Product</th>
+                    <th>From</th>
+                    <th>To</th>
+                    <th class="text-right">Qty</th>
+                    <th>Status</th>
+                    <th class="text-right">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for trf in transfers %}
+                <tr class="hover">
+                    <td>#{{ trf.id }}</td>
+                    <td class="font-bold">{{ trf.product.name }}</td>
+                    <td>{{ trf.from_warehouse.name }}</td>
+                    <td>{{ trf.to_warehouse.name }}</td>
+                    <td class="text-right font-mono">{{ trf.quantity }}</td>
+                    <td>
+                        <span class="badge {% if trf.status == 'Completed' %}badge-success{% elif trf.status == 'In Transit' %}badge-info{% else %}badge-warning{% endif %} badge-sm">{{ trf.status }}</span>
+                    </td>
+                    <td class="text-right">
+                        <a href="{% url 'inventory:warehouse_transfer_detail' trf.pk %}" class="btn btn-ghost btn-xs">View</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center p-8 text-base-content/50">No warehouse transfers found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "core/base.html" %}
+
+{% block title %}Purchasing Dashboard | ERP Framework{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+            <h1 class="text-3xl font-bold tracking-tight">Purchasing Dashboard</h1>
+            <p class="text-base-content/60">Overview of procurement lifecycle.</p>
+        </div>
+        <div class="flex gap-2">
+            <a href="{% url 'purchasing:pr_list' %}" class="btn btn-outline btn-sm">View Requests</a>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="stat bg-base-100 shadow rounded-lg border border-base-200">
+            <div class="stat-title">Purchase Requests</div>
+            <div class="stat-value text-primary">{{ prs }}</div>
+        </div>
+        <div class="stat bg-base-100 shadow rounded-lg border border-base-200">
+            <div class="stat-title">Purchase Orders</div>
+            <div class="stat-value text-info">{{ pos }}</div>
+        </div>
+        <div class="stat bg-base-100 shadow rounded-lg border border-base-200">
+            <div class="stat-title">Goods Receipts</div>
+            <div class="stat-value text-success">{{ grns }}</div>
+        </div>
+    </div>
+</div>
+{% endblock %}

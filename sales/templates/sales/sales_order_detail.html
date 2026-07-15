@@ -1,0 +1,39 @@
+{% extends "core/base.html" %}
+
+{% block title %}Sales Order {{ order.so_number }} | ERP Framework{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col md:flex-row justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-bold tracking-tight">Sales Order: {{ order.so_number }}</h1>
+            <p class="text-base-content/60">Customer: {{ order.customer.name }} | Expected Dispatch: {{ order.expected_dispatch_date }}</p>
+            <div class="mt-2">
+                <span class="badge {% if order.status == 'Confirmed' %}badge-success{% else %}badge-info{% endif %}">{{ order.status }}</span>
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <a href="{% url 'sales:sales_order_list' %}" class="btn btn-ghost btn-sm">Back to List</a>
+            {% if order.status == 'Confirmed' %}
+            <button class="btn btn-warning btn-sm">
+                Ship Order (WIP)
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Items Section -->
+    <div class="bg-base-100 shadow rounded-lg border border-base-200">
+        <div class="p-4 border-b border-base-200 bg-base-200/50 flex justify-between items-center">
+            <h3 class="font-bold text-lg">Order Details</h3>
+            <span class="font-bold font-mono text-xl">Total: ₹{{ order.total_amount }}</span>
+        </div>
+        
+        <div class="p-6 text-center text-base-content/60">
+            SO Line Items would inherit from Quotation or be manually added here.
+            <br>
+            <span class="italic">(UI similar to Quotation)</span>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -54,3 +54,16 @@ class PurchaseOrderForm(forms.ModelForm):
     class Meta:
         model = PurchaseOrder
         fields = ['po_number', 'supplier']
+
+from .models import StockAdjustment
+
+class StockAdjustmentForm(forms.ModelForm):
+    class Meta:
+        model = StockAdjustment
+        fields = ['warehouse', 'product', 'quantity_adjusted', 'reason']
+        widgets = {
+            'warehouse': forms.Select(attrs={'class': 'select select-bordered w-full'}),
+            'product': forms.Select(attrs={'class': 'select select-bordered w-full'}),
+            'quantity_adjusted': forms.NumberInput(attrs={'class': 'input input-bordered w-full', 'placeholder': '+5 or -2'}),
+            'reason': forms.TextInput(attrs={'class': 'input input-bordered w-full', 'placeholder': 'e.g., Audit match, Expiry, Damage'}),
+        }

@@ -1656,3 +1656,90 @@ def export_labels_pdf(request):
     )
     response['Content-Disposition'] = f'attachment; filename="product_labels_{label_type}.pdf"'
     return response
+
+# ==========================================
+# PHASE 2: INVENTORY & STOCK CONTROL VIEWS
+# ==========================================
+from .models import Warehouse, StockLedger, StockAdjustment, WarehouseTransfer
+
+@login_required
+def warehouse_list(request):
+    warehouses = Warehouse.objects.all()
+    if request.GET.get('q'):
+        warehouses = warehouses.filter(name__icontains=request.GET['q'])
+    return render(request, 'inventory/warehouse_list.html', {'warehouses': warehouses})
+
+@login_required
+def stock_ledger(request):
+    entries = StockLedger.objects.select_related('product', 'warehouse').all()
+    if request.GET.get('product_id'):
+        entries = entries.filter(product_id=request.GET['product_id'])
+    if request.GET.get('warehouse_id'):
+        entries = entries.filter(warehouse_id=request.GET['warehouse_id'])
+    return render(request, 'inventory/stock_ledger.html', {'entries': entries[:100]})
+
+from .forms import StockAdjustmentForm
+from django.core.exceptions import ValidationError
+
+@login_required
+def stock_adjustment_list(request):
+    adjustments = StockAdjustment.objects.select_related('product', 'warehouse').all()
+    return render(request, 'inventory/stock_adjustment_list.html', {'adjustments': adjustments})
+
+@login_required
+def stock_adjustment_create(request):
+    if request.method == "POST":
+        form = StockAdjustmentForm(request.POST)
+        if form.is_valid():
+            adj = form.save()
+            if request.headers.get('HX-Request'):
+                response = HttpResponse()
+                response['HX-Redirect'] = reverse('inventory:stock_adjustment_list')
+                return response
+            return redirect('inventory:stock_adjustment_list')
+    else:
+        form = StockAdjustmentForm()
+        
+    return render(request, 'inventory/stock_adjustment_form.html', {'form': form})
+
+@login_required
+def stock_adjustment_detail(request, pk):
+    adjustment = get_object_or_404(StockAdjustment, pk=pk)
+    
+    if request.method == "POST" and request.POST.get('action') == 'approve':
+        try:
+            adjustment.approve_adjustment()
+            adjustment.save()
+            messages.success(request, f"Adjustment #{adjustment.id} approved successfully.")
+        except Exception as e:
+            messages.error(request, f"Approval failed: {str(e)}")
+            
+        if request.headers.get('HX-Request'):
+            response = HttpResponse()
+            response['HX-Refresh'] = 'true'
+            return response
+        return redirect('inventory:stock_adjustment_detail', pk=pk)
+        
+    return render(request, 'inventory/stock_adjustment_detail.html', {'adjustment': adjustment})
+
+@login_required
+def stock_adjustment_approve_modal(request, pk):
+    adjustment = get_object_or_404(StockAdjustment, pk=pk)
+    return render(request, 'inventory/stock_adjustment_approve_modal.html', {'adjustment': adjustment})
+
+@login_required
+def warehouse_transfer_list(request):
+    transfers = WarehouseTransfer.objects.select_related('product', 'from_warehouse', 'to_warehouse').all()
+    return render(request, 'inventory/warehouse_transfer_list.html', {'transfers': transfers})
+
+@login_required
+def warehouse_transfer_create(request):
+    # Dummy creation view logic for now
+    if request.method == "POST":
+        pass
+    return render(request, 'inventory/warehouse_transfer_form.html')
+
+@login_required
+def warehouse_transfer_detail(request, pk):
+    transfer = get_object_or_404(WarehouseTransfer, pk=pk)
+    return render(request, 'inventory/warehouse_transfer_detail.html', {'transfer': transfer})

@@ -1,0 +1,59 @@
+{% extends "core/base.html" %}
+
+{% block title %}Stock Adjustments | ERP Framework{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+            <h1 class="text-3xl font-bold tracking-tight">Stock Adjustments</h1>
+            <p class="text-base-content/60">Manual corrections to warehouse inventory levels.</p>
+        </div>
+        <div class="flex gap-2">
+            <button class="btn btn-primary btn-sm" 
+                    hx-get="{% url 'inventory:stock_adjustment_create' %}" 
+                    hx-target="body" 
+                    hx-swap="beforeend">
+                New Adjustment
+            </button>
+        </div>
+    </div>
+
+    <div class="overflow-x-auto bg-base-100 rounded-lg shadow border border-base-200">
+        <table class="table w-full">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Product</th>
+                    <th>Warehouse</th>
+                    <th>Reason</th>
+                    <th class="text-right">Qty</th>
+                    <th>Status</th>
+                    <th class="text-right">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for adj in adjustments %}
+                <tr class="hover">
+                    <td>#{{ adj.id }}</td>
+                    <td class="font-bold">{{ adj.product.name }}</td>
+                    <td>{{ adj.warehouse.name }}</td>
+                    <td class="text-sm truncate max-w-xs">{{ adj.reason }}</td>
+                    <td class="text-right font-mono">{{ adj.quantity_adjusted }}</td>
+                    <td>
+                        <span class="badge {% if adj.status == 'Approved' %}badge-success{% else %}badge-warning{% endif %} badge-sm">{{ adj.status }}</span>
+                    </td>
+                    <td class="text-right">
+                        <a href="{% url 'inventory:stock_adjustment_detail' adj.pk %}" class="btn btn-ghost btn-xs">View</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center p-8 text-base-content/50">No stock adjustments recorded.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

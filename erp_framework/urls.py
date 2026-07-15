@@ -26,10 +26,15 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('core/', include('core.urls')),
     path('inventory/', include('inventory.urls')),
-    path('hrms/', include('hrms.urls')),
     path('crm/', include('crm.urls')),
+    path('hrms/', include('hrms.urls')),
     path('itam/', include('itam.urls')),
     path('helpdesk/', include('helpdesk.urls')),
+    path('store/', include('generic_store_mgmt.urls')),
+    path('purchasing/', include('purchasing.urls', namespace='purchasing')),
+    path('sales/', include('sales.urls', namespace='sales')),
+    path('finance/', include('finance.urls', namespace='finance')),
+    path('reports/', include('reports.urls', namespace='reports')),
 ]
 
 if settings.DEBUG:
