@@ -29,6 +29,7 @@ urlpatterns = [
     path('hrms/', include('hrms.urls')),
     path('crm/', include('crm.urls')),
     path('itam/', include('itam.urls')),
+    path('helpdesk/', include('helpdesk.urls')),
 ]
 
 if settings.DEBUG:

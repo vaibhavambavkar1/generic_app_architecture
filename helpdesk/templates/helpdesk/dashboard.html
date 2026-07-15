@@ -1,0 +1,77 @@
+{% extends "core/base.html" %}
+{% load helpdesk_tags %}
+
+{% block title %}Helpdesk Dashboard | ERP Framework{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+            <h1 class="text-3xl font-bold tracking-tight">Helpdesk Dashboard</h1>
+            <p class="text-base-content/60">Manage internal support tickets.</p>
+        </div>
+        <div class="flex gap-2">
+            <a href="{% url 'helpdesk:ticket_list' %}" class="btn btn-outline btn-sm">All Tickets</a>
+            <a href="{% url 'helpdesk:ticket_create' %}" class="btn btn-primary btn-sm">New Ticket</a>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="stat bg-base-100 shadow rounded-lg border border-base-200">
+            <div class="stat-title">Total Tickets</div>
+            <div class="stat-value">{{ total_tickets }}</div>
+        </div>
+        <div class="stat bg-base-100 shadow rounded-lg border border-base-200">
+            <div class="stat-title text-error">Open</div>
+            <div class="stat-value text-error">{{ open_tickets }}</div>
+        </div>
+        <div class="stat bg-base-100 shadow rounded-lg border border-base-200">
+            <div class="stat-title text-warning">In Progress</div>
+            <div class="stat-value text-warning">{{ in_progress }}</div>
+        </div>
+        <div class="stat bg-base-100 shadow rounded-lg border border-base-200">
+            <div class="stat-title text-success">Resolved</div>
+            <div class="stat-value text-success">{{ resolved }}</div>
+        </div>
+    </div>
+
+    <!-- Kanban Board -->
+    <div class="overflow-x-auto pb-4">
+        <div class="flex gap-4 min-w-max">
+            {% for col in board_columns %}
+            <div class="bg-base-200 rounded-lg p-4 w-80 flex-shrink-0">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-lg">{{ col }}</h3>
+                    {% with tickets=kanban_data|get_item:col %}
+                    <span class="badge badge-primary">{{ tickets.count }}</span>
+                </div>
+                
+                <div class="space-y-3">
+                    {% for ticket in tickets %}
+                    <a href="{% url 'helpdesk:ticket_detail' ticket.id %}" class="block bg-base-100 p-4 rounded shadow-sm border-l-4 border-primary hover:shadow-md transition-shadow">
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="text-xs font-mono text-base-content/50">TKT-{{ ticket.id }}</span>
+                            <span class="badge badge-sm badge-outline">{{ ticket.priority }}</span>
+                        </div>
+                        <h4 class="font-semibold text-sm mb-2">{{ ticket.title }}</h4>
+                        <div class="flex justify-between items-center text-xs text-base-content/70">
+                            <span>Reporter: {{ ticket.reporter.username }}</span>
+                            {% if ticket.assignee %}
+                                <span>Assignee: {{ ticket.assignee.username }}</span>
+                            {% endif %}
+                        </div>
+                    </a>
+                    {% empty %}
+                    <div class="text-center p-4 text-sm text-base-content/50">
+                        No tickets in {{ col }}.
+                    </div>
+                    {% endfor %}
+                    {% endwith %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

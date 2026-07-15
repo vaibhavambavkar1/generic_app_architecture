@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'crm',
     'hrms',
     'itam',
+    'helpdesk',
     'django_htmx',
     'django_celery_beat',
     'rest_framework',

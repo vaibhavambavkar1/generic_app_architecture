@@ -1,0 +1,144 @@
+{% extends "core/base.html" %}
+
+{% block title %}Ticket Details | ERP Framework{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+            <div class="flex items-center gap-3 mb-1">
+                <h1 class="text-3xl font-bold tracking-tight">TKT-{{ ticket.id }}: {{ ticket.title }}</h1>
+                <span class="badge badge-lg badge-info">{{ ticket.status }}</span>
+                <span class="badge badge-outline">{{ ticket.priority }}</span>
+            </div>
+            <p class="text-base-content/60">Reported by: <strong>{{ ticket.reporter.username }}</strong> on {{ ticket.created_at|date:"M d, Y H:i" }}</p>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-success shadow-sm">
+                <span>{{ message }}</span>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Main Description & Comments -->
+        <div class="lg:col-span-2 space-y-6">
+            <div class="card bg-base-100 shadow border border-base-200">
+                <div class="card-body">
+                    <h2 class="card-title text-primary border-b border-base-200 pb-2 mb-2">Description</h2>
+                    <p class="whitespace-pre-wrap">{{ ticket.description }}</p>
+                    
+                    {% if ticket.resolution_notes %}
+                        <div class="mt-4 p-4 bg-success/10 border-l-4 border-success rounded">
+                            <h3 class="font-bold text-success text-sm uppercase">Resolution Notes</h3>
+                            <p class="mt-1">{{ ticket.resolution_notes }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Conversation -->
+            <div class="card bg-base-100 shadow border border-base-200">
+                <div class="card-body">
+                    <h2 class="card-title text-secondary border-b border-base-200 pb-2 mb-4">Conversation</h2>
+                    
+                    <div class="space-y-4 mb-6">
+                        {% for comment in comments %}
+                            <div class="flex gap-3">
+                                <div class="avatar placeholder">
+                                  <div class="bg-neutral text-neutral-content rounded-full w-10">
+                                    <span class="uppercase">{{ comment.author.username.0 }}</span>
+                                  </div>
+                                </div>
+                                <div class="bg-base-200 rounded-lg p-3 w-full {% if comment.is_internal %}border-l-4 border-warning bg-warning/5{% endif %}">
+                                    <div class="flex justify-between items-center mb-1">
+                                        <span class="font-bold text-sm">{{ comment.author.username }}</span>
+                                        <span class="text-xs text-base-content/50">{{ comment.created_at|date:"M d, Y H:i" }}</span>
+                                    </div>
+                                    <p class="text-sm whitespace-pre-wrap">{{ comment.body }}</p>
+                                    {% if comment.is_internal %}
+                                        <span class="badge badge-warning badge-xs mt-2">Internal Note</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% empty %}
+                            <p class="text-sm text-base-content/50 text-center">No comments yet.</p>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Add Comment -->
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="form-control mb-4">
+                            {{ form.body }}
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <label class="cursor-pointer label gap-2">
+                                {{ form.is_internal }}
+                                <span class="label-text">Internal Note (Hidden from Reporter)</span>
+                            </label>
+                            <button type="submit" name="add_comment" class="btn btn-primary btn-sm">Add Reply</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar / Actions -->
+        <div class="space-y-6">
+            <div class="card bg-base-200 shadow">
+                <div class="card-body">
+                    <h2 class="card-title text-primary mb-4 border-b border-base-300 pb-2">Ticket Info</h2>
+                    <ul class="space-y-2 text-sm">
+                        <li class="flex justify-between">
+                            <span class="text-base-content/60">Category:</span>
+                            <span class="font-medium">{{ ticket.category.name }}</span>
+                        </li>
+                        <li class="flex justify-between">
+                            <span class="text-base-content/60">Assignee:</span>
+                            <span class="font-medium">{{ ticket.assignee.username|default:"Unassigned" }}</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card bg-base-200 shadow">
+                <div class="card-body">
+                    <h2 class="card-title text-primary mb-2">Actions</h2>
+                    
+                    <div class="flex flex-col gap-3">
+                        <form method="POST" class="flex flex-col gap-2">
+                            {% csrf_token %}
+                            {% for trans in available_transitions %}
+                                {% if trans.method == 'assign_ticket' %}
+                                    <button type="submit" name="method" value="{{ trans.method }}" class="btn btn-success btn-sm w-full">
+                                        Assign to Me
+                                    </button>
+                                {% elif trans.method == 'mark_resolved' %}
+                                    <div class="form-control w-full">
+                                        <textarea name="resolution_notes" class="textarea textarea-bordered textarea-sm mb-2" placeholder="Resolution notes..." required></textarea>
+                                        <button type="submit" name="method" value="{{ trans.method }}" class="btn btn-info btn-sm w-full">
+                                            Mark as Resolved
+                                        </button>
+                                    </div>
+                                {% elif trans.method == 'close_ticket' %}
+                                    <button type="submit" name="method" value="{{ trans.method }}" class="btn btn-error btn-sm w-full">
+                                        Close Ticket
+                                    </button>
+                                {% elif trans.method == 'reopen_ticket' %}
+                                    <button type="submit" name="method" value="{{ trans.method }}" class="btn btn-warning btn-sm w-full">
+                                        Reopen Ticket
+                                    </button>
+                                {% endif %}
+                            {% endfor %}
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
