@@ -1,0 +1,103 @@
+{% extends "core/base.html" %}
+
+{% block title %}Appraisal Details | ERP Framework{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+            <div class="flex items-center gap-3 mb-1">
+                <h1 class="text-3xl font-bold tracking-tight">Appraisal: {{ appraisal.employee.user.get_full_name }}</h1>
+                <span class="badge badge-lg badge-info">{{ appraisal.status }}</span>
+            </div>
+            <p class="text-base-content/60">Period: <strong class="text-primary">{{ appraisal.review_period }}</strong></p>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-success shadow-sm">
+                <span>{{ message }}</span>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 space-y-6">
+            
+            <!-- Evaluation Form -->
+            <div class="card bg-base-200 shadow">
+                <div class="card-body">
+                    <h2 class="card-title text-primary mb-4">Evaluations</h2>
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="space-y-4">
+                            {% for field in form %}
+                            <div class="form-control">
+                                <label class="label"><span class="label-text font-medium">{{ field.label }}</span></label>
+                                {{ field }}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="mt-6 flex justify-end">
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- OKRs -->
+            <div class="card bg-base-200 shadow">
+                <div class="card-body">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="card-title text-primary">Objectives & Key Results (OKRs)</h2>
+                        <a href="{% url 'hrms:okr_create' appraisal.id %}" class="btn btn-outline btn-xs">Add OKR</a>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        {% for okr in okrs %}
+                        <div class="bg-base-100 p-4 rounded-lg border border-base-300">
+                            <h3 class="font-bold mb-2">{{ okr.objective }}</h3>
+                            <p class="text-sm text-base-content/70 mb-3">{{ okr.key_result }}</p>
+                            <div class="flex items-center gap-3">
+                                <progress class="progress progress-primary w-full" value="{{ okr.completion_percentage }}" max="100"></progress>
+                                <span class="text-xs font-bold">{{ okr.completion_percentage }}%</span>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <p class="text-sm text-base-content/50">No OKRs defined for this cycle.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="space-y-6">
+            <!-- Workflow Actions -->
+            <div class="card bg-base-200 shadow">
+                <div class="card-body">
+                    <h2 class="card-title text-primary mb-2">Workflow Actions</h2>
+                    <p class="text-sm text-base-content/60 mb-4">Current stage: <strong>{{ appraisal.status }}</strong></p>
+                    
+                    <div class="flex flex-col gap-3">
+                        {% if available_transitions %}
+                            <form method="POST" class="flex flex-col gap-2">
+                                {% csrf_token %}
+                                {% for trans in available_transitions %}
+                                    <button type="submit" name="method" value="{{ trans.method }}" class="btn btn-secondary w-full">
+                                        Move to {{ trans.target }}
+                                    </button>
+                                {% endfor %}
+                            </form>
+                        {% else %}
+                            <div class="alert alert-success shadow-sm">
+                                <span>Workflow completed.</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,92 @@
+{% extends "core/base.html" %}
+
+{% block title %}HRMS Dashboard | ERP Framework{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+            <h1 class="text-3xl font-bold tracking-tight">HRMS Dashboard</h1>
+            <p class="text-base-content/60">Overview of human resources, leaves, and expenses.</p>
+        </div>
+        <div class="flex gap-2">
+            <a href="{% url 'hrms:leave_create' %}" class="btn btn-primary btn-sm">Request Leave</a>
+            <a href="{% url 'hrms:expense_create' %}" class="btn btn-outline btn-primary btn-sm">Submit Expense</a>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="stat bg-base-200 rounded-xl shadow border border-base-300">
+            <div class="stat-title">Total Employees</div>
+            <div class="stat-value text-primary">{{ total_employees }}</div>
+        </div>
+        <div class="stat bg-base-200 rounded-xl shadow border border-base-300">
+            <div class="stat-title">Pending Leave Requests</div>
+            <div class="stat-value text-secondary">{{ pending_leaves }}</div>
+        </div>
+        <div class="stat bg-base-200 rounded-xl shadow border border-base-300">
+            <div class="stat-title">Pending Expense Claims</div>
+            <div class="stat-value text-accent">{{ pending_expenses }}</div>
+        </div>
+    </div>
+
+    <!-- Quick Links -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+        <div class="card bg-base-100 shadow border border-base-200 hover:shadow-md transition-shadow">
+            <div class="card-body">
+                <h2 class="card-title">Employee Directory</h2>
+                <p class="text-sm text-base-content/70">Manage profiles, designations, and leave balances.</p>
+                <div class="card-actions justify-end mt-4">
+                    <a href="{% url 'hrms:employee_list' %}" class="btn btn-outline btn-sm">View Directory</a>
+                </div>
+            </div>
+        </div>
+        <div class="card bg-base-100 shadow border border-base-200 hover:shadow-md transition-shadow">
+            <div class="card-body">
+                <h2 class="card-title">Leave Management</h2>
+                <p class="text-sm text-base-content/70">Review and approve employee time-off requests.</p>
+                <div class="card-actions justify-end mt-4">
+                    <a href="{% url 'hrms:leave_list' %}" class="btn btn-outline btn-sm">Manage Leaves</a>
+                </div>
+            </div>
+        </div>
+        <div class="card bg-base-100 shadow border border-base-200 hover:shadow-md transition-shadow">
+            <div class="card-body">
+                <h2 class="card-title">Expense Claims</h2>
+                <p class="text-sm text-base-content/70">Process reimbursements and track departmental spending.</p>
+                <div class="card-actions justify-end mt-4">
+                    <a href="{% url 'hrms:expense_list' %}" class="btn btn-outline btn-sm">Manage Expenses</a>
+                </div>
+            </div>
+        </div>
+        <div class="card bg-base-100 shadow border border-base-200 hover:shadow-md transition-shadow">
+            <div class="card-body">
+                <h2 class="card-title text-secondary">ATS (Recruitment)</h2>
+                <p class="text-sm text-base-content/70">Track candidate pipelines and job postings.</p>
+                <div class="card-actions justify-end mt-4">
+                    <a href="{% url 'hrms:ats_dashboard' %}" class="btn btn-secondary btn-sm">Open Pipeline</a>
+                </div>
+            </div>
+        </div>
+        <div class="card bg-base-100 shadow border border-base-200 hover:shadow-md transition-shadow">
+            <div class="card-body">
+                <h2 class="card-title text-accent">Payroll Administration</h2>
+                <p class="text-sm text-base-content/70">Manage salary structures and generate payslips.</p>
+                <div class="card-actions justify-end mt-4">
+                    <a href="{% url 'hrms:payroll_dashboard' %}" class="btn btn-accent btn-sm">Open Payroll</a>
+                </div>
+            </div>
+        </div>
+        <div class="card bg-base-100 shadow border border-base-200 hover:shadow-md transition-shadow">
+            <div class="card-body">
+                <h2 class="card-title text-info">Performance Appraisals</h2>
+                <p class="text-sm text-base-content/70">Manage OKRs and evaluate performance cycles.</p>
+                <div class="card-actions justify-end mt-4">
+                    <a href="{% url 'hrms:appraisal_list' %}" class="btn btn-info btn-sm">Open Appraisals</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

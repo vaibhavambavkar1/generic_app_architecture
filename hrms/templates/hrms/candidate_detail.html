@@ -1,0 +1,79 @@
+{% extends "core/base.html" %}
+
+{% block title %}Candidate Review | ERP Framework{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+            <div class="flex items-center gap-3 mb-1">
+                <h1 class="text-3xl font-bold tracking-tight">{{ candidate.first_name }} {{ candidate.last_name }}</h1>
+                <span class="badge badge-lg badge-neutral">{{ candidate.status }}</span>
+            </div>
+            <p class="text-base-content/60">Applying for: <strong class="text-primary">{{ candidate.job.title }}</strong> ({{ candidate.job.department }})</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 space-y-6">
+            <div class="card bg-base-200 shadow">
+                <div class="card-body">
+                    <h2 class="card-title text-primary mb-4">Contact Info & Details</h2>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <span class="text-sm text-base-content/60 font-semibold block mb-1">Email</span>
+                            <span class="font-medium"><a href="mailto:{{ candidate.email }}" class="link">{{ candidate.email }}</a></span>
+                        </div>
+                        <div>
+                            <span class="text-sm text-base-content/60 font-semibold block mb-1">Phone</span>
+                            <span class="font-medium">{{ candidate.phone|default:"N/A" }}</span>
+                        </div>
+                    </div>
+                    <div class="divider"></div>
+                    <div>
+                        <span class="text-sm text-base-content/60 font-semibold block mb-2">Interviewer Notes</span>
+                        <div class="prose max-w-none text-sm bg-base-100 p-4 rounded-lg border border-base-300">
+                            {{ candidate.notes|default:"No notes added yet."|linebreaks }}
+                        </div>
+                    </div>
+                    {% if candidate.resume %}
+                    <div class="mt-4">
+                        <span class="text-sm text-base-content/60 font-semibold block mb-2">Resume</span>
+                        <a href="{{ candidate.resume.url }}" target="_blank" class="btn btn-outline btn-sm">View Resume</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="space-y-6">
+            <div class="card bg-base-200 shadow">
+                <div class="card-body">
+                    <h2 class="card-title text-primary mb-2">Recruitment Pipeline</h2>
+                    <p class="text-sm text-base-content/60 mb-4">Current stage: <strong>{{ candidate.status }}</strong></p>
+                    
+                    <div class="flex flex-col gap-3">
+                        {% if available_transitions %}
+                            <form method="POST" class="flex flex-col gap-2">
+                                {% csrf_token %}
+                                {% for trans in available_transitions %}
+                                    <button type="submit" name="method" value="{{ trans.method }}" class="btn btn-primary w-full">
+                                        Move to {{ trans.target }}
+                                    </button>
+                                {% endfor %}
+                            </form>
+                        {% else %}
+                            <div class="alert alert-success shadow-sm">
+                                <div>
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current flex-shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                    <span>Pipeline completed.</span>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

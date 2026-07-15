@@ -27,6 +27,7 @@ urlpatterns = [
     path('core/', include('core.urls')),
     path('inventory/', include('inventory.urls')),
     path('crm/', include('crm.urls')),
+    path('hrms/', include('hrms.urls')),
 ]
 
 if settings.DEBUG:

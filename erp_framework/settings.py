@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'core',
     'inventory',
     'crm',
+    'hrms',
     'django_htmx',
     'django_celery_beat',
     'rest_framework',

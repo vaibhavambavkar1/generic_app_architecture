@@ -1,0 +1,76 @@
+{% extends "core/base.html" %}
+
+{% block title %}Payroll Dashboard | ERP Framework{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+            <h1 class="text-3xl font-bold tracking-tight">Payroll Administration</h1>
+            <p class="text-base-content/60">Generate and manage employee payslips.</p>
+        </div>
+        <div class="flex gap-2">
+            <form method="POST" action="{% url 'hrms:generate_payslips' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                    Generate This Month's Payslips
+                </button>
+            </form>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-success shadow-sm">
+                <div>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current flex-shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <span>{{ message }}</span>
+                </div>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="overflow-x-auto bg-base-200 rounded-lg shadow">
+        <table class="table w-full">
+            <thead>
+                <tr>
+                    <th>Employee</th>
+                    <th>Month</th>
+                    <th>Base Salary</th>
+                    <th>Net Salary</th>
+                    <th>Status</th>
+                    <th class="text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for payslip in payslips %}
+                <tr class="hover">
+                    <td class="font-bold"><a href="{% url 'hrms:employee_detail' payslip.employee.id %}" class="link link-hover">{{ payslip.employee.user.get_full_name }}</a></td>
+                    <td>{{ payslip.month|date:"F Y" }}</td>
+                    <td>₹{{ payslip.base_salary|floatformat:2 }}</td>
+                    <td class="font-semibold text-accent">₹{{ payslip.net_salary|floatformat:2 }}</td>
+                    <td>
+                        {% if payslip.is_paid %}
+                            <span class="badge badge-success badge-sm">Paid</span>
+                        {% else %}
+                            <span class="badge badge-warning badge-sm">Pending</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-right">
+                        <a href="{% url 'hrms:download_payslip_pdf' payslip.id %}" class="btn btn-ghost btn-xs text-primary">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                            PDF
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center p-8 text-base-content/50">No payslips found. Generate them above!</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,83 @@
+{% extends "core/base.html" %}
+
+{% block title %}Expense Claim Review | ERP Framework{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+            <div class="flex items-center gap-3 mb-1">
+                <h1 class="text-3xl font-bold tracking-tight">Expense Claim</h1>
+                <span class="badge badge-lg badge-neutral">{{ expense.status }}</span>
+            </div>
+            <p class="text-base-content/60">Claimed by: <a href="{% url 'hrms:employee_detail' expense.employee.id %}" class="link">{{ expense.employee.user.get_full_name }}</a></p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 space-y-6">
+            <div class="card bg-base-200 shadow">
+                <div class="card-body">
+                    <h2 class="card-title text-primary mb-4">Claim Details</h2>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <span class="text-sm text-base-content/60 font-semibold block mb-1">Title</span>
+                            <span class="font-medium">{{ expense.title }}</span>
+                        </div>
+                        <div>
+                            <span class="text-sm text-base-content/60 font-semibold block mb-1">Amount</span>
+                            <span class="font-bold text-accent text-lg">₹{{ expense.amount|floatformat:2 }}</span>
+                        </div>
+                        <div>
+                            <span class="text-sm text-base-content/60 font-semibold block mb-1">Date Incurred</span>
+                            <span class="font-medium">{{ expense.date_incurred }}</span>
+                        </div>
+                    </div>
+                    <div class="divider"></div>
+                    <div>
+                        <span class="text-sm text-base-content/60 font-semibold block mb-2">Description</span>
+                        <div class="prose max-w-none text-sm bg-base-100 p-4 rounded-lg border border-base-300">
+                            {{ expense.description|default:"No description."|linebreaks }}
+                        </div>
+                    </div>
+                    {% if expense.receipt %}
+                    <div class="mt-4">
+                        <span class="text-sm text-base-content/60 font-semibold block mb-2">Receipt Document</span>
+                        <a href="{{ expense.receipt.url }}" target="_blank" class="btn btn-outline btn-sm">View Receipt</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="space-y-6">
+            <div class="card bg-base-200 shadow">
+                <div class="card-body">
+                    <h2 class="card-title text-primary mb-2">Workflow Actions</h2>
+                    <p class="text-sm text-base-content/60 mb-4">Current stage: <strong>{{ expense.status }}</strong></p>
+                    
+                    <div class="flex flex-col gap-3">
+                        {% if available_transitions %}
+                            <form method="POST" class="flex flex-col gap-2">
+                                {% csrf_token %}
+                                {% for trans in available_transitions %}
+                                    <button type="submit" name="method" value="{{ trans.method }}" class="btn btn-primary w-full">
+                                        {{ trans.name }} &rarr; {{ trans.target }}
+                                    </button>
+                                {% endfor %}
+                            </form>
+                        {% else %}
+                            <div class="alert alert-success shadow-sm">
+                                <div>
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current flex-shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                    <span>Workflow completed.</span>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

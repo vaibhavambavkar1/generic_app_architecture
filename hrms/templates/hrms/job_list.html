@@ -1,0 +1,44 @@
+{% extends "core/base.html" %}
+
+{% block title %}Job Postings | ERP Framework{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+            <h1 class="text-3xl font-bold tracking-tight">Job Postings</h1>
+        </div>
+        <div class="flex gap-2">
+            <a href="{% url 'hrms:job_create' %}" class="btn btn-primary btn-sm">Create Job</a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for job in jobs %}
+        <div class="card bg-base-200 shadow border border-base-300">
+            <div class="card-body">
+                <div class="flex justify-between items-start">
+                    <h2 class="card-title text-primary">{{ job.title }}</h2>
+                    {% if job.is_active %}
+                        <span class="badge badge-success badge-sm">Active</span>
+                    {% else %}
+                        <span class="badge badge-error badge-sm">Closed</span>
+                    {% endif %}
+                </div>
+                <p class="text-sm font-semibold text-base-content/70">{{ job.department }} • {{ job.location }}</p>
+                <div class="mt-4 text-sm text-base-content/80 line-clamp-3">
+                    {{ job.description }}
+                </div>
+                <div class="card-actions justify-end mt-4">
+                    <a href="{% url 'hrms:job_edit' job.id %}" class="btn btn-outline btn-sm">Edit</a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full text-center p-8 text-base-content/50">
+            No job postings found.
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
