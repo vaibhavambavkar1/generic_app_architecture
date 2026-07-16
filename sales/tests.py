@@ -113,3 +113,56 @@ class SalesWorkflowTests(TestCase):
         revenue_line = je.lines.get(account=self.revenue_acc)
         self.assertEqual(revenue_line.credit, Decimal("300.00"))
         self.assertEqual(revenue_line.debit, Decimal("0.00"))
+
+from django.urls import reverse
+from django.contrib.auth import get_user_model
+
+class SalesModalFormTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(username='testuser', password='password123')
+        self.client.force_login(self.user)
+        from core.models import Organization
+        Organization.objects.create(name="Test Org", owner_name="Owner", email="owner@test.com")
+        
+        self.customer = Customer.objects.create(name="Test Customer")
+        self.warehouse = Warehouse.objects.create(name="Test Warehouse")
+        self.uom = UnitOfMeasure.objects.create(name="Piece", code="PCS")
+
+    def test_quotation_create_modal_get(self):
+        url = reverse('sales:quotation_create_modal')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200, getattr(response, 'url', 'No URL'))
+        self.assertTemplateUsed(response, 'sales/quotation_create_modal.html')
+
+    def test_quotation_create_modal_post_success(self):
+        url = reverse('sales:quotation_create_modal')
+        data = {
+            'quote_number': 'QT-NEW-001',
+            'customer': self.customer.id,
+            'valid_until': '2027-01-01',
+        }
+        response = self.client.post(url, data, HTTP_HX_REQUEST='true')
+        
+        self.assertTrue(Quotation.objects.filter(quote_number='QT-NEW-001').exists())
+        self.assertEqual(response.status_code, 200, getattr(response, 'url', 'No URL'))
+        self.assertTrue('HX-Redirect' in response)
+        
+    def test_sales_order_create_modal_get(self):
+        url = reverse('sales:sales_order_create_modal')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200, getattr(response, 'url', 'No URL'))
+        self.assertTemplateUsed(response, 'sales/sales_order_create_modal.html')
+
+    def test_sales_order_create_modal_post_success(self):
+        url = reverse('sales:sales_order_create_modal')
+        data = {
+            'so_number': 'SO-NEW-001',
+            'customer': self.customer.id,
+            'warehouse': self.warehouse.id,
+            'expected_dispatch_date': '2027-01-01',
+        }
+        response = self.client.post(url, data, HTTP_HX_REQUEST='true')
+        
+        self.assertTrue(SalesOrder.objects.filter(so_number='SO-NEW-001').exists())
+        self.assertEqual(response.status_code, 200, getattr(response, 'url', 'No URL'))
+        self.assertTrue('HX-Redirect' in response)

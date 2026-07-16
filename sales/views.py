@@ -6,6 +6,7 @@ from django.contrib import messages
 from .models import Quotation, SalesOrder, POSInvoice, POSLineItem
 from generic_store_mgmt.models import Product
 from inventory.models import Warehouse
+from django.urls import reverse
 import uuid
 
 @login_required
@@ -13,8 +14,40 @@ def quotation_list(request):
     quotes = Quotation.objects.all().order_by('-created_at')
     return render(request, 'sales/quotation_list.html', {'quotes': quotes})
 
-from .forms import QuotationLineItemForm
+from .forms import QuotationLineItemForm, QuotationForm, SalesOrderForm
 from .models import QuotationLineItem
+
+@login_required
+def quotation_create_modal(request):
+    if request.method == "POST":
+        form = QuotationForm(request.POST)
+        if form.is_valid():
+            quote = form.save()
+            messages.success(request, f"Quotation #{quote.quote_number} created.")
+            if request.headers.get('HX-Request'):
+                response = HttpResponse()
+                response['HX-Redirect'] = reverse('sales:quotation_detail', args=[quote.pk])
+                return response
+            return redirect('sales:quotation_detail', pk=quote.pk)
+    else:
+        form = QuotationForm()
+    return render(request, 'sales/quotation_create_modal.html', {'form': form})
+
+@login_required
+def sales_order_create_modal(request):
+    if request.method == "POST":
+        form = SalesOrderForm(request.POST)
+        if form.is_valid():
+            order = form.save()
+            messages.success(request, f"Sales Order #{order.so_number} created.")
+            if request.headers.get('HX-Request'):
+                response = HttpResponse()
+                response['HX-Redirect'] = reverse('sales:sales_order_detail', args=[order.pk])
+                return response
+            return redirect('sales:sales_order_detail', pk=order.pk)
+    else:
+        form = SalesOrderForm()
+    return render(request, 'sales/sales_order_create_modal.html', {'form': form})
 
 @login_required
 def quotation_detail(request, pk):

@@ -10,7 +10,12 @@
             <p class="text-base-content/60">Manage all items across the store.</p>
         </div>
         <div class="flex gap-2">
-            <a href="#" class="btn btn-primary btn-sm">New Product</a>
+            <button class="btn btn-primary btn-sm"
+                    hx-get="{% url 'generic_store_mgmt:product_create_modal' %}"
+                    hx-target="body"
+                    hx-swap="beforeend">
+                New Product
+            </button>
         </div>
     </div>
 
@@ -50,7 +55,12 @@
                         {% endif %}
                     </td>
                     <td class="text-right">
-                        <a href="#" class="btn btn-ghost btn-xs text-primary">Edit</a>
+                        <button class="btn btn-ghost btn-xs text-primary"
+                                hx-get="{% url 'generic_store_mgmt:product_edit_modal' product.pk %}"
+                                hx-target="body"
+                                hx-swap="beforeend">
+                            Edit
+                        </button>
                     </td>
                 </tr>
                 {% empty %}

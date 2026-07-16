@@ -66,3 +66,65 @@ class GenericStoreMgmtModelTests(TestCase):
         # Add duplicate should raise IntegrityError
         with self.assertRaises(IntegrityError):
             PriceListItem.objects.create(price_list=price_list, product=product, rate=Decimal("45.00"))
+
+from django.urls import reverse
+from django.contrib.auth import get_user_model
+
+class GenericStoreMgmtModalTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(username='testuser', password='password123')
+        self.client.force_login(self.user)
+        from core.models import Organization
+        Organization.objects.create(name="Test Org", owner_name="Owner", email="owner@test.com")
+        self.uom = UnitOfMeasure.objects.create(name="Piece", code="PCS")
+
+    def test_product_create_modal_get(self):
+        url = reverse('generic_store_mgmt:product_create_modal')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200, getattr(response, 'url', 'No URL'))
+        self.assertTemplateUsed(response, 'generic_store_mgmt/product_form_modal.html')
+
+    def test_product_create_modal_post_success(self):
+        url = reverse('generic_store_mgmt:product_create_modal')
+        data = {
+            'name': 'New Modal Product',
+            'sku': 'SKU-MODAL-1',
+            'product_type': 'goods',
+            'uom': self.uom.id,
+            'purchase_price': '10.00',
+            'selling_price': '20.00',
+            'manage_stock': True,
+            'is_active': True,
+        }
+        response = self.client.post(url, data, HTTP_HX_REQUEST='true')
+        
+        self.assertTrue(Product.objects.filter(sku='SKU-MODAL-1').exists())
+        self.assertEqual(response.status_code, 200, getattr(response, 'url', 'No URL'))
+        self.assertEqual(response['HX-Refresh'], 'true')
+
+    def test_product_edit_modal_get(self):
+        product = Product.objects.create(name="To Edit", uom=self.uom)
+        url = reverse('generic_store_mgmt:product_edit_modal', args=[product.id])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200, getattr(response, 'url', 'No URL'))
+        self.assertTemplateUsed(response, 'generic_store_mgmt/product_form_modal.html')
+
+    def test_product_edit_modal_post_success(self):
+        product = Product.objects.create(name="To Edit", uom=self.uom, sku='OLD-SKU')
+        url = reverse('generic_store_mgmt:product_edit_modal', args=[product.id])
+        data = {
+            'name': 'Edited Product Name',
+            'sku': 'OLD-SKU',
+            'product_type': 'goods',
+            'uom': self.uom.id,
+            'purchase_price': '15.00',
+            'selling_price': '25.00',
+            'manage_stock': True,
+            'is_active': True,
+        }
+        response = self.client.post(url, data, HTTP_HX_REQUEST='true')
+        
+        product.refresh_from_db()
+        self.assertEqual(product.name, 'Edited Product Name')
+        self.assertEqual(response.status_code, 200, getattr(response, 'url', 'No URL'))
+        self.assertEqual(response['HX-Refresh'], 'true')
