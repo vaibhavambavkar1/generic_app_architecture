@@ -26,12 +26,137 @@
         </div>
         <div class="stat bg-base-100 shadow rounded-lg border border-base-200">
             <div class="stat-title">Categories</div>
-            <div class="stat-value text-info">{{ categories }}</div>
+            <div class="stat-value text-info">{{ categories_count }}</div>
         </div>
         <div class="stat bg-base-100 shadow rounded-lg border border-base-200">
             <div class="stat-title">Brands</div>
-            <div class="stat-value text-warning">{{ brands }}</div>
+            <div class="stat-value text-warning">{{ brands_count }}</div>
         </div>
     </div>
+    </div>
+
+    <!-- Master Data Management Sections -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+        <!-- Categories Card -->
+        <div class="card bg-base-100 shadow border border-base-200">
+            <div class="card-body p-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="card-title text-lg">Categories</h2>
+                    <button class="btn btn-sm btn-primary" hx-get="{% url 'generic_store_mgmt:category_create_modal' %}" hx-target="body" hx-swap="beforeend">
+                        + New
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in categories %}
+                            <tr>
+                                <td>{{ item.name }}</td>
+                                <td>
+                                    {% if item.is_active %}
+                                    <span class="badge badge-success badge-sm">Active</span>
+                                    {% else %}
+                                    <span class="badge badge-ghost badge-sm">Inactive</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="btn btn-xs btn-ghost" hx-get="{% url 'generic_store_mgmt:category_edit_modal' item.pk %}" hx-target="body" hx-swap="beforeend">Edit</button>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="3" class="text-center text-sm text-base-content/50">No categories found.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Brands Card -->
+        <div class="card bg-base-100 shadow border border-base-200">
+            <div class="card-body p-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="card-title text-lg">Brands</h2>
+                    <button class="btn btn-sm btn-primary" hx-get="{% url 'generic_store_mgmt:brand_create_modal' %}" hx-target="body" hx-swap="beforeend">
+                        + New
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in brands %}
+                            <tr>
+                                <td>{{ item.name }}</td>
+                                <td>
+                                    {% if item.is_active %}
+                                    <span class="badge badge-success badge-sm">Active</span>
+                                    {% else %}
+                                    <span class="badge badge-ghost badge-sm">Inactive</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="btn btn-xs btn-ghost" hx-get="{% url 'generic_store_mgmt:brand_edit_modal' item.pk %}" hx-target="body" hx-swap="beforeend">Edit</button>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="3" class="text-center text-sm text-base-content/50">No brands found.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- UOMs Card -->
+        <div class="card bg-base-100 shadow border border-base-200">
+            <div class="card-body p-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="card-title text-lg">Unit of Measure</h2>
+                    <button class="btn btn-sm btn-primary" hx-get="{% url 'generic_store_mgmt:uom_create_modal' %}" hx-target="body" hx-swap="beforeend">
+                        + New
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Code</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in uoms %}
+                            <tr>
+                                <td>{{ item.name }}</td>
+                                <td><span class="badge badge-ghost badge-sm">{{ item.code }}</span></td>
+                                <td>
+                                    <button class="btn btn-xs btn-ghost" hx-get="{% url 'generic_store_mgmt:uom_edit_modal' item.pk %}" hx-target="body" hx-swap="beforeend">Edit</button>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="3" class="text-center text-sm text-base-content/50">No UOMs found.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 {% endblock %}

@@ -18,8 +18,15 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {% for field in form %}
                 <div class="form-control w-full {% if field.name == 'name' or field.name == 'manage_stock' or field.name == 'is_active' %}md:col-span-2{% endif %}">
+                    {% if field.name == 'manage_stock' or field.name == 'is_active' %}
+                    <label class="label cursor-pointer justify-start gap-4">
+                        <span class="label-text font-semibold">{{ field.label }}</span>
+                        {{ field }}
+                    </label>
+                    {% else %}
                     <label class="label"><span class="label-text font-semibold">{{ field.label }}</span></label>
                     {{ field }}
+                    {% endif %}
                     {% if field.errors %}
                     <div class="text-error text-xs mt-1">
                         {% for error in field.errors %}
