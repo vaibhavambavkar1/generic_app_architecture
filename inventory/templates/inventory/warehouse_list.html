@@ -10,7 +10,7 @@
             <p class="text-base-content/60">Manage your storage locations.</p>
         </div>
         <div class="flex gap-2">
-            <a href="#" class="btn btn-primary btn-sm">Add Warehouse</a>
+            <button class="btn btn-primary btn-sm" hx-get="{% url 'inventory:warehouse_create_modal' %}" hx-target="body" hx-swap="beforeend">Add Warehouse</button>
         </div>
     </div>
 
@@ -38,7 +38,7 @@
                         {% endif %}
                     </td>
                     <td class="text-right">
-                        <a href="#" class="btn btn-ghost btn-xs">Edit</a>
+                        <button class="btn btn-ghost btn-xs" hx-get="{% url 'inventory:warehouse_edit_modal' wh.pk %}" hx-target="body" hx-swap="beforeend">Edit</button>
                     </td>
                 </tr>
                 {% empty %}

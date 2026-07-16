@@ -10,7 +10,7 @@
             <p class="text-base-content/60">Move stock securely between warehouse locations.</p>
         </div>
         <div class="flex gap-2">
-            <a href="{% url 'inventory:warehouse_transfer_create' %}" class="btn btn-primary btn-sm">New Transfer</a>
+            <button class="btn btn-primary btn-sm" hx-get="{% url 'inventory:warehouse_transfer_create' %}" hx-target="body" hx-swap="beforeend">New Transfer</button>
         </div>
     </div>
 

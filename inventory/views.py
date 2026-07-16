@@ -1662,6 +1662,42 @@ def export_labels_pdf(request):
 # ==========================================
 from .models import Warehouse, StockLedger, StockAdjustment, WarehouseTransfer
 
+from .models import Warehouse
+from .forms import WarehouseForm
+
+@login_required
+def warehouse_create_modal(request):
+    if request.method == "POST":
+        form = WarehouseForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Warehouse created.")
+            if request.headers.get('HX-Request'):
+                response = HttpResponse()
+                response['HX-Refresh'] = 'true'
+                return response
+            return redirect('inventory:warehouse_list')
+    else:
+        form = WarehouseForm()
+    return render(request, 'inventory/warehouse_form_modal.html', {'form': form, 'is_edit': False})
+
+@login_required
+def warehouse_edit_modal(request, pk):
+    warehouse = get_object_or_404(Warehouse, pk=pk)
+    if request.method == "POST":
+        form = WarehouseForm(request.POST, instance=warehouse)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Warehouse updated.")
+            if request.headers.get('HX-Request'):
+                response = HttpResponse()
+                response['HX-Refresh'] = 'true'
+                return response
+            return redirect('inventory:warehouse_list')
+    else:
+        form = WarehouseForm(instance=warehouse)
+    return render(request, 'inventory/warehouse_form_modal.html', {'form': form, 'is_edit': True, 'warehouse': warehouse})
+
 @login_required
 def warehouse_list(request):
     warehouses = Warehouse.objects.all()
@@ -1732,12 +1768,23 @@ def warehouse_transfer_list(request):
     transfers = WarehouseTransfer.objects.select_related('product', 'from_warehouse', 'to_warehouse').all()
     return render(request, 'inventory/warehouse_transfer_list.html', {'transfers': transfers})
 
+from .forms import WarehouseTransferForm
+
 @login_required
 def warehouse_transfer_create(request):
-    # Dummy creation view logic for now
     if request.method == "POST":
-        pass
-    return render(request, 'inventory/warehouse_transfer_form.html')
+        form = WarehouseTransferForm(request.POST)
+        if form.is_valid():
+            transfer = form.save()
+            messages.success(request, "Warehouse transfer created.")
+            if request.headers.get('HX-Request'):
+                response = HttpResponse()
+                response['HX-Refresh'] = 'true'
+                return response
+            return redirect('inventory:warehouse_transfer_detail', pk=transfer.pk)
+    else:
+        form = WarehouseTransferForm()
+    return render(request, 'inventory/warehouse_transfer_form.html', {'form': form})
 
 @login_required
 def warehouse_transfer_detail(request, pk):

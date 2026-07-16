@@ -67,3 +67,33 @@ class StockAdjustmentForm(forms.ModelForm):
             'quantity_adjusted': forms.NumberInput(attrs={'class': 'input input-bordered w-full', 'placeholder': '+5 or -2'}),
             'reason': forms.TextInput(attrs={'class': 'input input-bordered w-full', 'placeholder': 'e.g., Audit match, Expiry, Damage'}),
         }
+
+from .models import Warehouse
+
+class WarehouseForm(forms.ModelForm):
+    class Meta:
+        model = Warehouse
+        fields = ['name', 'location', 'is_active']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'input input-bordered w-full'}),
+            'location': forms.Textarea(attrs={'class': 'textarea textarea-bordered w-full', 'rows': 2}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'checkbox checkbox-primary checkbox-sm'}),
+        }
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if 'is_active' in self.fields:
+            self.fields['is_active'].widget.template_name = 'inventory/widgets/checkbox.html'
+
+from .models import WarehouseTransfer
+
+class WarehouseTransferForm(forms.ModelForm):
+    class Meta:
+        model = WarehouseTransfer
+        fields = ['from_warehouse', 'to_warehouse', 'product', 'quantity']
+        widgets = {
+            'from_warehouse': forms.Select(attrs={'class': 'select select-bordered w-full'}),
+            'to_warehouse': forms.Select(attrs={'class': 'select select-bordered w-full'}),
+            'product': forms.Select(attrs={'class': 'select select-bordered w-full'}),
+            'quantity': forms.NumberInput(attrs={'class': 'input input-bordered w-full', 'placeholder': 'e.g. 10'}),
+        }

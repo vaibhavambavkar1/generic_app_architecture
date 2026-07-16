@@ -1,0 +1,92 @@
+<dialog id="warehouse_transfer_form_modal" class="modal modal-bottom sm:modal-middle" open>
+    <div class="modal-box bg-base-100 border border-base-300 shadow-xl rounded-2xl max-w-2xl">
+        <div class="flex items-center justify-between mb-6 sticky top-0 bg-base-100 z-10 pb-4 border-b border-base-200">
+            <h3 class="font-bold text-xl text-primary flex items-center gap-2">
+                New Warehouse Transfer
+            </h3>
+            <button class="btn btn-sm btn-circle btn-ghost" onclick="closeTransferModal('warehouse_transfer_form_modal')">✕</button>
+        </div>
+
+        <form method="POST" 
+              hx-post="{% url 'inventory:warehouse_transfer_create' %}" 
+              hx-swap="outerHTML"
+              hx-target="#warehouse_transfer_form_modal"
+              class="space-y-4">
+            {% csrf_token %}
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="form-control w-full">
+                    <label class="label"><span class="label-text font-semibold">From Warehouse</span></label>
+                    <select name="from_warehouse" class="select select-bordered w-full" required id="id_from_warehouse">
+                        <option value="" disabled selected>Select Origin Warehouse...</option>
+                        {% for wh in form.fields.from_warehouse.queryset %}
+                        <option value="{{ wh.pk }}">{{ wh.name }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if form.from_warehouse.errors %}
+                    <div class="text-error text-xs mt-1">{{ form.from_warehouse.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-control w-full">
+                    <label class="label"><span class="label-text font-semibold">To Warehouse</span></label>
+                    <select name="to_warehouse" class="select select-bordered w-full" required id="id_to_warehouse">
+                        <option value="" disabled selected>Select Destination Warehouse...</option>
+                        {% for wh in form.fields.to_warehouse.queryset %}
+                        <option value="{{ wh.pk }}">{{ wh.name }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if form.to_warehouse.errors %}
+                    <div class="text-error text-xs mt-1">{{ form.to_warehouse.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="form-control w-full">
+                    <label class="label"><span class="label-text font-semibold">Product</span></label>
+                    <select name="product" class="select select-bordered w-full" required id="id_product">
+                        <option value="" disabled selected>Select Product...</option>
+                        {% for p in form.fields.product.queryset %}
+                        <option value="{{ p.pk }}">{{ p.name }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if form.product.errors %}
+                    <div class="text-error text-xs mt-1">{{ form.product.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-control w-full">
+                    <label class="label"><span class="label-text font-semibold">Quantity to Transfer</span></label>
+                    <input type="number" name="quantity" class="input input-bordered w-full" required min="1" id="id_quantity" placeholder="e.g. 10">
+                    {% if form.quantity.errors %}
+                    <div class="text-error text-xs mt-1">{{ form.quantity.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% if form.non_field_errors %}
+            <div class="alert alert-error mt-4 shadow-sm py-2">
+                <span>{{ form.non_field_errors }}</span>
+            </div>
+            {% endif %}
+
+            <div class="modal-action mt-6 flex gap-2">
+                <button type="button" class="btn btn-ghost flex-1" onclick="closeTransferModal('warehouse_transfer_form_modal')">Cancel</button>
+                <button type="submit" class="btn btn-primary flex-1">Submit Transfer</button>
+            </div>
+        </form>
+    </div>
+</dialog>
+
+<script>
+    if (typeof closeTransferModal !== 'function') {
+        window.closeTransferModal = function(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.removeAttribute('open');
+                setTimeout(() => modal.remove(), 200);
+            }
+        }
+    }
+</script>

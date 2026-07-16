@@ -41,6 +41,8 @@ urlpatterns = [
     
     # Phase 2: Inventory & Stock Control
     path('warehouses/', views.warehouse_list, name='warehouse_list'),
+    path('warehouses/create/', views.warehouse_create_modal, name='warehouse_create_modal'),
+    path('warehouses/<int:pk>/edit/', views.warehouse_edit_modal, name='warehouse_edit_modal'),
     path('ledger/', views.stock_ledger, name='stock_ledger'),
     path('adjustments/', views.stock_adjustment_list, name='stock_adjustment_list'),
     path('adjustments/create/', views.stock_adjustment_create, name='stock_adjustment_create'),
