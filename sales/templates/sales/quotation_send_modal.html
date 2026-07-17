@@ -12,7 +12,7 @@
 
         <form method="POST" action="{% url 'sales:quotation_detail' quote.pk %}" 
               hx-post="{% url 'sales:quotation_detail' quote.pk %}" 
-              hx-swap="none"
+              hx-target="body"
               class="space-y-4" 
               onsubmit="setTimeout(closeSendModal, 300)">
             {% csrf_token %}

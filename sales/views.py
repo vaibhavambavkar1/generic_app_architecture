@@ -70,13 +70,23 @@ def sales_order_create_modal(request):
 def quotation_detail(request, pk):
     quote = get_object_or_404(Quotation, pk=pk)
     
-    if request.method == "POST" and request.POST.get('action') == 'send':
+    if request.method == "POST":
+        action = request.POST.get('action')
         try:
-            quote.send_quote()
-            quote.save()
-            messages.success(request, f"Quotation #{quote.quote_number} sent to {quote.customer.name}.")
+            if action == 'send':
+                quote.send_quote()
+                quote.save()
+                messages.success(request, f"Quotation #{quote.quote_number} sent to {quote.customer.name}.")
+            elif action == 'accept':
+                quote.accept_quote()
+                quote.save()
+                messages.success(request, f"Quotation #{quote.quote_number} accepted.")
+            elif action == 'reject':
+                quote.reject_quote()
+                quote.save()
+                messages.success(request, f"Quotation #{quote.quote_number} rejected.")
         except Exception as e:
-            messages.error(request, f"Failed to send: {str(e)}")
+            messages.error(request, f"Failed to update quotation: {str(e)}")
             
         if request.headers.get('HX-Request'):
             response = HttpResponse()

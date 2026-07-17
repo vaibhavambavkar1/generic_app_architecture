@@ -28,6 +28,10 @@ class Quotation(WorkflowMixin):
     def accept_quote(self):
         pass
 
+    @transition(field='status', source='Sent', target='Rejected')
+    def reject_quote(self):
+        pass
+
     def save(self, *args, **kwargs):
         if not self.quote_number:
             import uuid

@@ -21,6 +21,17 @@
                     hx-swap="beforeend">
                 Send to Customer
             </button>
+            {% elif quote.status == 'Sent' %}
+            <form method="POST" hx-post="{% url 'sales:quotation_detail' quote.pk %}" hx-target="body">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="accept">
+                <button type="submit" class="btn btn-success btn-sm">Accept</button>
+            </form>
+            <form method="POST" hx-post="{% url 'sales:quotation_detail' quote.pk %}" hx-target="body">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="reject">
+                <button type="submit" class="btn btn-error btn-sm">Reject</button>
+            </form>
             {% endif %}
         </div>
     </div>
