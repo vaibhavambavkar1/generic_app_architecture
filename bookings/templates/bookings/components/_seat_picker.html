@@ -1,0 +1,97 @@
+<div class="card bg-base-200 shadow-sm border border-base-300 mt-6">
+    <div class="card-body">
+        <h3 class="card-title text-lg mb-2">Select Your Seats</h3>
+        <p class="text-sm text-base-content/70 mb-6">Click on a seat to select it. Premium zones may have different pricing.</p>
+        
+        <!-- Screen / Stage Indicator -->
+        <div class="w-full max-w-md mx-auto mb-10">
+            <div class="h-2 bg-gradient-to-r from-transparent via-primary/50 to-transparent rounded-full shadow-[0_10px_20px_rgba(59,130,246,0.3)]"></div>
+            <div class="text-center text-xs font-semibold tracking-[0.2em] text-base-content/50 uppercase mt-4">Screen / Stage</div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <div class="min-w-max mx-auto space-y-3 pb-4">
+                
+                <!-- Example Row A (Premium) -->
+                <div class="flex items-center justify-center gap-4">
+                    <div class="w-6 text-center font-bold text-base-content/40 text-sm">A</div>
+                    <div class="flex gap-2">
+                        {% for i in "12345678" %}
+                        <label class="cursor-pointer relative group">
+                            <input type="checkbox" name="seats" value="A{{ i }}" class="peer sr-only" {% if i == '3' or i == '4' %}disabled{% endif %} />
+                            <div class="w-8 h-8 rounded-t-lg rounded-b-sm border-2 
+                                {% if i == '3' or i == '4' %}bg-base-300 border-base-300 cursor-not-allowed
+                                {% else %}bg-secondary/20 border-secondary hover:bg-secondary/40 peer-checked:bg-secondary peer-checked:border-secondary peer-checked:text-secondary-content{% endif %}
+                                flex items-center justify-center transition-all duration-200 shadow-sm">
+                                <span class="text-[10px] font-bold opacity-0 group-hover:opacity-100 peer-checked:opacity-100">{{ i }}</span>
+                            </div>
+                        </label>
+                        {% if i == '4' %}<div class="w-6"></div>{% endif %} <!-- Aisle -->
+                        {% endfor %}
+                    </div>
+                    <div class="w-6 text-center font-bold text-base-content/40 text-sm">A</div>
+                </div>
+
+                <!-- Example Row B (Standard) -->
+                <div class="flex items-center justify-center gap-4">
+                    <div class="w-6 text-center font-bold text-base-content/40 text-sm">B</div>
+                    <div class="flex gap-2">
+                        {% for i in "12345678" %}
+                        <label class="cursor-pointer relative group">
+                            <input type="checkbox" name="seats" value="B{{ i }}" class="peer sr-only" />
+                            <div class="w-8 h-8 rounded-t-lg rounded-b-sm border-2 
+                                bg-base-100 border-base-300 hover:border-primary peer-checked:bg-primary peer-checked:border-primary peer-checked:text-primary-content
+                                flex items-center justify-center transition-all duration-200 shadow-sm">
+                                <span class="text-[10px] font-bold opacity-0 group-hover:opacity-100 peer-checked:opacity-100">{{ i }}</span>
+                            </div>
+                        </label>
+                        {% if i == '4' %}<div class="w-6"></div>{% endif %} <!-- Aisle -->
+                        {% endfor %}
+                    </div>
+                    <div class="w-6 text-center font-bold text-base-content/40 text-sm">B</div>
+                </div>
+                
+                <!-- Example Row C (Standard) -->
+                <div class="flex items-center justify-center gap-4">
+                    <div class="w-6 text-center font-bold text-base-content/40 text-sm">C</div>
+                    <div class="flex gap-2">
+                        {% for i in "12345678" %}
+                        <label class="cursor-pointer relative group">
+                            <input type="checkbox" name="seats" value="C{{ i }}" class="peer sr-only" {% if i == '7' %}disabled{% endif %} />
+                            <div class="w-8 h-8 rounded-t-lg rounded-b-sm border-2 
+                                {% if i == '7' %}bg-base-300 border-base-300 cursor-not-allowed
+                                {% else %}bg-base-100 border-base-300 hover:border-primary peer-checked:bg-primary peer-checked:border-primary peer-checked:text-primary-content{% endif %}
+                                flex items-center justify-center transition-all duration-200 shadow-sm">
+                                <span class="text-[10px] font-bold opacity-0 group-hover:opacity-100 peer-checked:opacity-100">{{ i }}</span>
+                            </div>
+                        </label>
+                        {% if i == '4' %}<div class="w-6"></div>{% endif %} <!-- Aisle -->
+                        {% endfor %}
+                    </div>
+                    <div class="w-6 text-center font-bold text-base-content/40 text-sm">C</div>
+                </div>
+                
+            </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="flex justify-center gap-6 mt-6 pt-4 border-t border-base-300 text-sm">
+            <div class="flex items-center gap-2">
+                <div class="w-4 h-4 rounded border-2 border-base-300 bg-base-100"></div>
+                <span class="text-base-content/80">Available</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="w-4 h-4 rounded border-2 border-secondary bg-secondary/20"></div>
+                <span class="text-base-content/80">Premium</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="w-4 h-4 rounded bg-primary border-2 border-primary"></div>
+                <span class="text-base-content/80">Selected</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="w-4 h-4 rounded bg-base-300 border-2 border-base-300"></div>
+                <span class="text-base-content/80 text-decoration-line-through">Booked</span>
+            </div>
+        </div>
+    </div>
+</div>
