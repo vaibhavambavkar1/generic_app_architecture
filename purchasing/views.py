@@ -69,6 +69,27 @@ from .forms import PurchaseRequestItemForm, GRNLineItemForm
 @login_required
 def pr_detail(request, pk):
     pr = get_object_or_404(PurchaseRequest, pk=pk)
+    
+    if request.method == "POST":
+        action = request.POST.get('action')
+        try:
+            if action == 'submit':
+                pr.submit_pr()
+                pr.save()
+                messages.success(request, f"PR #{pr.request_number} submitted for approval.")
+            elif action == 'approve':
+                pr.approve_pr()
+                pr.save()
+                messages.success(request, f"PR #{pr.request_number} approved.")
+            elif action == 'reject':
+                pr.reject_pr()
+                pr.save()
+                messages.success(request, f"PR #{pr.request_number} rejected.")
+        except Exception as e:
+            messages.error(request, f"Failed to update PR: {str(e)}")
+            
+        return redirect('purchasing:pr_detail', pk=pk)
+        
     item_form = PurchaseRequestItemForm()
     return render(request, 'purchasing/pr_detail.html', {'pr': pr, 'item_form': item_form})
 

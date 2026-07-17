@@ -8,9 +8,30 @@
         <div>
             <h1 class="text-3xl font-bold tracking-tight">PR: {{ pr.request_number }}</h1>
             <p class="text-base-content/60">Department: {{ pr.department }} | Expected: {{ pr.expected_date }}</p>
+            <div class="mt-2">
+                <span class="badge {% if pr.status == 'Approved' %}badge-success{% elif pr.status == 'Rejected' %}badge-error{% else %}badge-info{% endif %}">{{ pr.status }}</span>
+            </div>
         </div>
         <div class="flex gap-2">
             <a href="{% url 'purchasing:pr_list' %}" class="btn btn-ghost btn-sm">Back to List</a>
+            {% if pr.status == 'Draft' %}
+            <form method="POST" hx-post="{% url 'purchasing:pr_detail' pr.pk %}" hx-target="body">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="submit">
+                <button type="submit" class="btn btn-primary btn-sm">Submit for Approval</button>
+            </form>
+            {% elif pr.status == 'Submitted' %}
+            <form method="POST" hx-post="{% url 'purchasing:pr_detail' pr.pk %}" hx-target="body">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="approve">
+                <button type="submit" class="btn btn-success btn-sm">Approve</button>
+            </form>
+            <form method="POST" hx-post="{% url 'purchasing:pr_detail' pr.pk %}" hx-target="body">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="reject">
+                <button type="submit" class="btn btn-error btn-sm">Reject</button>
+            </form>
+            {% endif %}
         </div>
     </div>
 
@@ -20,6 +41,7 @@
             <h3 class="font-bold text-lg">Requested Items</h3>
         </div>
         
+        {% if pr.status == 'Draft' %}
         <!-- Add Item Form -->
         <div class="p-4 bg-base-200">
             <form method="POST" action="{% url 'purchasing:pr_add_item' pr.pk %}" 
@@ -43,6 +65,7 @@
                 </div>
             </form>
         </div>
+        {% endif %}
 
         <div class="overflow-x-auto">
             <table class="table w-full">
@@ -51,7 +74,9 @@
                         <th>Product</th>
                         <th>Qty</th>
                         <th>Description</th>
+                        {% if pr.status == 'Draft' %}
                         <th class="text-right">Action</th>
+                        {% endif %}
                     </tr>
                 </thead>
                 <tbody>
@@ -60,13 +85,16 @@
                         <td class="font-bold">{{ item.product.name }}</td>
                         <td>{{ item.quantity }}</td>
                         <td class="text-sm">{{ item.description }}</td>
+                        {% if pr.status == 'Draft' %}
                         <td class="text-right">
                             <button class="btn btn-ghost btn-xs text-error" 
                                     hx-post="{% url 'purchasing:pr_delete_item' item.pk %}"
+                                    hx-target="body"
                                     hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
                                 Remove
                             </button>
                         </td>
+                        {% endif %}
                     </tr>
                     {% empty %}
                     <tr>

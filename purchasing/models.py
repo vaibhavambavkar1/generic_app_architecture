@@ -27,6 +27,16 @@ class PurchaseRequest(WorkflowMixin):
     def approve_pr(self):
         pass
 
+    @transition(field='status', source='Submitted', target='Rejected')
+    def reject_pr(self):
+        pass
+
+    def save(self, *args, **kwargs):
+        if not self.request_number:
+            import uuid
+            self.request_number = f"PR-{uuid.uuid4().hex[:8].upper()}"
+        super().save(*args, **kwargs)
+
 class PurchaseRequestItem(AuditableMixin):
     purchase_request = models.ForeignKey(PurchaseRequest, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.PROTECT)
@@ -46,6 +56,12 @@ class RequestForQuotation(WorkflowMixin):
     @transition(field='status', source='Draft', target='Sent')
     def send_rfq(self):
         pass
+
+    def save(self, *args, **kwargs):
+        if not self.rfq_number:
+            import uuid
+            self.rfq_number = f"RFQ-{uuid.uuid4().hex[:8].upper()}"
+        super().save(*args, **kwargs)
 
 class StorePurchaseOrder(WorkflowMixin):
     """
@@ -71,6 +87,12 @@ class StorePurchaseOrder(WorkflowMixin):
     @transition(field='status', source=['Issued', 'Partially Received'], target='Fully Received')
     def fully_receive(self):
         pass
+
+    def save(self, *args, **kwargs):
+        if not self.po_number:
+            import uuid
+            self.po_number = f"PO-{uuid.uuid4().hex[:8].upper()}"
+        super().save(*args, **kwargs)
 
 class StorePOLineItem(AuditableMixin):
     po = models.ForeignKey(StorePurchaseOrder, on_delete=models.CASCADE, related_name='lines')
@@ -144,6 +166,12 @@ class GoodsReceiptNote(WorkflowMixin):
                     description=f"Payable to {self.purchase_order.supplier.name}",
                     supplier=self.purchase_order.supplier
                 )
+
+    def save(self, *args, **kwargs):
+        if not self.grn_number:
+            import uuid
+            self.grn_number = f"GRN-{uuid.uuid4().hex[:8].upper()}"
+        super().save(*args, **kwargs)
 
 class GRNLineItem(AuditableMixin):
     grn = models.ForeignKey(GoodsReceiptNote, on_delete=models.CASCADE, related_name='lines')

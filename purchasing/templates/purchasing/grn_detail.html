@@ -80,6 +80,7 @@
                         <td class="text-right">
                             <button class="btn btn-ghost btn-xs text-error" 
                                     hx-post="{% url 'purchasing:grn_delete_item' item.pk %}"
+                                    hx-target="body"
                                     hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
                                 Remove
                             </button>

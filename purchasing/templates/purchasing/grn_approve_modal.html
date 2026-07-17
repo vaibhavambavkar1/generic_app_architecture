@@ -12,7 +12,7 @@
 
         <form method="POST" action="{% url 'purchasing:grn_detail' grn.pk %}" 
               hx-post="{% url 'purchasing:grn_detail' grn.pk %}" 
-              hx-swap="none"
+              hx-target="body"
               class="space-y-4" 
               onsubmit="setTimeout(closeGRNApproveModal, 300)">
             {% csrf_token %}
