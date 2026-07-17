@@ -5,6 +5,7 @@ from django.urls import reverse
 from django.contrib import messages
 from .models import PurchaseRequest, GoodsReceiptNote, StorePurchaseOrder
 from .forms import PurchaseRequestForm, GRNForm
+from django.core.paginator import Paginator
 
 @login_required
 def dashboard(request):
@@ -21,7 +22,10 @@ def dashboard(request):
 
 @login_required
 def pr_list(request):
-    prs = PurchaseRequest.objects.all().order_by('-id')
+    prs_list = PurchaseRequest.objects.all().order_by('-id')
+    paginator = Paginator(prs_list, 10)
+    page_number = request.GET.get('page')
+    prs = paginator.get_page(page_number)
     return render(request, 'purchasing/pr_list.html', {'prs': prs})
 
 @login_required
@@ -43,7 +47,10 @@ def pr_create(request):
 
 @login_required
 def grn_list(request):
-    grns = GoodsReceiptNote.objects.select_related('purchase_order').all().order_by('-id')
+    grns_list = GoodsReceiptNote.objects.select_related('purchase_order').all().order_by('-id')
+    paginator = Paginator(grns_list, 10)
+    page_number = request.GET.get('page')
+    grns = paginator.get_page(page_number)
     return render(request, 'purchasing/grn_list.html', {'grns': grns})
 
 @login_required

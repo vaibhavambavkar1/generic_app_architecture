@@ -59,5 +59,24 @@
             </tbody>
         </table>
     </div>
+    {% if accounts.has_other_pages %}
+    <div class="flex justify-center p-4 bg-base-100 border-t border-base-200">
+        <div class="join">
+            {% if accounts.has_previous %}
+                <a href="?page={{ accounts.previous_page_number }}" class="join-item btn btn-sm">«</a>
+            {% else %}
+                <button class="join-item btn btn-sm btn-disabled">«</button>
+            {% endif %}
+            
+            <button class="join-item btn btn-sm">Page {{ accounts.number }} of {{ accounts.paginator.num_pages }}</button>
+            
+            {% if accounts.has_next %}
+                <a href="?page={{ accounts.next_page_number }}" class="join-item btn btn-sm">»</a>
+            {% else %}
+                <button class="join-item btn btn-sm btn-disabled">»</button>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

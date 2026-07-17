@@ -4,10 +4,14 @@ from django.contrib import messages
 from django.http import HttpResponse
 from .models import Account, JournalEntry, JournalEntryLine
 from .forms import JournalEntryForm, JournalEntryLineForm, AccountForm
+from django.core.paginator import Paginator
 
 @login_required
 def account_list(request):
-    accounts = Account.objects.all().order_by('category', 'code')
+    accounts_list = Account.objects.all().order_by('category', 'code')
+    paginator = Paginator(accounts_list, 10)
+    page_number = request.GET.get('page')
+    accounts = paginator.get_page(page_number)
     return render(request, 'finance/account_list.html', {'accounts': accounts})
 
 @login_required
@@ -28,7 +32,10 @@ def account_create(request):
 
 @login_required
 def journal_list(request):
-    entries = JournalEntry.objects.all().order_by('-date', '-id')
+    entries_list = JournalEntry.objects.all().order_by('-date', '-id')
+    paginator = Paginator(entries_list, 10)
+    page_number = request.GET.get('page')
+    entries = paginator.get_page(page_number)
     return render(request, 'finance/journal_list.html', {'entries': entries})
 
 @login_required

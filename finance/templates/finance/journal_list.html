@@ -64,5 +64,24 @@
             </tbody>
         </table>
     </div>
+    {% if entries.has_other_pages %}
+    <div class="flex justify-center p-4 bg-base-100 border-t border-base-200">
+        <div class="join">
+            {% if entries.has_previous %}
+                <a href="?page={{ entries.previous_page_number }}" class="join-item btn btn-sm">«</a>
+            {% else %}
+                <button class="join-item btn btn-sm btn-disabled">«</button>
+            {% endif %}
+            
+            <button class="join-item btn btn-sm">Page {{ entries.number }} of {{ entries.paginator.num_pages }}</button>
+            
+            {% if entries.has_next %}
+                <a href="?page={{ entries.next_page_number }}" class="join-item btn btn-sm">»</a>
+            {% else %}
+                <button class="join-item btn btn-sm btn-disabled">»</button>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
