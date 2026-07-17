@@ -29,6 +29,12 @@ class GRNForm(forms.ModelForm):
             'purchase_order': forms.Select(attrs={'class': 'select select-bordered w-full'}),
             'supplier_challan_number': forms.TextInput(attrs={'class': 'input input-bordered w-full'}),
         }
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['purchase_order'].queryset = StorePurchaseOrder.objects.filter(
+            status__in=['Issued', 'Partially Received']
+        )
 
 class GRNLineItemForm(forms.ModelForm):
     class Meta:

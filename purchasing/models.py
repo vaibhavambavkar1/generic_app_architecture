@@ -62,6 +62,9 @@ class RequestForQuotation(WorkflowMixin):
             import uuid
             self.rfq_number = f"RFQ-{uuid.uuid4().hex[:8].upper()}"
         super().save(*args, **kwargs)
+        
+    def __str__(self):
+        return f"RFQ: {self.rfq_number}"
 
 class StorePurchaseOrder(WorkflowMixin):
     """
@@ -75,6 +78,9 @@ class StorePurchaseOrder(WorkflowMixin):
     expected_delivery = models.DateField()
     total_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
     payments = GenericRelation('core.PaymentTransaction')
+
+    def __str__(self):
+        return f"{self.po_number} - {self.supplier.name}"
 
     @transition(field='status', source='Draft', target='Issued')
     def issue_po(self):
@@ -113,6 +119,9 @@ class GoodsReceiptNote(WorkflowMixin):
     purchase_order = models.ForeignKey(StorePurchaseOrder, on_delete=models.PROTECT, related_name='grns')
     received_date = models.DateField(auto_now_add=True)
     supplier_challan_number = models.CharField(max_length=100, blank=True)
+    
+    def __str__(self):
+        return f"GRN: {self.grn_number}"
     
     @transition(field='status', source='Draft', target='Received')
     def receive_goods(self):

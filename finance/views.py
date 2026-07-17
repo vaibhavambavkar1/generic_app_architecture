@@ -12,7 +12,7 @@ def account_list(request):
 
 @login_required
 def journal_list(request):
-    entries = JournalEntry.objects.all().order_by('-date', '-created_at')
+    entries = JournalEntry.objects.all().order_by('-date', '-id')
     return render(request, 'finance/journal_list.html', {'entries': entries})
 
 @login_required
