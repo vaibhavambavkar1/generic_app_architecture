@@ -17,6 +17,9 @@ class Quotation(WorkflowMixin):
     valid_until = models.DateField()
     total_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
 
+    def __str__(self):
+        return f"{self.quote_number} - {self.customer}"
+
     @transition(field='status', source='Draft', target='Sent')
     def send_quote(self):
         pass
@@ -24,6 +27,12 @@ class Quotation(WorkflowMixin):
     @transition(field='status', source='Sent', target='Accepted')
     def accept_quote(self):
         pass
+
+    def save(self, *args, **kwargs):
+        if not self.quote_number:
+            import uuid
+            self.quote_number = f"QT-{uuid.uuid4().hex[:8].upper()}"
+        super().save(*args, **kwargs)
 
 class QuotationLineItem(AuditableMixin):
     quotation = models.ForeignKey(Quotation, on_delete=models.CASCADE, related_name='lines')
@@ -44,6 +53,9 @@ class SalesOrder(WorkflowMixin):
     total_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
     payments = GenericRelation('core.PaymentTransaction')
 
+    def __str__(self):
+        return f"{self.so_number} - {self.customer}"
+
     @transition(field='status', source='Draft', target='Confirmed')
     def confirm_order(self):
         pass
@@ -52,6 +64,22 @@ class SalesOrder(WorkflowMixin):
     def ship_order(self):
         # In a full ERP, this would trigger Delivery Challan and Stock Out
         pass
+
+    def save(self, *args, **kwargs):
+        if not self.so_number:
+            import uuid
+            self.so_number = f"SO-{uuid.uuid4().hex[:8].upper()}"
+        super().save(*args, **kwargs)
+
+class SalesOrderLineItem(AuditableMixin):
+    sales_order = models.ForeignKey(SalesOrder, on_delete=models.CASCADE, related_name='lines')
+    product = models.ForeignKey(Product, on_delete=models.PROTECT)
+    quantity = models.PositiveIntegerField()
+    unit_price = models.DecimalField(max_digits=12, decimal_places=2)
+    
+    @property
+    def line_total(self):
+        return self.quantity * self.unit_price
 
 class POSInvoice(AuditableMixin):
     """

@@ -12,7 +12,7 @@ import uuid
 
 @login_required
 def quotation_list(request):
-    quotes = Quotation.objects.all().order_by('-created_at')
+    quotes = Quotation.objects.all().order_by('-id')
     return render(request, 'sales/quotation_list.html', {'quotes': quotes})
 
 from .forms import QuotationLineItemForm, QuotationForm, SalesOrderForm
@@ -39,7 +39,23 @@ def sales_order_create_modal(request):
     if request.method == "POST":
         form = SalesOrderForm(request.POST)
         if form.is_valid():
-            order = form.save()
+            with transaction.atomic():
+                order = form.save()
+                
+                if order.quotation:
+                    from .models import SalesOrderLineItem
+                    total = 0
+                    for q_line in order.quotation.lines.all():
+                        SalesOrderLineItem.objects.create(
+                            sales_order=order,
+                            product=q_line.product,
+                            quantity=q_line.quantity,
+                            unit_price=q_line.unit_price
+                        )
+                        total += (q_line.quantity * q_line.unit_price)
+                    order.total_amount = total
+                    order.save()
+                    
             messages.success(request, f"Sales Order #{order.so_number} created.")
             if request.headers.get('HX-Request'):
                 response = HttpResponse()
@@ -118,13 +134,77 @@ def quotation_send_modal(request, pk):
 
 @login_required
 def sales_order_list(request):
-    orders = SalesOrder.objects.all().order_by('-created_at')
+    orders = SalesOrder.objects.all().order_by('-id')
     return render(request, 'sales/sales_order_list.html', {'orders': orders})
 
 @login_required
 def sales_order_detail(request, pk):
+    from .forms import SalesOrderLineItemForm
     order = get_object_or_404(SalesOrder, pk=pk)
-    return render(request, 'sales/sales_order_detail.html', {'order': order})
+    
+    if request.method == "POST":
+        action = request.POST.get('action')
+        try:
+            if action == 'confirm':
+                order.confirm_order()
+                order.save()
+                messages.success(request, f"Sales Order #{order.so_number} confirmed.")
+            elif action == 'ship':
+                order.ship_order()
+                order.save()
+                messages.success(request, f"Sales Order #{order.so_number} marked as shipped.")
+        except Exception as e:
+            messages.error(request, f"Workflow error: {str(e)}")
+            
+        if request.headers.get('HX-Request'):
+            response = HttpResponse()
+            response['HX-Refresh'] = 'true'
+            return response
+        return redirect('sales:sales_order_detail', pk=pk)
+        
+    item_form = SalesOrderLineItemForm()
+    return render(request, 'sales/sales_order_detail.html', {'order': order, 'item_form': item_form})
+
+@login_required
+def sales_order_add_item(request, pk):
+    from .forms import SalesOrderLineItemForm
+    from .models import SalesOrderLineItem
+    order = get_object_or_404(SalesOrder, pk=pk)
+    if request.method == "POST":
+        form = SalesOrderLineItemForm(request.POST)
+        if form.is_valid():
+            item = form.save(commit=False)
+            item.sales_order = order
+            item.save()
+            
+            order.total_amount = sum(i.quantity * i.unit_price for i in order.lines.all())
+            order.save()
+            messages.success(request, "Item added to Sales Order.")
+        else:
+            messages.error(request, "Failed to add item.")
+            
+    if request.headers.get('HX-Request'):
+        response = HttpResponse()
+        response['HX-Refresh'] = 'true'
+        return response
+    return redirect('sales:sales_order_detail', pk=pk)
+
+@login_required
+def sales_order_delete_item(request, item_pk):
+    from .models import SalesOrderLineItem
+    item = get_object_or_404(SalesOrderLineItem, pk=item_pk)
+    order = item.sales_order
+    item.delete()
+    
+    order.total_amount = sum(i.quantity * i.unit_price for i in order.lines.all())
+    order.save()
+    messages.success(request, "Item removed from Sales Order.")
+    
+    if request.headers.get('HX-Request'):
+        response = HttpResponse()
+        response['HX-Refresh'] = 'true'
+        return response
+    return redirect('sales:sales_order_detail', pk=order.pk)
 
 # --- POS Terminal ---
 

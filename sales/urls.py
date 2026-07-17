@@ -15,6 +15,8 @@ urlpatterns = [
     path('orders/', views.sales_order_list, name='sales_order_list'),
     path('orders/new/', views.sales_order_create_modal, name='sales_order_create_modal'),
     path('orders/<int:pk>/', views.sales_order_detail, name='sales_order_detail'),
+    path('orders/<int:pk>/add-item/', views.sales_order_add_item, name='sales_order_add_item'),
+    path('orders/item/<int:item_pk>/delete/', views.sales_order_delete_item, name='sales_order_delete_item'),
     
     # POS Terminal
     path('pos/', views.pos_terminal, name='pos_terminal'),
