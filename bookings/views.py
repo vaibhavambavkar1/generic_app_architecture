@@ -11,11 +11,8 @@ from django.contrib import messages
 
 @login_required
 def get_business(request):
-    """Helper to get the user's business profile or None"""
-    org = Organization.objects.first() # Simplification for single org
-    if not org:
-        return None
-    return BusinessProfile.objects.filter(organization=org).first()
+    """Helper to get the user's business profile via middleware"""
+    return getattr(request, 'tenant', None)
 
 @login_required
 def dashboard(request):

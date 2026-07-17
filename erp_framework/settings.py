@@ -80,6 +80,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_htmx.middleware.HtmxMiddleware',
     'simple_history.middleware.HistoryRequestMiddleware',
+    'bookings.middleware.TenantMiddleware',
     #'core.middleware.LicenseEnforcementMiddleware',
     'core.middleware.ExceptionLoggingMiddleware',
 ]
