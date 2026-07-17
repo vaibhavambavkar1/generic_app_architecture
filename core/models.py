@@ -128,6 +128,27 @@ class ChatMessage(models.Model):
     def __str__(self):
         return f"{self.sender} to {self.recipient if self.recipient else 'All'}: {self.content[:20]}"
 
+class InternalEmail(models.Model):
+    sender = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='sent_internal_emails', on_delete=models.CASCADE)
+    recipient = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='received_internal_emails', on_delete=models.CASCADE)
+    subject = models.CharField(max_length=255)
+    body = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+    
+    class Meta:
+        ordering = ['-timestamp']
+
+    def __str__(self):
+        return f"{self.subject} (from {self.sender} to {self.recipient})"
+
+class InternalEmailAttachment(models.Model):
+    email = models.ForeignKey(InternalEmail, related_name='attachments', on_delete=models.CASCADE)
+    file = models.FileField(upload_to='internal_emails/')
+    
+    def __str__(self):
+        return f"Attachment for {self.email.subject}"
+
 class ApprovalRoute(models.Model):
     transition = models.ForeignKey(Transition, related_name='approvals', on_delete=models.CASCADE)
     required_group = models.ForeignKey('auth.Group', on_delete=models.SET_NULL, null=True, blank=True)

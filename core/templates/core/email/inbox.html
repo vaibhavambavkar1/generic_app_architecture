@@ -1,0 +1,52 @@
+{% extends "core/email/layout.html" %}
+
+{% block email_content %}
+<div class="p-6 border-b border-base-200 bg-gradient-to-r from-base-200/50 to-base-100 flex justify-between items-center backdrop-blur-md sticky top-0 z-10">
+    <h2 class="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">Inbox</h2>
+    <span class="text-sm font-semibold tracking-wide text-base-content/50 uppercase">{{ emails.count }} messages</span>
+</div>
+
+<div class="flex-1 overflow-y-auto bg-base-100">
+    <table class="table w-full">
+        <tbody>
+            {% for email in emails %}
+            <tr class="hover:bg-base-200/60 cursor-pointer transition-all duration-200 border-l-4 group {% if not email.is_read %}border-l-primary bg-base-200/30{% else %}border-l-transparent{% endif %}" onclick="window.location='{% url 'core:email_detail' email.pk %}'">
+                <td class="w-16 pl-6">
+                    <div class="avatar placeholder">
+                        <div class="w-10 rounded-full {% if not email.is_read %}bg-primary text-primary-content shadow-lg shadow-primary/30{% else %}bg-base-300 text-base-content/70{% endif %} transition-transform group-hover:scale-110">
+                            <span class="text-sm font-bold">{{ email.sender.first_name|first|default:email.sender.username|first|upper }}</span>
+                        </div>
+                    </div>
+                </td>
+                <td class="w-1/4 truncate {% if not email.is_read %}font-extrabold text-base-content{% else %}text-base-content/80{% endif %}">
+                    {{ email.sender.get_full_name|default:email.sender.username }}
+                </td>
+                <td class="truncate max-w-[200px]">
+                    <div class="flex items-center gap-3">
+                        <span class="{% if not email.is_read %}font-bold text-base-content{% else %}text-base-content/70{% endif %}">{{ email.subject }}</span>
+                        {% if email.attachments.exists %}
+                        <div class="badge badge-sm badge-ghost opacity-70 gap-1 group-hover:opacity-100 transition-opacity">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                        </div>
+                        {% endif %}
+                    </div>
+                </td>
+                <td class="text-right text-xs w-32 whitespace-nowrap pr-6 {% if not email.is_read %}font-bold text-primary{% else %}opacity-60{% endif %}">
+                    {{ email.timestamp|date:"M d, h:i a" }}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4">
+                    <div class="flex flex-col items-center justify-center p-16 text-base-content/40">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 mb-4 opacity-20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" /></svg>
+                        <p class="text-lg font-medium">Your inbox is empty.</p>
+                        <p class="text-sm">Enjoy the silence.</p>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -35,6 +35,12 @@ urlpatterns = [
     # Chat Routes
     path('chat/messages/', views.chat_messages, name='chat_messages'),
     path('chat/send/', views.send_chat_message, name='send_chat_message'),
+    
+    # Internal Email Routes
+    path('email/inbox/', views.email_inbox, name='email_inbox'),
+    path('email/sent/', views.email_sent, name='email_sent'),
+    path('email/compose/', views.email_compose, name='email_compose'),
+    path('email/<int:pk>/', views.email_detail, name='email_detail'),
 ]
 
 # HTML Auth URLs

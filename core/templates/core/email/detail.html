@@ -1,0 +1,56 @@
+{% extends "core/email/layout.html" %}
+
+{% block email_content %}
+<div class="p-8 border-b border-base-200 bg-gradient-to-br from-base-200/60 to-base-100 flex justify-between items-start gap-6 backdrop-blur-md">
+    <div class="flex gap-6 w-full">
+        <div class="avatar placeholder mt-2">
+            <div class="bg-primary/20 text-primary rounded-2xl w-16 h-16 shadow-inner border border-primary/30">
+                <span class="text-2xl font-black">{{ email.sender.first_name|first|default:email.sender.username|first|upper }}</span>
+            </div>
+        </div>
+        <div class="flex-1">
+            <h2 class="text-3xl font-black text-base-content mb-2">{{ email.subject }}</h2>
+            <div class="flex items-center gap-2 mb-1">
+                <span class="font-bold text-base-content/90 text-lg">{{ email.sender.get_full_name|default:email.sender.username }}</span>
+                <span class="badge badge-ghost badge-sm font-mono">&lt;{{ email.sender.email }}&gt;</span>
+            </div>
+            <div class="text-sm font-medium text-base-content/50">
+                To: <span class="text-base-content/80">{{ email.recipient.get_full_name|default:email.recipient.username }}</span>
+            </div>
+        </div>
+        <div class="text-right pt-2">
+            <div class="text-sm font-semibold text-base-content/40 whitespace-nowrap bg-base-200/50 px-3 py-1.5 rounded-lg border border-base-300">
+                {{ email.timestamp|date:"M d, Y h:i a" }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="flex-1 overflow-y-auto p-10 bg-base-100">
+    <div class="prose max-w-none text-base-content/90 whitespace-pre-wrap font-medium leading-relaxed">
+        {{ email.body }}
+    </div>
+    
+    {% if email.attachments.exists %}
+    <div class="mt-16 pt-8 border-t border-base-200/70">
+        <h4 class="font-bold mb-6 flex items-center text-sm uppercase text-base-content/40 tracking-widest">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+            Attachments ({{ email.attachments.count }})
+        </h4>
+        <div class="flex flex-wrap gap-4">
+            {% for attachment in email.attachments.all %}
+            <a href="{{ attachment.file.url }}" target="_blank" class="group flex items-center gap-4 p-4 w-64 bg-base-200/30 hover:bg-base-200/80 rounded-2xl border border-base-300 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                <div class="bg-primary/10 text-primary p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                </div>
+                <div class="flex flex-col flex-1 overflow-hidden">
+                    <span class="text-sm font-bold text-base-content/90 truncate">{{ attachment.file.name|slice:"16:" }}</span>
+                    <span class="text-xs text-primary font-semibold mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity -translate-x-2 group-hover:translate-x-0">Download &rarr;</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

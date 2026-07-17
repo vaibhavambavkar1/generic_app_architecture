@@ -760,3 +760,83 @@ def send_chat_message(request):
     messages = ChatMessage.objects.filter(recipient__isnull=True).order_by('-timestamp')[:50]
     messages = reversed(messages)
     return render(request, 'core/components/chat_messages_list.html', {'chat_messages': messages})
+
+from .models import InternalEmail, InternalEmailAttachment
+from django.contrib.auth import get_user_model
+
+@login_required
+def email_inbox(request):
+    emails = InternalEmail.objects.filter(recipient=request.user).order_by('-timestamp')
+    unread_count = emails.filter(is_read=False).count()
+    return render(request, 'core/email/inbox.html', {
+        'emails': emails,
+        'active_tab': 'inbox',
+        'unread_count': unread_count
+    })
+
+@login_required
+def email_sent(request):
+    emails = InternalEmail.objects.filter(sender=request.user).order_by('-timestamp')
+    unread_count = InternalEmail.objects.filter(recipient=request.user, is_read=False).count()
+    return render(request, 'core/email/sent.html', {
+        'emails': emails,
+        'active_tab': 'sent',
+        'unread_count': unread_count
+    })
+
+@login_required
+def email_compose(request):
+    User = get_user_model()
+    unread_count = InternalEmail.objects.filter(recipient=request.user, is_read=False).count()
+    users = User.objects.exclude(pk=request.user.pk).order_by('first_name', 'username')
+    
+    if request.method == 'POST':
+        recipient_id = request.POST.get('recipient')
+        subject = request.POST.get('subject')
+        body = request.POST.get('body')
+        
+        if recipient_id and subject and body:
+            recipient = get_object_or_404(User, pk=recipient_id)
+            email = InternalEmail.objects.create(
+                sender=request.user,
+                recipient=recipient,
+                subject=subject,
+                body=body
+            )
+            
+            # Handle attachments
+            files = request.FILES.getlist('attachments')
+            for f in files:
+                InternalEmailAttachment.objects.create(email=email, file=f)
+                
+            messages.success(request, "Email sent successfully.")
+            return redirect('core:email_sent')
+        else:
+            messages.error(request, "Please fill out all fields.")
+            
+    return render(request, 'core/email/compose.html', {
+        'active_tab': 'compose',
+        'users': users,
+        'unread_count': unread_count
+    })
+
+@login_required
+def email_detail(request, pk):
+    email = get_object_or_404(InternalEmail, pk=pk)
+    
+    # Security check
+    if email.recipient != request.user and email.sender != request.user:
+        return HttpResponseBadRequest("Unauthorized")
+        
+    if email.recipient == request.user and not email.is_read:
+        email.is_read = True
+        email.save()
+        
+    unread_count = InternalEmail.objects.filter(recipient=request.user, is_read=False).count()
+    active_tab = 'inbox' if email.recipient == request.user else 'sent'
+    
+    return render(request, 'core/email/detail.html', {
+        'email': email,
+        'active_tab': active_tab,
+        'unread_count': unread_count
+    })
