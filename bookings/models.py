@@ -3,6 +3,7 @@ from django.db import models
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 from django_fsm import transition
 
 from core.mixins import AuditableMixin
@@ -248,6 +249,9 @@ class Booking(WorkflowMixin):
     )
     notes = models.TextField(blank=True)
     source = models.CharField(max_length=20, default='WALK_IN')  # WALK_IN, ONLINE, PHONE, API
+    
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
 
     class Meta:
         indexes = [
