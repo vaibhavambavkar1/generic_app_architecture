@@ -59,7 +59,7 @@ def executive_dashboard(request):
         total_revenue=Sum('lines__line_total')
     ).exclude(lines__product__name__isnull=True).order_by('-total_revenue')[:5]
     
-    high_value_pos = StorePurchaseOrder.objects.filter(total_amount__gte=50000).order_by('-created_at')[:5]
+    high_value_pos = StorePurchaseOrder.objects.filter(total_amount__gte=50000).order_by('-id')[:5]
 
     context = {
         'revenue_30d': revenue_30d,
