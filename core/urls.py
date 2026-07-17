@@ -31,6 +31,10 @@ urlpatterns = [
     path('workflow/transition/<int:transition_id>/edit/', views.edit_transition_row, name='edit_transition_row'),
     path('workflow/transition/<int:transition_id>/cancel/', views.cancel_edit_transition_row, name='cancel_edit_transition_row'),
     path('workflow/transition/<int:transition_id>/update/', views.update_approval_route, name='update_approval_route'),
+    
+    # Chat Routes
+    path('chat/messages/', views.chat_messages, name='chat_messages'),
+    path('chat/send/', views.send_chat_message, name='send_chat_message'),
 ]
 
 # HTML Auth URLs

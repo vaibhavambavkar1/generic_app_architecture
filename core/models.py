@@ -98,6 +98,36 @@ class AuditLog(models.Model):
     def __str__(self):
         return f"{self.action} on {self.content_type} #{self.object_id} at {self.timestamp}"
 
+class ApprovalLog(models.Model):
+    workflow = models.ForeignKey(Workflow, on_delete=models.CASCADE)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey('content_type', 'object_id')
+    
+    approver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    transition = models.ForeignKey(Transition, on_delete=models.CASCADE)
+    notes = models.TextField(blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-timestamp']
+
+    def __str__(self):
+        return f"{self.approver} - {self.transition.name} on {self.content_object}"
+
+class ChatMessage(models.Model):
+    sender = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='sent_messages', on_delete=models.CASCADE)
+    recipient = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='received_messages', on_delete=models.CASCADE, null=True, blank=True)
+    content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['timestamp']
+
+    def __str__(self):
+        return f"{self.sender} to {self.recipient if self.recipient else 'All'}: {self.content[:20]}"
+
 class ApprovalRoute(models.Model):
     transition = models.ForeignKey(Transition, related_name='approvals', on_delete=models.CASCADE)
     required_group = models.ForeignKey('auth.Group', on_delete=models.SET_NULL, null=True, blank=True)

@@ -737,4 +737,26 @@ def cancel_edit_transition_row(request, transition_id):
         'groups': groups
     })
 
+from .models import ChatMessage
 
+@login_required
+def chat_messages(request):
+    """HTMX endpoint to return latest chat messages."""
+    messages = ChatMessage.objects.filter(recipient__isnull=True).order_by('-timestamp')[:50]
+    messages = reversed(messages)
+    return render(request, 'core/components/chat_messages_list.html', {'chat_messages': messages})
+
+@login_required
+@require_POST
+def send_chat_message(request):
+    """HTMX endpoint to send a new chat message."""
+    content = request.POST.get('message', '').strip()
+    if content:
+        ChatMessage.objects.create(
+            sender=request.user,
+            recipient=None,
+            content=content
+        )
+    messages = ChatMessage.objects.filter(recipient__isnull=True).order_by('-timestamp')[:50]
+    messages = reversed(messages)
+    return render(request, 'core/components/chat_messages_list.html', {'chat_messages': messages})

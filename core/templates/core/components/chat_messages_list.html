@@ -1,0 +1,32 @@
+<div class="flex justify-center mb-4">
+    <span class="text-xs font-semibold text-base-content/40 bg-base-200 px-3 py-1 rounded-full">Recent Activity</span>
+</div>
+
+{% for msg in chat_messages %}
+    {% if msg.sender == request.user %}
+    <!-- Sent Message -->
+    <div class="chat chat-end mb-2">
+        <div class="chat-header text-xs opacity-50 mr-1">
+            You <time class="text-xs opacity-50">{{ msg.timestamp|time:"H:i" }}</time>
+        </div>
+        <div class="chat-bubble chat-bubble-info text-sm shadow-sm text-info-content">{{ msg.content }}</div>
+    </div>
+    {% else %}
+    <!-- Received Message -->
+    <div class="chat chat-start mb-2">
+        <div class="chat-image avatar placeholder">
+            <div class="w-8 rounded-full bg-base-300 ring ring-primary ring-offset-base-100 ring-offset-1">
+                <span class="flex items-center justify-center w-full h-full text-base-content/60 text-xs font-bold">
+                    {{ msg.sender.first_name|first|default:msg.sender.username|first|upper }}
+                </span>
+            </div>
+        </div>
+        <div class="chat-header text-xs opacity-50 ml-1">
+            {{ msg.sender.get_full_name|default:msg.sender.username }} <time class="text-xs opacity-50">{{ msg.timestamp|time:"H:i" }}</time>
+        </div>
+        <div class="chat-bubble chat-bubble-primary text-sm shadow-sm">{{ msg.content }}</div>
+    </div>
+    {% endif %}
+{% empty %}
+    <div class="text-center text-sm text-base-content/50 py-4">No messages yet. Start the conversation!</div>
+{% endfor %}
