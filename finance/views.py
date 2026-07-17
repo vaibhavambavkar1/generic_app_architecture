@@ -102,3 +102,65 @@ def journal_post(request, pk):
         response['HX-Refresh'] = 'true'
         return response
     return redirect('finance:journal_detail', pk=pk)
+
+@login_required
+def account_edit(request, pk):
+    acc = get_object_or_404(Account, pk=pk)
+    if request.method == "POST":
+        form = AccountForm(request.POST, instance=acc)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Account {acc.code} updated.")
+            if request.headers.get('HX-Request'):
+                response = HttpResponse()
+                response['HX-Refresh'] = 'true'
+                return response
+            return redirect('finance:account_list')
+    else:
+        form = AccountForm(instance=acc)
+    return render(request, 'finance/account_edit_modal.html', {'form': form, 'account': acc})
+
+@login_required
+def account_delete(request, pk):
+    acc = get_object_or_404(Account, pk=pk)
+    if request.method == "POST":
+        if acc.journal_lines.exists():
+            messages.error(request, f"Cannot delete Account {acc.code} because it has associated Journal Entries.")
+        else:
+            acc.delete()
+            messages.success(request, f"Account {acc.code} deleted.")
+        return redirect('finance:account_list')
+    return redirect('finance:account_list')
+
+@login_required
+def journal_edit(request, pk):
+    je = get_object_or_404(JournalEntry, pk=pk)
+    if je.is_posted:
+        messages.error(request, "Cannot edit a posted journal entry.")
+        return redirect('finance:journal_list')
+        
+    if request.method == "POST":
+        form = JournalEntryForm(request.POST, instance=je)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Journal Entry {je.entry_number} updated.")
+            if request.headers.get('HX-Request'):
+                response = HttpResponse()
+                response['HX-Refresh'] = 'true'
+                return response
+            return redirect('finance:journal_list')
+    else:
+        form = JournalEntryForm(instance=je)
+    return render(request, 'finance/journal_edit_modal.html', {'form': form, 'je': je})
+
+@login_required
+def journal_delete(request, pk):
+    je = get_object_or_404(JournalEntry, pk=pk)
+    if request.method == "POST":
+        if je.is_posted:
+            messages.error(request, "Cannot delete a posted journal entry.")
+        else:
+            je.delete()
+            messages.success(request, f"Journal Entry {je.entry_number} deleted.")
+        return redirect('finance:journal_list')
+    return redirect('finance:journal_list')

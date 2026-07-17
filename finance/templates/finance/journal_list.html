@@ -45,6 +45,15 @@
                     </td>
                     <td class="text-right">
                         <a href="{% url 'finance:journal_detail' je.pk %}" class="btn btn-ghost btn-xs">View</a>
+                        {% if not je.is_posted %}
+                        <button class="btn btn-ghost btn-xs text-primary"
+                                hx-get="{% url 'finance:journal_edit' je.pk %}"
+                                hx-target="body" hx-swap="beforeend">Edit</button>
+                        <form method="POST" action="{% url 'finance:journal_delete' je.pk %}" class="inline-block" onsubmit="return confirm('Are you sure you want to delete this draft journal entry?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-ghost btn-xs text-error">Delete</button>
+                        </form>
+                        {% endif %}
                     </td>
                 </tr>
                 {% empty %}

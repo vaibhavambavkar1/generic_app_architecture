@@ -1,0 +1,48 @@
+<dialog id="je_edit_modal" class="modal modal-bottom sm:modal-middle" open>
+    <div class="modal-box bg-base-100 border border-base-300 shadow-xl rounded-2xl max-w-lg">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="font-bold text-xl text-primary flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                Edit Journal Entry: {{ je.entry_number }}
+            </h3>
+            <button class="btn btn-sm btn-circle btn-ghost" onclick="closeJEEditModal()">✕</button>
+        </div>
+
+        <form method="POST" action="{% url 'finance:journal_edit' je.pk %}" 
+              hx-post="{% url 'finance:journal_edit' je.pk %}" 
+              hx-target="body"
+              class="space-y-4" 
+              onsubmit="setTimeout(closeJEEditModal, 300)">
+            {% csrf_token %}
+            
+            {% for field in form %}
+            <div class="form-control w-full">
+                <label class="label font-semibold pb-1">
+                    <span class="label-text">{{ field.label }}</span>
+                </label>
+                {{ field }}
+                {% if field.errors %}
+                <label class="label"><span class="label-text-alt text-error">{{ field.errors.0 }}</span></label>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            <div class="modal-action mt-6">
+                <button type="button" class="btn btn-ghost" onclick="closeJEEditModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</dialog>
+
+<script>
+    function closeJEEditModal() {
+        const modal = document.getElementById('je_edit_modal');
+        if (modal) {
+            modal.removeAttribute('open');
+            setTimeout(() => modal.remove(), 200);
+        }
+    }
+</script>

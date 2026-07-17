@@ -27,6 +27,7 @@
                     <th>Account Name</th>
                     <th>Category</th>
                     <th class="text-right">Balance</th>
+                    <th class="text-right">Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -39,6 +40,15 @@
                     </td>
                     <td class="text-right font-mono font-bold {% if acc.balance < 0 %}text-error{% endif %}">
                         ₹{{ acc.balance|default:"0.00" }}
+                    </td>
+                    <td class="text-right">
+                        <button class="btn btn-ghost btn-xs text-primary"
+                                hx-get="{% url 'finance:account_edit' acc.pk %}"
+                                hx-target="body" hx-swap="beforeend">Edit</button>
+                        <form method="POST" action="{% url 'finance:account_delete' acc.pk %}" class="inline-block" onsubmit="return confirm('Are you sure you want to delete this account?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-ghost btn-xs text-error">Delete</button>
+                        </form>
                     </td>
                 </tr>
                 {% empty %}
