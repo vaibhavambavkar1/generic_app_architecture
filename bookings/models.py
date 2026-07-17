@@ -422,31 +422,6 @@ class Review(AuditableMixin):
         return f"Review for {self.booking.booking_number} ({self.rating}/5)"
 
 
-class PaymentTransaction(AuditableMixin):
-    """
-    Payment integration ledger for processing and tracking financial settlements.
-    """
-    PAYMENT_METHODS = (
-        ('CARD', 'Credit/Debit Card'),
-        ('CASH', 'Cash'),
-        ('BANK_TRANSFER', 'Bank Transfer'),
-        ('WALLET', 'Digital Wallet'),
-    )
-    STATUS_CHOICES = (
-        ('PENDING', 'Pending'),
-        ('SUCCESS', 'Success'),
-        ('FAILED', 'Failed'),
-        ('REFUNDED', 'Refunded'),
-    )
-    booking = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name="payments")
-    transaction_id = models.CharField(max_length=100, unique=True, help_text="Gateway reference ID")
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
-    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHODS, default='CASH')
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
-    gateway_response = models.JSONField(blank=True, default=dict)
-
-    def __str__(self) -> str:
-        return f"Payment {self.transaction_id} - {self.status}"
 
 
 class Waitlist(AuditableMixin):
