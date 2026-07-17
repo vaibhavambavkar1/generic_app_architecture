@@ -18,6 +18,7 @@ urlpatterns = [
     
     # POS Terminal
     path('pos/', views.pos_terminal, name='pos_terminal'),
+    path('pos/invoices/', views.pos_invoice_list, name='pos_invoice_list'),
     path('pos/scan/', views.pos_scan_barcode, name='pos_scan_barcode'),
     path('pos/remove/<int:item_id>/', views.pos_remove_item, name='pos_remove_item'),
     path('pos/update-quantity/<int:item_id>/', views.pos_update_quantity, name='pos_update_quantity'),

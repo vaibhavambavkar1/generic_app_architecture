@@ -1,0 +1,71 @@
+{% extends "core/base.html" %}
+
+{% block title %}Retail Sales | ERP Framework{% endblock %}
+
+{% block content %}
+<div class="flex justify-between items-center mb-6">
+    <div>
+        <h1 class="text-3xl font-bold tracking-tight">Retail Sales History</h1>
+        <p class="text-base-content/60">View all completed Point of Sale transactions.</p>
+    </div>
+    <div class="flex gap-2">
+        <a href="{% url 'sales:pos_terminal' %}" class="btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+            </svg>
+            New POS Sale
+        </a>
+    </div>
+</div>
+
+<div class="bg-base-100 rounded-xl shadow border border-base-200 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="table w-full">
+            <thead class="bg-base-200/50">
+                <tr>
+                    <th>Date & Time</th>
+                    <th>Invoice Number</th>
+                    <th>Warehouse</th>
+                    <th>Payment Method</th>
+                    <th class="text-right">Total Amount</th>
+                    <th class="text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for invoice in invoices %}
+                <tr class="hover:bg-base-200/30 transition-colors">
+                    <td>
+                        <div class="font-medium">{{ invoice.date|date:"M d, Y" }}</div>
+                        <div class="text-xs text-base-content/60">{{ invoice.date|time:"H:i" }}</div>
+                    </td>
+                    <td class="font-mono text-sm">{{ invoice.invoice_number }}</td>
+                    <td>{{ invoice.warehouse.name }}</td>
+                    <td>
+                        <span class="badge badge-sm badge-outline">{{ invoice.get_payment_method_display }}</span>
+                    </td>
+                    <td class="text-right font-bold text-primary">₹{{ invoice.total_amount }}</td>
+                    <td class="text-center">
+                        <a href="{% url 'sales:pos_receipt' invoice.pk %}" class="btn btn-ghost btn-xs" target="_blank">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            View Receipt
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-8 text-base-content/50">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-3 opacity-20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <p>No completed retail sales found.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

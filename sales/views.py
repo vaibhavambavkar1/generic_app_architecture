@@ -129,6 +129,11 @@ def sales_order_detail(request, pk):
 # --- POS Terminal ---
 
 @login_required
+def pos_invoice_list(request):
+    invoices = POSInvoice.objects.filter(is_paid=True).order_by('-date')
+    return render(request, 'sales/pos_invoice_list.html', {'invoices': invoices})
+
+@login_required
 def pos_terminal(request):
     # Retrieve active draft invoice from session, or create one
     invoice_id = request.session.get('active_pos_invoice_id')
