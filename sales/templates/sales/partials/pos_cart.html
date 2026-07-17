@@ -7,10 +7,16 @@
                 <div class="font-bold text-sm truncate">{{ item.product.name }}</div>
                 <div class="text-xs text-base-content/60 font-mono">{{ item.product.sku }}</div>
             </div>
-            <div class="flex flex-col items-end gap-1">
+                <div class="flex flex-col items-end gap-1">
                 <div class="font-bold">₹{{ item.line_total }}</div>
                 <div class="flex items-center gap-2">
-                    <span class="text-xs font-mono bg-base-200 px-1 rounded">{{ item.quantity }} x ₹{{ item.unit_price }}</span>
+                    <span class="text-xs font-mono text-base-content/70">x ₹{{ item.unit_price }}</span>
+                    <input type="number" name="quantity" value="{{ item.quantity }}" min="1" 
+                           class="input input-bordered input-xs w-16 text-center font-mono"
+                           hx-post="{% url 'sales:pos_update_quantity' item.id %}"
+                           hx-trigger="change"
+                           hx-target="#pos-cart"
+                           hx-swap="outerHTML">
                     <button class="btn btn-circle btn-ghost btn-xs text-error" 
                             hx-post="{% url 'sales:pos_remove_item' item.id %}" 
                             hx-target="#pos-cart" 

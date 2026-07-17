@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.template.loader import render_to_string
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.db import transaction
@@ -147,7 +148,8 @@ def pos_terminal(request):
         )
         request.session['active_pos_invoice_id'] = invoice.id
 
-    return render(request, 'sales/pos_terminal.html', {'invoice': invoice})
+    quick_products = Product.objects.filter(is_active=True)[:9]
+    return render(request, 'sales/pos_terminal.html', {'invoice': invoice, 'quick_products': quick_products})
 
 @login_required
 def pos_scan_barcode(request):
@@ -159,12 +161,13 @@ def pos_scan_barcode(request):
         # Check by SKU or barcode (assuming SKU matches barcode for simple POS)
         product = Product.objects.filter(sku=barcode).first()
         if product:
-            # Check price list
-            price = 0.00
-            # For simplicity, if we have price_list_items, take the first active one, or standard fallback
+            # Use product's default selling price
+            price = product.selling_price
+            
+            # Check if there is a specific price list rate
             pli = product.price_list_items.first()
             if pli:
-                price = pli.price
+                price = pli.rate
             
             # Add to cart
             line, created = POSLineItem.objects.get_or_create(
@@ -181,14 +184,19 @@ def pos_scan_barcode(request):
             invoice.subtotal = sum(item.line_total for item in invoice.lines.all())
             invoice.total_amount = invoice.subtotal + invoice.tax_amount
             invoice.save()
+            
+            cart_html = render_to_string('sales/partials/pos_cart.html', {'invoice': invoice}, request=request)
+            return HttpResponse(cart_html + "<div id='pos-alert' hx-swap-oob='true'></div>")
         else:
             # Product not found, send HTMX error Toast or inline message
+            cart_html = render_to_string('sales/partials/pos_cart.html', {'invoice': invoice}, request=request)
             return HttpResponse(
-                f"<div class='alert alert-error' hx-swap-oob='true' id='pos-alert'>Product with SKU {barcode} not found!</div>"
+                cart_html + f"<div class='alert alert-error' hx-swap-oob='true' id='pos-alert'>Product with SKU {barcode} not found!</div>"
             )
 
     # Return updated cart fragment
-    return render(request, 'sales/partials/pos_cart.html', {'invoice': invoice})
+    cart_html = render_to_string('sales/partials/pos_cart.html', {'invoice': invoice}, request=request)
+    return HttpResponse(cart_html + "<div id='pos-alert' hx-swap-oob='true'></div>")
 
 @login_required
 def pos_remove_item(request, item_id):
@@ -202,6 +210,30 @@ def pos_remove_item(request, item_id):
     invoice.total_amount = invoice.subtotal + invoice.tax_amount
     invoice.save()
 
+    return render(request, 'sales/partials/pos_cart.html', {'invoice': invoice})
+
+@login_required
+def pos_update_quantity(request, item_id):
+    invoice_id = request.session.get('active_pos_invoice_id')
+    invoice = get_object_or_404(POSInvoice, id=invoice_id, is_paid=False)
+    line = get_object_or_404(POSLineItem, id=item_id, invoice=invoice)
+    
+    try:
+        new_quantity = int(request.POST.get('quantity', 1))
+        if new_quantity > 0:
+            line.quantity = new_quantity
+            line.line_total = line.quantity * line.unit_price
+            line.save()
+        elif new_quantity == 0:
+            line.delete()
+            
+        # Update total
+        invoice.subtotal = sum(item.line_total for item in invoice.lines.all())
+        invoice.total_amount = invoice.subtotal + invoice.tax_amount
+        invoice.save()
+    except ValueError:
+        pass
+        
     return render(request, 'sales/partials/pos_cart.html', {'invoice': invoice})
 
 @login_required
@@ -229,5 +261,7 @@ def pos_checkout(request):
 
 @login_required
 def pos_receipt(request, pk):
+    from core.models import Organization
     invoice = get_object_or_404(POSInvoice, pk=pk)
-    return render(request, 'sales/pos_receipt.html', {'invoice': invoice})
+    organization = Organization.objects.first()
+    return render(request, 'sales/pos_receipt.html', {'invoice': invoice, 'organization': organization})

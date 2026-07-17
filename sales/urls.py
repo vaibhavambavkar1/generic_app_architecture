@@ -20,6 +20,7 @@ urlpatterns = [
     path('pos/', views.pos_terminal, name='pos_terminal'),
     path('pos/scan/', views.pos_scan_barcode, name='pos_scan_barcode'),
     path('pos/remove/<int:item_id>/', views.pos_remove_item, name='pos_remove_item'),
+    path('pos/update-quantity/<int:item_id>/', views.pos_update_quantity, name='pos_update_quantity'),
     path('pos/checkout/', views.pos_checkout, name='pos_checkout'),
     path('pos/receipt/<int:pk>/', views.pos_receipt, name='pos_receipt'),
 ]

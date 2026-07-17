@@ -3,11 +3,38 @@
 {% block title %}Receipt | ERP Framework{% endblock %}
 
 {% block content %}
+<style>
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    #printable-receipt, #printable-receipt * {
+        visibility: visible;
+    }
+    #printable-receipt {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+        padding: 20px;
+        box-shadow: none;
+        border: none;
+    }
+    .print-hide {
+        display: none !important;
+    }
+}
+</style>
+
 <div class="flex justify-center py-10">
-    <div class="bg-base-100 p-8 rounded-xl shadow-2xl w-full max-w-sm font-mono border-t-8 border-t-primary">
+    <div id="printable-receipt" class="bg-base-100 p-8 rounded-xl shadow-2xl w-full max-w-sm font-mono border-t-8 border-t-primary">
         <div class="text-center mb-6 border-b border-dashed border-base-300 pb-6">
-            <h1 class="text-2xl font-bold tracking-tight uppercase">Your Store Name</h1>
-            <p class="text-sm text-base-content/60 mt-1">123 ERP Framework Ave.<br>City, State 12345</p>
+            <h1 class="text-2xl font-bold tracking-tight uppercase">{{ organization.name|default:"Your Store Name" }}</h1>
+            <p class="text-sm text-base-content/60 mt-1 whitespace-pre-line">{{ organization.address|default:"123 ERP Framework Ave.\nCity, State 12345" }}</p>
+            {% if organization.phone %}<p class="text-sm text-base-content/60">Ph: {{ organization.phone }}</p>{% endif %}
+            {% if organization.gstin %}<p class="text-sm text-base-content/60">GSTIN: {{ organization.gstin }}</p>{% endif %}
         </div>
         
         <div class="text-sm mb-6 space-y-1">
@@ -69,7 +96,7 @@
             <p class="text-xs text-base-content/50">Please keep receipt for returns</p>
         </div>
 
-        <div class="mt-6 flex gap-2">
+        <div class="mt-6 flex gap-2 print-hide">
             <button class="btn btn-outline btn-sm flex-1" onclick="window.print()">Print</button>
             <a href="{% url 'sales:pos_terminal' %}" class="btn btn-primary btn-sm flex-1">New Sale</a>
         </div>

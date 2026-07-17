@@ -14,7 +14,7 @@
                 </svg>
                 Scan Barcode
             </h2>
-            <form hx-post="{% url 'sales:pos_scan_barcode' %}" hx-target="#pos-cart" hx-swap="outerHTML" onsubmit="this.reset(); setTimeout(()=>document.getElementById('barcode-input').focus(), 50)">
+            <form hx-post="{% url 'sales:pos_scan_barcode' %}" hx-target="#pos-cart" hx-swap="outerHTML" hx-on::after-request="this.reset(); setTimeout(()=>document.getElementById('barcode-input').focus(), 50)">
                 {% csrf_token %}
                 <div class="join w-full">
                     <input type="text" id="barcode-input" name="barcode" class="input input-bordered join-item w-full text-lg font-mono placeholder:font-sans" placeholder="Ready to scan... (or type SKU)" autofocus autocomplete="off" />
@@ -28,11 +28,14 @@
         <div class="flex-1 bg-base-100 rounded-xl shadow border border-base-200 p-4">
             <h3 class="font-bold text-base-content/70 mb-4">Quick Products</h3>
             <div class="grid grid-cols-3 gap-2">
-                <!-- Ideally populated from DB based on most sold -->
-                <button class="btn btn-outline border-base-300 h-24 flex flex-col" onclick="document.getElementById('barcode-input').value='PROD-100'; document.getElementById('barcode-input').form.dispatchEvent(new Event('submit', {cancelable: true, bubbles: true}))">
-                    <span class="text-xs">PROD-100</span>
-                    <span class="font-bold">Test Item A</span>
+                {% for prod in quick_products %}
+                <button class="btn btn-outline border-base-300 h-24 flex flex-col" onclick="document.getElementById('barcode-input').value='{{ prod.sku }}'; document.getElementById('barcode-input').form.dispatchEvent(new Event('submit', {cancelable: true, bubbles: true}))">
+                    <span class="text-xs truncate w-full" title="{{ prod.sku }}">{{ prod.sku }}</span>
+                    <span class="font-bold truncate w-full" title="{{ prod.name }}">{{ prod.name }}</span>
                 </button>
+                {% empty %}
+                <div class="col-span-3 text-center text-sm text-base-content/50">No products available</div>
+                {% endfor %}
             </div>
         </div>
     </div>
