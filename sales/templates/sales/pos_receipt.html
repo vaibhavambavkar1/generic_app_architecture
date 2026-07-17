@@ -48,7 +48,7 @@
             </div>
             <div class="flex justify-between">
                 <span>Payment:</span>
-                <span>{{ invoice.get_payment_method_display }}</span>
+                <span>{{ invoice.payment_method.name|default:"-" }}</span>
             </div>
         </div>
 

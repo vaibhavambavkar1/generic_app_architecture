@@ -4,6 +4,7 @@ from core.models import WorkflowMixin
 from django_fsm import transition
 from generic_store_mgmt.models import Product
 from inventory.models import Supplier, Warehouse, StockLedger
+from django.contrib.contenttypes.fields import GenericRelation
 
 class PurchaseRequest(WorkflowMixin):
     """
@@ -56,8 +57,8 @@ class StorePurchaseOrder(WorkflowMixin):
     rfq = models.ForeignKey(RequestForQuotation, on_delete=models.SET_NULL, null=True, blank=True)
     warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT)
     expected_delivery = models.DateField()
-    
     total_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
+    payments = GenericRelation('core.PaymentTransaction')
 
     @transition(field='status', source='Draft', target='Issued')
     def issue_po(self):

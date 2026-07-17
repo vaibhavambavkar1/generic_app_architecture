@@ -243,12 +243,15 @@ def pos_update_quantity(request, item_id):
 
 @login_required
 def pos_checkout(request):
+    from core.models import PaymentMethod
     invoice_id = request.session.get('active_pos_invoice_id')
     invoice = get_object_or_404(POSInvoice, id=invoice_id, is_paid=False)
     
     if request.method == "POST":
-        payment_method = request.POST.get('payment_method', 'CASH')
-        invoice.payment_method = payment_method
+        payment_method_id = request.POST.get('payment_method')
+        if payment_method_id:
+            pm = get_object_or_404(PaymentMethod, pk=payment_method_id)
+            invoice.payment_method = pm
         
         with transaction.atomic():
             invoice.process_payment() # Sets is_paid and writes Ledger
@@ -262,7 +265,8 @@ def pos_checkout(request):
             return response
         return redirect('sales:pos_receipt', pk=invoice.id)
         
-    return render(request, 'sales/pos_checkout_modal.html', {'invoice': invoice})
+    payment_methods = PaymentMethod.objects.filter(is_active=True)
+    return render(request, 'sales/pos_checkout_modal.html', {'invoice': invoice, 'payment_methods': payment_methods})
 
 @login_required
 def pos_receipt(request, pk):

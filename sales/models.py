@@ -5,6 +5,7 @@ from django_fsm import transition
 from generic_store_mgmt.models import Product
 from crm.models import Customer
 from inventory.models import Warehouse, StockLedger
+from django.contrib.contenttypes.fields import GenericRelation
 
 class Quotation(WorkflowMixin):
     """
@@ -41,6 +42,7 @@ class SalesOrder(WorkflowMixin):
     warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT)
     expected_dispatch_date = models.DateField()
     total_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
+    payments = GenericRelation('core.PaymentTransaction')
 
     @transition(field='status', source='Draft', target='Confirmed')
     def confirm_order(self):
@@ -63,18 +65,28 @@ class POSInvoice(AuditableMixin):
     subtotal = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
     tax_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
     total_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
+    payments = GenericRelation('core.PaymentTransaction')
     
-    PAYMENT_CHOICES = [
-        ('CASH', 'Cash'),
-        ('CARD', 'Card'),
-        ('UPI', 'UPI'),
-    ]
-    payment_method = models.CharField(max_length=10, choices=PAYMENT_CHOICES, default='CASH')
+    payment_method = models.ForeignKey('core.PaymentMethod', on_delete=models.PROTECT, null=True, blank=True)
     is_paid = models.BooleanField(default=False)
 
     def process_payment(self):
         self.is_paid = True
         self.save()
+        
+        # Create central PaymentTransaction record
+        from core.models import PaymentTransaction
+        from django.contrib.contenttypes.models import ContentType
+        PaymentTransaction.objects.create(
+            payment_method=self.payment_method,
+            amount=self.total_amount,
+            transaction_type='IN',
+            status='SUCCESS',
+            content_type=ContentType.objects.get_for_model(self),
+            object_id=self.pk,
+            notes=f"POS Sale Checkout for Invoice {self.invoice_number}"
+        )
+        
         # Create stock ledger entries for each line item (Stock OUT)
         for line in self.lines.all():
             StockLedger.objects.create(
@@ -96,7 +108,7 @@ class POSInvoice(AuditableMixin):
             je = JournalEntry.objects.create(
                 entry_number=f"JE-POS-{self.invoice_number}",
                 reference=self.invoice_number,
-                notes=f"POS Sale - {self.get_payment_method_display()}",
+                notes=f"POS Sale - {self.payment_method.name if self.payment_method else 'Cash'}",
                 is_posted=True # Automatically post it
             )
             # Debit Cash

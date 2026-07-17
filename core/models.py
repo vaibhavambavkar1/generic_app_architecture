@@ -401,3 +401,62 @@ class SavedReport(AuditableMixin):
 
     def __str__(self):
         return f"{self.name} ({self.report_id})"
+
+class PaymentMethod(AuditableMixin):
+    """
+    Master data for Payment Methods (Cash, UPI, Card, etc.) configurable for the ERP.
+    """
+    PAYMENT_TYPES = (
+        ('CASH', 'Cash'),
+        ('CARD', 'Credit/Debit Card'),
+        ('UPI', 'UPI'),
+        ('BANK', 'Bank Transfer'),
+        ('WALLET', 'Digital Wallet'),
+        ('OTHER', 'Other'),
+    )
+    name = models.CharField(max_length=100)
+    type = models.CharField(max_length=15, choices=PAYMENT_TYPES)
+    is_active = models.BooleanField(default=True)
+    # Allows storing dynamic gateway details, UPI handles, etc. without hardcoding fields
+    configuration = models.JSONField(blank=True, default=dict, help_text="Specific configs like UPI ID, Merchant ID, API keys, etc.")
+    
+    def __str__(self):
+        return f"{self.name} ({self.get_type_display()})"
+
+class PaymentTransaction(AuditableMixin):
+    """
+    Generic model to track payments made or received across the entire application (Sales, Purchases, HRMS, etc.)
+    """
+    TRANSACTION_TYPES = (
+        ('IN', 'Inbound (Receipt)'),
+        ('OUT', 'Outbound (Payment)'),
+    )
+    STATUS_CHOICES = (
+        ('PENDING', 'Pending'),
+        ('SUCCESS', 'Success'),
+        ('FAILED', 'Failed'),
+        ('REFUNDED', 'Refunded'),
+    )
+    transaction_id = models.CharField(max_length=100, unique=True, blank=True)
+    payment_method = models.ForeignKey(PaymentMethod, on_delete=models.PROTECT)
+    amount = models.DecimalField(max_digits=15, decimal_places=2)
+    transaction_type = models.CharField(max_length=10, choices=TRANSACTION_TYPES, default='IN')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='SUCCESS')
+    
+    # Generic relation to link to POSInvoice, SalesOrder, PurchaseOrder, Payroll, etc.
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey('content_type', 'object_id')
+    
+    reference_number = models.CharField(max_length=100, blank=True, help_text="External reference like UTR or Gateway ID")
+    notes = models.TextField(blank=True)
+    
+    def save(self, *args, **kwargs):
+        if not self.transaction_id:
+            import uuid
+            self.transaction_id = f"TXN-{uuid.uuid4().hex[:10].upper()}"
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.transaction_id} - {self.amount} ({self.get_transaction_type_display()}) via {self.payment_method.name}"
+

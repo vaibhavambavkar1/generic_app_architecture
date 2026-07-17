@@ -41,7 +41,7 @@
                     <td class="font-mono text-sm">{{ invoice.invoice_number }}</td>
                     <td>{{ invoice.warehouse.name }}</td>
                     <td>
-                        <span class="badge badge-sm badge-outline">{{ invoice.get_payment_method_display }}</span>
+                        <span class="badge badge-sm badge-outline">{{ invoice.payment_method.name|default:"-" }}</span>
                     </td>
                     <td class="text-right font-bold text-primary">₹{{ invoice.total_amount }}</td>
                     <td class="text-center">
