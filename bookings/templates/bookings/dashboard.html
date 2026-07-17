@@ -1,0 +1,70 @@
+{% extends "bookings/base.html" %}
+
+{% block bookings_title %}Overview{% endblock %}
+
+{% block bookings_actions %}
+<a href="{% url 'bookings:calendar' %}" class="btn btn-primary">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+    New Booking
+</a>
+{% endblock %}
+
+{% block bookings_content %}
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="stat bg-base-100 shadow-sm border border-base-200 rounded-xl">
+        <div class="stat-figure text-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-8 h-8 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+        </div>
+        <div class="stat-title">Today's Bookings</div>
+        <div class="stat-value text-primary">{{ today_bookings }}</div>
+        <div class="stat-desc">Scheduled for {{ now|date:"M d, Y" }}</div>
+    </div>
+    
+    <div class="stat bg-base-100 shadow-sm border border-base-200 rounded-xl">
+        <div class="stat-figure text-secondary">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-8 h-8 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+        </div>
+        <div class="stat-title">Active Resources</div>
+        <div class="stat-value text-secondary">{{ active_resources }}</div>
+        <div class="stat-desc">Available for booking</div>
+    </div>
+</div>
+
+<div class="card bg-base-100 shadow-sm border border-base-200">
+    <div class="card-body">
+        <h2 class="card-title mb-4">Recent Bookings</h2>
+        <div class="overflow-x-auto">
+            <table class="table table-zebra w-full">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Customer</th>
+                        <th>Start Time</th>
+                        <th>Status</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for booking in recent_bookings %}
+                    <tr>
+                        <td>{{ booking.booking_number }}</td>
+                        <td>{{ booking.customer.name }}</td>
+                        <td>{{ booking.start_datetime|date:"M d, Y H:i" }}</td>
+                        <td>
+                            <div class="badge {% if booking.status == 'Confirmed' %}badge-success{% elif booking.status == 'Cancelled' %}badge-error{% else %}badge-info{% endif %}">
+                                {{ booking.status }}
+                            </div>
+                        </td>
+                        <td>{{ business.currency }} {{ booking.total_amount }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center text-base-content/50 py-8">No recent bookings found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

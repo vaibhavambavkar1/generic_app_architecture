@@ -1,0 +1,41 @@
+{% extends "bookings/base.html" %}
+
+{% block bookings_title %}Business Setup{% endblock %}
+
+{% block bookings_content %}
+<div class="max-w-2xl mx-auto">
+    <div class="card bg-base-100 shadow-sm border border-base-200">
+        <div class="card-body">
+            <h2 class="card-title text-2xl mb-2">Configure Your Business</h2>
+            <p class="text-base-content/70 mb-6">Select your industry to load the appropriate booking engine presets.</p>
+            
+            <form method="post" action="{% url 'bookings:setup_wizard' %}">
+                {% csrf_token %}
+                
+                {% for field in form %}
+                <div class="form-control w-full mb-4">
+                    <label class="label" for="{{ field.id_for_label }}">
+                        <span class="label-text font-medium">{{ field.label }}</span>
+                    </label>
+                    {{ field }}
+                    {% if field.help_text %}
+                    <label class="label">
+                        <span class="label-text-alt text-base-content/60">{{ field.help_text }}</span>
+                    </label>
+                    {% endif %}
+                    {% if field.errors %}
+                    <label class="label">
+                        <span class="label-text-alt text-error">{{ field.errors.0 }}</span>
+                    </label>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                
+                <div class="mt-8 flex justify-end">
+                    <button type="submit" class="btn btn-primary w-full md:w-auto">Save Configuration</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

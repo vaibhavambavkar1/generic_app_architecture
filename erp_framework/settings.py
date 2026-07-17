@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'sales',
     'finance',
     'reports',
+    'bookings',
     'django_htmx',
     'django_celery_beat',
     'rest_framework',

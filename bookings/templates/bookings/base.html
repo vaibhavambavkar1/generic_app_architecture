@@ -1,0 +1,33 @@
+{% extends "core/base.html" %}
+
+{% block content %}
+<div class="mb-6 border-b border-base-300">
+    <div class="flex items-center justify-between mb-4">
+        <div>
+            <h1 class="text-3xl font-bold tracking-tight text-base-content">
+                {% block bookings_title %}Bookings Management{% endblock %}
+            </h1>
+            {% if business %}
+            <p class="text-sm text-base-content/70 mt-1">
+                Operating as <span class="font-semibold">{{ business.name }}</span> ({{ business.industry.name }})
+            </p>
+            {% endif %}
+        </div>
+        <div>
+            {% block bookings_actions %}{% endblock %}
+        </div>
+    </div>
+    
+    <div class="tabs tabs-bordered">
+        <a href="{% url 'bookings:dashboard' %}" class="tab tab-lg {% if request.resolver_match.url_name == 'dashboard' %}tab-active{% endif %}">Dashboard</a>
+        <a href="{% url 'bookings:calendar' %}" class="tab tab-lg {% if request.resolver_match.url_name == 'calendar' %}tab-active{% endif %}">Calendar</a>
+        <a href="{% url 'bookings:resource_list' %}" class="tab tab-lg {% if request.resolver_match.url_name == 'resource_list' or request.resolver_match.url_name == 'resource_create' %}tab-active{% endif %}">Resources</a>
+        <a href="{% url 'bookings:schedule_list' %}" class="tab tab-lg {% if request.resolver_match.url_name == 'schedule_list' or request.resolver_match.url_name == 'schedule_create' %}tab-active{% endif %}">Schedules</a>
+        <a href="{% url 'bookings:setup_wizard' %}" class="tab tab-lg {% if request.resolver_match.url_name == 'setup_wizard' %}tab-active{% endif %}">Settings</a>
+    </div>
+</div>
+
+<div class="py-4">
+    {% block bookings_content %}{% endblock %}
+</div>
+{% endblock %}

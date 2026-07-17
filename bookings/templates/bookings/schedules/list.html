@@ -1,0 +1,65 @@
+{% extends "bookings/base.html" %}
+
+{% block bookings_title %}Operating Schedules{% endblock %}
+
+{% block bookings_actions %}
+<a href="{% url 'bookings:schedule_create' %}" class="btn btn-primary">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+    Add Schedule
+</a>
+{% endblock %}
+
+{% block bookings_content %}
+<div class="card bg-base-100 shadow-sm border border-base-200">
+    <div class="card-body">
+        <div class="overflow-x-auto">
+            <table class="table table-zebra w-full">
+                <thead>
+                    <tr>
+                        <th>Day of Week</th>
+                        <th>Resource</th>
+                        <th>Time Window</th>
+                        <th>Slot Duration</th>
+                        <th>Max Concurrent</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for schedule in schedules %}
+                    <tr>
+                        <td class="font-semibold">{{ schedule.get_day_of_week_display }}</td>
+                        <td>
+                            {% if schedule.resource %}
+                                <span class="badge badge-outline">{{ schedule.resource.name }}</span>
+                            {% else %}
+                                <span class="text-base-content/60">Business Wide</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ schedule.start_time|time:"H:i" }} - {{ schedule.end_time|time:"H:i" }}</td>
+                        <td>
+                            {% if schedule.slot_duration_minutes %}
+                                {{ schedule.slot_duration_minutes }} min
+                            {% else %}
+                                <span class="text-base-content/60">Flexible</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ schedule.max_concurrent }}</td>
+                        <td>
+                            {% if schedule.is_active %}
+                            <span class="badge badge-success badge-sm">Active</span>
+                            {% else %}
+                            <span class="badge badge-ghost badge-sm">Inactive</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-base-content/50 py-8">No operating schedules configured.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

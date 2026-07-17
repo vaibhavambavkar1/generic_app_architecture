@@ -1,0 +1,62 @@
+{% extends "bookings/base.html" %}
+
+{% block bookings_title %}Reservation Calendar{% endblock %}
+
+{% block bookings_content %}
+<div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+    <div class="md:col-span-4">
+        <div class="card bg-base-100 shadow-sm border border-base-200">
+            <div class="card-body">
+                <h3 class="card-title text-lg mb-4">Search Availability</h3>
+                
+                <form id="slot-search-form" 
+                      hx-get="{% url 'bookings:api_slots' %}" 
+                      hx-target="#slots-container" 
+                      hx-indicator=".htmx-indicator">
+                      
+                    <div class="form-control w-full mb-4">
+                        <label class="label"><span class="label-text font-medium">Resource</span></label>
+                        <select name="resource_id" class="select select-bordered w-full" required 
+                                hx-get="{% url 'bookings:api_slots' %}" 
+                                hx-target="#slots-container" 
+                                hx-include="[name='date']"
+                                hx-trigger="change">
+                            <option value="" disabled selected>Select a resource...</option>
+                            {% for res in resources %}
+                            <option value="{{ res.id }}">{{ res.name }} ({{ res.resource_type.name }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-control w-full mb-6">
+                        <label class="label"><span class="label-text font-medium">Date</span></label>
+                        <input type="date" name="date" class="input input-bordered w-full" value="{{ today_str }}" required 
+                               hx-get="{% url 'bookings:api_slots' %}" 
+                               hx-target="#slots-container" 
+                               hx-include="[name='resource_id']"
+                               hx-trigger="change"/>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-full">
+                        <span class="htmx-indicator loading loading-spinner loading-sm mr-2"></span>
+                        Find Slots
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="md:col-span-8">
+        <div class="card bg-base-100 shadow-sm border border-base-200 min-h-[400px]">
+            <div class="card-body">
+                <div id="slots-container">
+                    <div class="flex flex-col items-center justify-center h-full text-base-content/40 py-20">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                        <p class="text-lg">Select a resource and date to view available slots.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
