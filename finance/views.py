@@ -3,12 +3,28 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponse
 from .models import Account, JournalEntry, JournalEntryLine
-from .forms import JournalEntryForm, JournalEntryLineForm
+from .forms import JournalEntryForm, JournalEntryLineForm, AccountForm
 
 @login_required
 def account_list(request):
     accounts = Account.objects.all().order_by('category', 'code')
     return render(request, 'finance/account_list.html', {'accounts': accounts})
+
+@login_required
+def account_create(request):
+    if request.method == "POST":
+        form = AccountForm(request.POST)
+        if form.is_valid():
+            acc = form.save()
+            messages.success(request, f"Account {acc.code} created successfully.")
+            if request.headers.get('HX-Request'):
+                response = HttpResponse()
+                response['HX-Refresh'] = 'true'
+                return response
+            return redirect('finance:account_list')
+    else:
+        form = AccountForm()
+    return render(request, 'finance/account_create_modal.html', {'form': form})
 
 @login_required
 def journal_list(request):

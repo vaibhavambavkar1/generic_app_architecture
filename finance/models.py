@@ -25,6 +25,12 @@ class Account(AuditableMixin):
     def __str__(self):
         return f"{self.code} - {self.name} ({self.category})"
         
+    def save(self, *args, **kwargs):
+        if not self.code:
+            import uuid
+            self.code = f"ACC-{uuid.uuid4().hex[:6].upper()}"
+        super().save(*args, **kwargs)
+        
     @property
     def balance(self):
         """
@@ -52,6 +58,12 @@ class JournalEntry(AuditableMixin):
 
     def __str__(self):
         return f"JE: {self.entry_number} on {self.date}"
+
+    def save(self, *args, **kwargs):
+        if not self.entry_number:
+            import uuid
+            self.entry_number = f"JE-{uuid.uuid4().hex[:8].upper()}"
+        super().save(*args, **kwargs)
 
     def clean(self):
         """Ensure Debits = Credits before posting"""

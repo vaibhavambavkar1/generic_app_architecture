@@ -10,7 +10,12 @@
             <p class="text-base-content/60">Core ledger tracking categories.</p>
         </div>
         <div class="flex gap-2">
-            <button class="btn btn-primary btn-sm">New Account</button>
+            <button class="btn btn-primary btn-sm"
+                    hx-get="{% url 'finance:account_create' %}"
+                    hx-target="body"
+                    hx-swap="beforeend">
+                New Account
+            </button>
         </div>
     </div>
 
