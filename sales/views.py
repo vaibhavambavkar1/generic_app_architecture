@@ -10,9 +10,14 @@ from inventory.models import Warehouse
 from django.urls import reverse
 import uuid
 
+from django.core.paginator import Paginator
+
 @login_required
 def quotation_list(request):
-    quotes = Quotation.objects.all().order_by('-id')
+    quotes_list = Quotation.objects.all().order_by('-id')
+    paginator = Paginator(quotes_list, 10)
+    page_number = request.GET.get('page')
+    quotes = paginator.get_page(page_number)
     return render(request, 'sales/quotation_list.html', {'quotes': quotes})
 
 from .forms import QuotationLineItemForm, QuotationForm, SalesOrderForm
@@ -144,7 +149,10 @@ def quotation_send_modal(request, pk):
 
 @login_required
 def sales_order_list(request):
-    orders = SalesOrder.objects.all().order_by('-id')
+    orders_list = SalesOrder.objects.all().order_by('-id')
+    paginator = Paginator(orders_list, 10)
+    page_number = request.GET.get('page')
+    orders = paginator.get_page(page_number)
     return render(request, 'sales/sales_order_list.html', {'orders': orders})
 
 @login_required
@@ -220,7 +228,10 @@ def sales_order_delete_item(request, item_pk):
 
 @login_required
 def pos_invoice_list(request):
-    invoices = POSInvoice.objects.filter(is_paid=True).order_by('-date')
+    invoices_list = POSInvoice.objects.filter(is_paid=True).order_by('-date')
+    paginator = Paginator(invoices_list, 10)
+    page_number = request.GET.get('page')
+    invoices = paginator.get_page(page_number)
     return render(request, 'sales/pos_invoice_list.html', {'invoices': invoices})
 
 @login_required

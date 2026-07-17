@@ -67,5 +67,24 @@
             </tbody>
         </table>
     </div>
+    {% if invoices.has_other_pages %}
+    <div class="flex justify-center p-4 bg-base-100 border-t border-base-200">
+        <div class="join">
+            {% if invoices.has_previous %}
+                <a href="?page={{ invoices.previous_page_number }}" class="join-item btn btn-sm">«</a>
+            {% else %}
+                <button class="join-item btn btn-sm btn-disabled">«</button>
+            {% endif %}
+            
+            <button class="join-item btn btn-sm">Page {{ invoices.number }} of {{ invoices.paginator.num_pages }}</button>
+            
+            {% if invoices.has_next %}
+                <a href="?page={{ invoices.next_page_number }}" class="join-item btn btn-sm">»</a>
+            {% else %}
+                <button class="join-item btn btn-sm btn-disabled">»</button>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
