@@ -4,7 +4,7 @@ from django.utils import timezone
 from ..models import Booking, BookingItem, BookingAddon, Customer, BusinessProfile
 from .slot_engine import SlotEngine
 from .pricing_engine import PricingEngine
-from core.events import EventBus
+from core.events import EventBus, document_created, document_updated, workflow_transitioned
 
 
 class BookingService:
@@ -136,7 +136,7 @@ class BookingService:
             booking.confirm()
         booking.save()
 
-        EventBus.publish('booking_created', booking=booking)
+        EventBus.publish(document_created, sender=Booking, instance=booking)
         return booking
 
     @staticmethod
@@ -150,7 +150,7 @@ class BookingService:
 
         booking.cancel()
         booking.save()
-        EventBus.publish('booking_cancelled', booking=booking, user=user)
+        EventBus.publish(workflow_transitioned, sender=Booking, instance=booking, user=user)
         return booking
 
     @staticmethod
@@ -215,7 +215,7 @@ class BookingService:
         booking.total_amount = total_amount
         booking.save()
 
-        EventBus.publish('booking_rescheduled', booking=booking, user=user)
+        EventBus.publish(document_updated, sender=Booking, instance=booking, user=user)
         return booking
 
     @staticmethod

@@ -17,7 +17,11 @@ class AdvancedSaaSTests(TestCase):
         self.client = APIClient()
         self.client.force_authenticate(user=self.user)
         
-        self.org = Organization.objects.create(name="Test Org")
+        self.org = Organization.objects.create(
+            name="Test Org",
+            owner_name="Test Owner",
+            email="test@example.com"
+        )
         self.preset = IndustryPreset.objects.create(
             name="Generic", slug="generic", config={'slot_mode': 'time_slot'}
         )
