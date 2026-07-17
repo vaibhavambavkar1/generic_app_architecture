@@ -165,3 +165,79 @@ class POSLineItem(AuditableMixin):
     unit_price = models.DecimalField(max_digits=12, decimal_places=2)
     tax_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
     line_total = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+
+class B2BSalesInvoice(WorkflowMixin):
+    """
+    Formal B2B Invoice generated from Sales Orders, supporting Net payment terms and partial payments.
+    """
+    invoice_number = models.CharField(max_length=50, unique=True)
+    sales_order = models.ForeignKey(SalesOrder, on_delete=models.SET_NULL, null=True, blank=True, related_name='invoices')
+    customer = models.ForeignKey(Customer, on_delete=models.PROTECT, related_name='b2b_invoices')
+    issue_date = models.DateField(auto_now_add=True)
+    due_date = models.DateField()
+    
+    subtotal = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
+    tax_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
+    total_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
+    amount_paid = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
+    
+    payments = GenericRelation('core.PaymentTransaction')
+    
+    def __str__(self):
+        return f"{self.invoice_number} - {self.customer}"
+
+    @transition(field='status', source='Draft', target='Sent')
+    def issue_invoice(self):
+        # Generate Journal Entries
+        from finance.models import JournalEntry, JournalEntryLine, Account
+        
+        ar_account = Account.objects.filter(code='1100').first()
+        revenue_account = Account.objects.filter(code='4000').first()
+        tax_account = Account.objects.filter(code='2100').first()
+        
+        if ar_account and revenue_account:
+            je = JournalEntry.objects.create(
+                entry_number=f"JE-INV-{self.invoice_number}",
+                reference=self.invoice_number,
+                notes=f"B2B Invoice Issue - {self.customer.name}",
+                is_posted=True
+            )
+            # Debit AR
+            JournalEntryLine.objects.create(
+                journal_entry=je,
+                account=ar_account,
+                debit=self.total_amount,
+                description=f"Receivable for {self.invoice_number}",
+                customer=self.customer
+            )
+            # Credit Revenue
+            JournalEntryLine.objects.create(
+                journal_entry=je,
+                account=revenue_account,
+                credit=self.subtotal,
+                description=f"Revenue from {self.invoice_number}"
+            )
+            if self.tax_amount > 0 and tax_account:
+                JournalEntryLine.objects.create(
+                    journal_entry=je,
+                    account=tax_account,
+                    credit=self.tax_amount,
+                    description=f"Tax from {self.invoice_number}"
+                )
+
+    def save(self, *args, **kwargs):
+        if not self.invoice_number:
+            import uuid
+            self.invoice_number = f"INV-{uuid.uuid4().hex[:8].upper()}"
+        super().save(*args, **kwargs)
+
+class B2BSalesInvoiceLine(AuditableMixin):
+    invoice = models.ForeignKey(B2BSalesInvoice, on_delete=models.CASCADE, related_name='lines')
+    product = models.ForeignKey(Product, on_delete=models.PROTECT)
+    quantity = models.PositiveIntegerField()
+    unit_price = models.DecimalField(max_digits=12, decimal_places=2)
+    tax_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
+    
+    @property
+    def line_total(self):
+        return self.quantity * self.unit_price

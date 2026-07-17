@@ -188,3 +188,84 @@ class GRNLineItem(AuditableMixin):
     product = models.ForeignKey(Product, on_delete=models.PROTECT)
     expected_quantity = models.PositiveIntegerField()
     received_quantity = models.PositiveIntegerField()
+
+class SupplierBill(WorkflowMixin):
+    """
+    Formal Supplier Bill (AP) generated against Purchase Orders and GRNs.
+    """
+    bill_number = models.CharField(max_length=50, unique=True)
+    supplier_invoice_reference = models.CharField(max_length=100, blank=True)
+    supplier = models.ForeignKey('inventory.Supplier', on_delete=models.PROTECT, related_name='bills')
+    purchase_order = models.ForeignKey(StorePurchaseOrder, on_delete=models.SET_NULL, null=True, blank=True)
+    grn = models.ForeignKey(GoodsReceiptNote, on_delete=models.SET_NULL, null=True, blank=True)
+    issue_date = models.DateField(auto_now_add=True)
+    due_date = models.DateField()
+    
+    subtotal = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
+    tax_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
+    total_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
+    amount_paid = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
+    
+    def __str__(self):
+        return f"{self.bill_number} - {self.supplier}"
+
+    @transition(field='status', source='Draft', target='Verified')
+    def verify_bill(self):
+        # Generate Journal Entries
+        from finance.models import JournalEntry, JournalEntryLine, Account
+        
+        ap_account = Account.objects.filter(code='2000').first()
+        grn_clearing = Account.objects.filter(code='2010').first()
+        expense_account = Account.objects.filter(code='5000').first() # COGS or generic expense
+        tax_account = Account.objects.filter(code='2100').first() # Tax payable/receivable
+        
+        # If GRN clearing doesn't exist but we need it, we can fallback to Expense for simplicity,
+        # or ideally create it. Let's get or create GRN Clearing
+        if not grn_clearing and ap_account:
+            # We'll just fallback to expense if 2010 is completely missing to avoid crash
+            debit_account = expense_account
+        else:
+            debit_account = grn_clearing if self.grn else expense_account
+            
+        if ap_account and debit_account:
+            je = JournalEntry.objects.create(
+                entry_number=f"JE-BILL-{self.bill_number}",
+                reference=self.bill_number,
+                notes=f"Supplier Bill Verification - {self.supplier.name}",
+                is_posted=True
+            )
+            # Credit AP (Liability increases)
+            JournalEntryLine.objects.create(
+                journal_entry=je,
+                account=ap_account,
+                credit=self.total_amount,
+                description=f"Payable to {self.supplier.name} for {self.bill_number}",
+                supplier=self.supplier
+            )
+            # Debit GRN Clearing or Expense
+            JournalEntryLine.objects.create(
+                journal_entry=je,
+                account=debit_account,
+                debit=self.subtotal,
+                description=f"Expense/Clearing for {self.bill_number}"
+            )
+            if self.tax_amount > 0 and tax_account:
+                # Assuming tax on purchases is a debit (input tax credit)
+                JournalEntryLine.objects.create(
+                    journal_entry=je,
+                    account=tax_account,
+                    debit=self.tax_amount,
+                    description=f"Tax input for {self.bill_number}"
+                )
+
+    def save(self, *args, **kwargs):
+        if not self.bill_number:
+            import uuid
+            self.bill_number = f"BILL-{uuid.uuid4().hex[:8].upper()}"
+        super().save(*args, **kwargs)
+
+class SupplierBillLine(AuditableMixin):
+    bill = models.ForeignKey(SupplierBill, on_delete=models.CASCADE, related_name='lines')
+    product = models.ForeignKey(Product, on_delete=models.PROTECT)
+    quantity = models.PositiveIntegerField()
+    unit_price = models.DecimalField(max_digits=12, decimal_places=2)

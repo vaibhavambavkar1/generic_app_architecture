@@ -1,0 +1,40 @@
+<dialog class="modal modal-open">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg mb-4">{{ title }}</h3>
+        <p class="text-sm text-base-content/70 mb-4">Balance Due: <span class="font-bold text-warning text-lg">₹{{ balance_due|floatformat:2 }}</span></p>
+        
+        <form hx-post="{{ action_url }}" class="space-y-4">
+            {% csrf_token %}
+            
+            <div class="form-control">
+                <label class="label"><span class="label-text">Payment Amount</span></label>
+                <div class="input-group">
+                    <span>₹</span>
+                    <input type="number" name="amount" step="0.01" max="{{ balance_due }}" value="{{ balance_due }}" class="input input-bordered w-full" required />
+                </div>
+            </div>
+            
+            <div class="form-control">
+                <label class="label"><span class="label-text">Payment Method</span></label>
+                <select name="payment_method" class="select select-bordered w-full" required>
+                    {% for method in payment_methods %}
+                    <option value="{{ method.pk }}">{{ method.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-control">
+                <label class="label"><span class="label-text">Reference / Notes</span></label>
+                <input type="text" name="reference" placeholder="e.g. Cheque #12345" class="input input-bordered w-full" />
+            </div>
+            
+            <div class="modal-action">
+                <button type="submit" class="btn btn-primary">Confirm Payment</button>
+                <button type="button" class="btn" onclick="this.closest('.modal').classList.remove('modal-open')">Cancel</button>
+            </div>
+        </form>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+        <button onclick="this.closest('.modal').classList.remove('modal-open')">close</button>
+    </form>
+</dialog>

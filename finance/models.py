@@ -89,3 +89,67 @@ class JournalEntryLine(models.Model):
             raise ValidationError("A line cannot have both a debit and a credit.")
         if self.debit == 0 and self.credit == 0:
             raise ValidationError("A line must have either a debit or a credit.")
+
+class InvoicePaymentAllocation(models.Model):
+    """
+    Links a PaymentTransaction to specific AR/AP Invoices to handle partial and combined payments.
+    """
+    payment = models.ForeignKey('core.PaymentTransaction', on_delete=models.PROTECT)
+    sales_invoice = models.ForeignKey('sales.B2BSalesInvoice', on_delete=models.CASCADE, null=True, blank=True, related_name='allocations')
+    supplier_bill = models.ForeignKey('purchasing.SupplierBill', on_delete=models.CASCADE, null=True, blank=True, related_name='allocations')
+    allocated_amount = models.DecimalField(max_digits=15, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        super().save(*args, **kwargs)
+        
+        if is_new:
+            from finance.models import JournalEntry, JournalEntryLine, Account
+            cash_account = Account.objects.filter(code='1000').first()
+            ar_account = Account.objects.filter(code='1100').first()
+            ap_account = Account.objects.filter(code='2000').first()
+
+            if self.sales_invoice:
+                self.sales_invoice.amount_paid += self.allocated_amount
+                self.sales_invoice.save()
+                
+                # Payment received from customer: Debit Cash, Credit AR
+                if cash_account and ar_account:
+                    je = JournalEntry.objects.create(
+                        entry_number=f"JE-PAY-AR-{self.pk}",
+                        reference=self.sales_invoice.invoice_number,
+                        notes=f"Payment received for {self.sales_invoice.invoice_number}",
+                        is_posted=True
+                    )
+                    JournalEntryLine.objects.create(
+                        journal_entry=je, account=cash_account,
+                        debit=self.allocated_amount, description="Cash received"
+                    )
+                    JournalEntryLine.objects.create(
+                        journal_entry=je, account=ar_account,
+                        credit=self.allocated_amount, description="AR reduced",
+                        customer=self.sales_invoice.customer
+                    )
+                
+            if self.supplier_bill:
+                self.supplier_bill.amount_paid += self.allocated_amount
+                self.supplier_bill.save()
+                
+                # Payment made to supplier: Debit AP, Credit Cash
+                if cash_account and ap_account:
+                    je = JournalEntry.objects.create(
+                        entry_number=f"JE-PAY-AP-{self.pk}",
+                        reference=self.supplier_bill.bill_number,
+                        notes=f"Payment sent for {self.supplier_bill.bill_number}",
+                        is_posted=True
+                    )
+                    JournalEntryLine.objects.create(
+                        journal_entry=je, account=ap_account,
+                        debit=self.allocated_amount, description="AP reduced",
+                        supplier=self.supplier_bill.supplier
+                    )
+                    JournalEntryLine.objects.create(
+                        journal_entry=je, account=cash_account,
+                        credit=self.allocated_amount, description="Cash paid"
+                    )

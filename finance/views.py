@@ -171,3 +171,183 @@ def journal_delete(request, pk):
             messages.success(request, f"Journal Entry {je.entry_number} deleted.")
         return redirect('finance:journal_list')
     return redirect('finance:journal_list')
+
+# --- AR/AP Invoicing Dashboard ---
+
+from sales.models import B2BSalesInvoice
+from purchasing.models import SupplierBill
+from core.models import PaymentTransaction, PaymentMethod
+from finance.models import InvoicePaymentAllocation
+
+@login_required
+def invoicing_dashboard(request):
+    """
+    Unified AR/AP Dashboard for managing B2B Invoices and Supplier Bills.
+    """
+    active_tab = request.GET.get('tab', 'ar')
+    
+    context = {'active_tab': active_tab}
+    
+    if active_tab == 'ar':
+        # Accounts Receivable (Sales Invoices)
+        context['ar_invoices'] = B2BSalesInvoice.objects.all().order_by('-issue_date')
+    else:
+        # Accounts Payable (Supplier Bills)
+        context['ap_bills'] = SupplierBill.objects.all().order_by('-issue_date')
+        
+    return render(request, 'finance/invoicing/dashboard.html', context)
+
+@login_required
+def process_invoice_payment(request, invoice_type, pk):
+    """
+    HTMX Modal endpoint to allocate a payment to an AR/AP invoice.
+    """
+    if invoice_type == 'ar':
+        invoice = get_object_or_404(B2BSalesInvoice, pk=pk)
+        title = f"Receive Payment for {invoice.invoice_number}"
+        balance_due = invoice.total_amount - invoice.amount_paid
+        action_url = f"/finance/invoicing/pay/ar/{pk}/"
+    else:
+        invoice = get_object_or_404(SupplierBill, pk=pk)
+        title = f"Send Payment for {invoice.bill_number}"
+        balance_due = invoice.total_amount - invoice.amount_paid
+        action_url = f"/finance/invoicing/pay/ap/{pk}/"
+        
+    payment_methods = PaymentMethod.objects.filter(is_active=True)
+
+    if request.method == "POST":
+        amount = float(request.POST.get('amount', 0))
+        method_id = request.POST.get('payment_method')
+        reference = request.POST.get('reference', '')
+        
+        if amount <= 0 or amount > balance_due:
+            messages.error(request, "Invalid payment amount.")
+        else:
+            method = get_object_or_404(PaymentMethod, pk=method_id)
+            
+            # Create Generic Payment
+            pt = PaymentTransaction.objects.create(
+                payment_method=method,
+                amount=amount,
+                transaction_type='IN' if invoice_type == 'ar' else 'OUT',
+                status='SUCCESS',
+                notes=reference
+            )
+            
+            # Create Allocation (triggers Journal Entry in save)
+            if invoice_type == 'ar':
+                InvoicePaymentAllocation.objects.create(payment=pt, sales_invoice=invoice, allocated_amount=amount)
+            else:
+                InvoicePaymentAllocation.objects.create(payment=pt, supplier_bill=invoice, allocated_amount=amount)
+                
+            messages.success(request, f"Payment of {amount} processed successfully.")
+            
+        response = HttpResponse()
+        response['HX-Refresh'] = 'true'
+        return response
+        
+    context = {
+        'title': title,
+        'balance_due': balance_due,
+        'action_url': action_url,
+        'payment_methods': payment_methods
+    }
+    return render(request, 'finance/invoicing/payment_modal.html', context)
+
+import io
+from django.http import FileResponse
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+
+@login_required
+def generate_b2b_invoice_pdf(request, pk):
+    """
+    Generates a professional PDF invoice using ReportLab.
+    """
+    invoice = get_object_or_404(B2BSalesInvoice, pk=pk)
+    
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=30, leftMargin=30, topMargin=40, bottomMargin=30)
+    elements = []
+    
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'TitleStyle',
+        parent=styles['Heading1'],
+        fontSize=26,
+        textColor=colors.HexColor("#2C3E50"),
+        spaceAfter=20
+    )
+    
+    elements.append(Paragraph("TAX INVOICE", title_style))
+    
+    # Header Information
+    header_data = [
+        ["Invoice Number:", invoice.invoice_number, "Date:", invoice.issue_date.strftime("%b %d, %Y")],
+        ["Customer:", invoice.customer.get_full_name() or invoice.customer.username, "Due Date:", invoice.due_date.strftime("%b %d, %Y")],
+        ["Status:", invoice.status, "Balance Due:", f"Rs {invoice.total_amount - invoice.amount_paid}"]
+    ]
+    
+    t_header = Table(header_data, colWidths=[1.5*inch, 2.5*inch, 1*inch, 2*inch])
+    t_header.setStyle(TableStyle([
+        ('TEXTCOLOR', (0,0), (-1,-1), colors.HexColor("#333333")),
+        ('FONTNAME', (0,0), (0,-1), 'Helvetica-Bold'),
+        ('FONTNAME', (2,0), (2,-1), 'Helvetica-Bold'),
+        ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 8),
+    ]))
+    
+    elements.append(t_header)
+    elements.append(Spacer(1, 30))
+    
+    # Line Items Table
+    line_data = [["Product Description", "Qty", "Unit Price", "Total"]]
+    
+    for line in invoice.lines.all():
+        line_data.append([
+            line.product.name,
+            str(line.quantity),
+            f"Rs {line.unit_price}",
+            f"Rs {line.line_total}"
+        ])
+        
+    # Totals Row
+    line_data.append(["", "", "Subtotal:", f"Rs {invoice.subtotal}"])
+    line_data.append(["", "", "Tax Amount:", f"Rs {invoice.tax_amount}"])
+    line_data.append(["", "", "Total Amount:", f"Rs {invoice.total_amount}"])
+    
+    t_lines = Table(line_data, colWidths=[4*inch, 0.75*inch, 1.25*inch, 1.25*inch])
+    t_lines.setStyle(TableStyle([
+        # Header Row
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#3b82f6")), # Tailwind blue-500
+        ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('BOTTOMPADDING', (0,0), (-1,0), 12),
+        ('TOPPADDING', (0,0), (-1,0), 12),
+        
+        # Grid for items
+        ('GRID', (0,1), (-1,-4), 1, colors.HexColor("#E5E7EB")),
+        ('BOTTOMPADDING', (0,1), (-1,-4), 8),
+        ('TOPPADDING', (0,1), (-1,-4), 8),
+        
+        # Alignments
+        ('ALIGN', (1,0), (-1,-1), 'RIGHT'),
+        ('ALIGN', (0,0), (0,-1), 'LEFT'),
+        
+        # Totals Formatting
+        ('FONTNAME', (2,-3), (2,-1), 'Helvetica-Bold'),
+        ('FONTNAME', (3,-3), (3,-1), 'Helvetica-Bold'),
+        ('LINEABOVE', (2,-1), (-1,-1), 2, colors.HexColor("#3b82f6")), # Double line for final total
+        ('BOTTOMPADDING', (2,-3), (-1,-1), 6),
+        ('TOPPADDING', (2,-3), (-1,-1), 6),
+    ]))
+    
+    elements.append(t_lines)
+    
+    doc.build(elements)
+    buffer.seek(0)
+    
+    return FileResponse(buffer, as_attachment=True, filename=f"Invoice_{invoice.invoice_number}.pdf")
