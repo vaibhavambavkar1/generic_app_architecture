@@ -213,3 +213,57 @@ class BookingService:
         booking.save()
 
         return booking
+
+    @staticmethod
+    @transaction.atomic
+    def create_recurring_bookings(
+        business: BusinessProfile,
+        customer: Customer,
+        base_start_dt: timezone.datetime,
+        base_end_dt: timezone.datetime,
+        items: list[dict],
+        frequency: str, # 'daily', 'weekly', 'monthly'
+        count: int,
+        addons: list[dict] = None,
+        custom_data: dict = None,
+        notes: str = '',
+        source: str = 'WALK_IN'
+    ) -> list[Booking]:
+        """
+        Creates a series of recurring bookings based on a frequency.
+        """
+        from datetime import timedelta
+        from dateutil.relativedelta import relativedelta
+        
+        bookings = []
+        current_start = base_start_dt
+        current_end = base_end_dt
+        
+        for i in range(count):
+            # Create individual booking
+            booking = BookingService.create_booking(
+                business=business,
+                customer=customer,
+                start_dt=current_start,
+                end_dt=current_end,
+                items=items,
+                addons=addons,
+                slot_mode='recurring',
+                custom_data=custom_data,
+                notes=f"{notes} (Recurrence {i+1} of {count})",
+                source=source
+            )
+            bookings.append(booking)
+            
+            # Increment time
+            if frequency == 'daily':
+                current_start += timedelta(days=1)
+                current_end += timedelta(days=1)
+            elif frequency == 'weekly':
+                current_start += timedelta(days=7)
+                current_end += timedelta(days=7)
+            elif frequency == 'monthly':
+                current_start += relativedelta(months=1)
+                current_end += relativedelta(months=1)
+                
+        return bookings

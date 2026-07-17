@@ -1,0 +1,40 @@
+{% extends "bookings/base.html" %}
+
+{% block bookings_title %}Analytics & Reports{% endblock %}
+
+{% block bookings_content %}
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+    <div class="card bg-base-100 shadow-sm border border-base-200">
+        <div class="card-body p-4">
+            <div id="revenue-chart" style="width:100%; height:350px;"></div>
+        </div>
+    </div>
+    
+    <div class="card bg-base-100 shadow-sm border border-base-200">
+        <div class="card-body p-4">
+            <div id="status-chart" style="width:100%; height:350px;"></div>
+        </div>
+    </div>
+</div>
+
+<div class="card bg-base-100 shadow-sm border border-base-200">
+    <div class="card-body p-4">
+        <div id="occupancy-chart" style="width:100%; height:400px;"></div>
+    </div>
+</div>
+
+<!-- Plotly JS -->
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const revData = {{ rev_chart_json|safe }};
+        Plotly.newPlot('revenue-chart', revData.data, revData.layout, {responsive: true});
+        
+        const occData = {{ occ_chart_json|safe }};
+        Plotly.newPlot('occupancy-chart', occData.data, occData.layout, {responsive: true});
+        
+        const statData = {{ stat_chart_json|safe }};
+        Plotly.newPlot('status-chart', statData.data, statData.layout, {responsive: true});
+    });
+</script>
+{% endblock %}

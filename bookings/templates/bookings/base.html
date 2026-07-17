@@ -21,6 +21,7 @@
     <div class="tabs tabs-bordered">
         <a href="{% url 'bookings:dashboard' %}" class="tab tab-lg {% if request.resolver_match.url_name == 'dashboard' %}tab-active{% endif %}">Dashboard</a>
         <a href="{% url 'bookings:calendar' %}" class="tab tab-lg {% if request.resolver_match.url_name == 'calendar' %}tab-active{% endif %}">Calendar</a>
+        <a href="{% url 'bookings:reports' %}" class="tab tab-lg {% if request.resolver_match.url_name == 'reports' %}tab-active{% endif %}">Reports</a>
         <a href="{% url 'bookings:resource_list' %}" class="tab tab-lg {% if request.resolver_match.url_name == 'resource_list' or request.resolver_match.url_name == 'resource_create' %}tab-active{% endif %}">Resources</a>
         <a href="{% url 'bookings:schedule_list' %}" class="tab tab-lg {% if request.resolver_match.url_name == 'schedule_list' or request.resolver_match.url_name == 'schedule_create' %}tab-active{% endif %}">Schedules</a>
         <a href="{% url 'bookings:setup_wizard' %}" class="tab tab-lg {% if request.resolver_match.url_name == 'setup_wizard' %}tab-active{% endif %}">Settings</a>

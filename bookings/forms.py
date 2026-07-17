@@ -1,5 +1,5 @@
 from django import forms
-from .models import BusinessProfile, Resource, OperatingSchedule
+from .models import BusinessProfile, Resource, OperatingSchedule, Customer
 
 class BusinessSetupForm(forms.ModelForm):
     class Meta:
@@ -36,4 +36,14 @@ class OperatingScheduleForm(forms.ModelForm):
             'max_concurrent': forms.NumberInput(attrs={'class': 'input input-bordered w-full'}),
             'resource': forms.Select(attrs={'class': 'select select-bordered w-full'}),
             'is_active': forms.CheckboxInput(attrs={'class': 'toggle toggle-primary'}),
+        }
+
+class CustomerForm(forms.ModelForm):
+    class Meta:
+        model = Customer
+        fields = ['name', 'email', 'phone']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'input input-bordered w-full', 'required': 'required'}),
+            'email': forms.EmailInput(attrs={'class': 'input input-bordered w-full'}),
+            'phone': forms.TextInput(attrs={'class': 'input input-bordered w-full'}),
         }

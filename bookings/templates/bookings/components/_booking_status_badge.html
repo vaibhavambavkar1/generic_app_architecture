@@ -1,0 +1,11 @@
+<div class="badge 
+    {% if booking.status == 'Draft' %}badge-ghost
+    {% elif booking.status == 'Pending' %}badge-warning
+    {% elif booking.status == 'Confirmed' %}badge-info
+    {% elif booking.status == 'CheckedIn' %}badge-primary
+    {% elif booking.status == 'Completed' %}badge-success
+    {% elif booking.status == 'Cancelled' %}badge-error
+    {% elif booking.status == 'NoShow' %}badge-error badge-outline
+    {% else %}badge-neutral{% endif %} font-semibold px-3 py-3">
+    {{ booking.get_status_display|default:booking.status }}
+</div>
