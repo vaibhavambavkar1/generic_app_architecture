@@ -1,0 +1,83 @@
+{% extends "core/base.html" %}
+
+{% block title %}General Ledger | ERP Framework{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+            <div class="text-sm breadcrumbs mb-2">
+              <ul>
+                <li><a href="{% url 'reports:finance_reports_hub' %}">Finance Reports</a></li> 
+                <li>General Ledger</li>
+              </ul>
+            </div>
+            <h1 class="text-3xl font-bold tracking-tight">General Ledger</h1>
+            <p class="text-base-content/60">Detailed transaction history by account.</p>
+        </div>
+        <div class="flex gap-2">
+            {% if selected_acc %}
+            <a href="?account={{ selected_acc.pk }}&export=csv" class="btn btn-primary btn-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Export to CSV
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="bg-base-100 rounded-lg shadow border border-base-200 p-6">
+        <form method="GET" class="flex gap-4 items-end mb-6">
+            <div class="form-control w-full max-w-xs">
+                <label class="label"><span class="label-text font-semibold">Select Account</span></label>
+                <select name="account" class="select select-bordered" onchange="this.form.submit()">
+                    <option value="" disabled {% if not selected_acc %}selected{% endif %}>-- Choose an Account --</option>
+                    {% for acc in accounts %}
+                    <option value="{{ acc.pk }}" {% if selected_acc and selected_acc.pk == acc.pk %}selected{% endif %}>
+                        {{ acc.code }} - {{ acc.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </form>
+
+        {% if selected_acc %}
+        <div class="overflow-x-auto">
+            <table class="table w-full">
+                <thead class="bg-base-200">
+                    <tr>
+                        <th>Date</th>
+                        <th>Entry #</th>
+                        <th>Reference</th>
+                        <th>Description</th>
+                        <th class="text-right">Debit</th>
+                        <th class="text-right">Credit</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for line in lines %}
+                    <tr class="hover">
+                        <td>{{ line.journal_entry.date }}</td>
+                        <td class="font-mono text-sm"><a href="{% url 'finance:journal_detail' line.journal_entry.pk %}" class="link link-primary">{{ line.journal_entry.entry_number }}</a></td>
+                        <td>{{ line.journal_entry.reference|default:"-" }}</td>
+                        <td>{{ line.description }}</td>
+                        <td class="text-right">{% if line.debit %}₹{{ line.debit }}{% endif %}</td>
+                        <td class="text-right">{% if line.credit %}₹{{ line.credit }}{% endif %}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center p-8 text-base-content/50">No posted transactions found for this account.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center p-12 text-base-content/50 bg-base-200/30 rounded-lg">
+            Select an account above to view its ledger.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

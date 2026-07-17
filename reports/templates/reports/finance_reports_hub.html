@@ -1,0 +1,60 @@
+{% extends "core/base.html" %}
+
+{% block title %}Finance Reports | ERP Framework{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="mb-6">
+        <h1 class="text-3xl font-bold tracking-tight">Finance Reports</h1>
+        <p class="text-base-content/60">Generate and export core accounting statements.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        
+        <!-- Trial Balance -->
+        <div class="card bg-base-100 border border-base-200 shadow-sm hover:shadow-md transition-shadow">
+            <div class="card-body">
+                <h2 class="card-title text-primary">Trial Balance</h2>
+                <p class="text-sm text-base-content/70">Verify that total debits equal total credits across all accounts.</p>
+                <div class="card-actions justify-end mt-4">
+                    <a href="{% url 'reports:trial_balance' %}" class="btn btn-outline btn-primary btn-sm">View Report</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- General Ledger -->
+        <div class="card bg-base-100 border border-base-200 shadow-sm hover:shadow-md transition-shadow">
+            <div class="card-body">
+                <h2 class="card-title text-primary">General Ledger</h2>
+                <p class="text-sm text-base-content/70">View the detailed transaction history for any specific account.</p>
+                <div class="card-actions justify-end mt-4">
+                    <a href="{% url 'reports:general_ledger' %}" class="btn btn-outline btn-primary btn-sm">View Report</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Income Statement -->
+        <div class="card bg-base-100 border border-base-200 shadow-sm hover:shadow-md transition-shadow">
+            <div class="card-body">
+                <h2 class="card-title text-primary">Income Statement</h2>
+                <p class="text-sm text-base-content/70">Analyze revenue and expenses to determine the net profit or loss.</p>
+                <div class="card-actions justify-end mt-4">
+                    <a href="{% url 'reports:income_statement' %}" class="btn btn-outline btn-primary btn-sm">View Report</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Balance Sheet -->
+        <div class="card bg-base-100 border border-base-200 shadow-sm hover:shadow-md transition-shadow">
+            <div class="card-body">
+                <h2 class="card-title text-primary">Balance Sheet</h2>
+                <p class="text-sm text-base-content/70">Snapshot of the company's financial position: Assets, Liabilities, and Equity.</p>
+                <div class="card-actions justify-end mt-4">
+                    <a href="{% url 'reports:balance_sheet' %}" class="btn btn-outline btn-primary btn-sm">View Report</a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

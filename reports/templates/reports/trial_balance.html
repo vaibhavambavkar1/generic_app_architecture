@@ -1,0 +1,62 @@
+{% extends "core/base.html" %}
+
+{% block title %}Trial Balance | ERP Framework{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+            <div class="text-sm breadcrumbs mb-2">
+              <ul>
+                <li><a href="{% url 'reports:finance_reports_hub' %}">Finance Reports</a></li> 
+                <li>Trial Balance</li>
+              </ul>
+            </div>
+            <h1 class="text-3xl font-bold tracking-tight">Trial Balance</h1>
+            <p class="text-base-content/60">As of today.</p>
+        </div>
+        <div class="flex gap-2">
+            <a href="?export=csv" class="btn btn-primary btn-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Export to CSV
+            </a>
+        </div>
+    </div>
+
+    <div class="overflow-x-auto bg-base-100 rounded-lg shadow border border-base-200">
+        <table class="table w-full">
+            <thead class="bg-base-200">
+                <tr>
+                    <th>Code</th>
+                    <th>Account Name</th>
+                    <th class="text-right">Debit</th>
+                    <th class="text-right">Credit</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in tb_data %}
+                <tr class="hover">
+                    <td class="font-mono">{{ row.code }}</td>
+                    <td>{{ row.name }}</td>
+                    <td class="text-right">{% if row.debit %}₹{{ row.debit|floatformat:2 }}{% endif %}</td>
+                    <td class="text-right">{% if row.credit %}₹{{ row.credit|floatformat:2 }}{% endif %}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center p-8 text-base-content/50">No account balances found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr class="bg-base-200 font-bold text-lg">
+                    <td colspan="2" class="text-right">TOTAL</td>
+                    <td class="text-right {% if total_debit != total_credit %}text-error{% else %}text-success{% endif %}">₹{{ total_debit|floatformat:2 }}</td>
+                    <td class="text-right {% if total_debit != total_credit %}text-error{% else %}text-success{% endif %}">₹{{ total_credit|floatformat:2 }}</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,114 @@
+{% extends "core/base.html" %}
+
+{% block title %}Balance Sheet | ERP Framework{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-4xl mx-auto">
+    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+            <div class="text-sm breadcrumbs mb-2">
+              <ul>
+                <li><a href="{% url 'reports:finance_reports_hub' %}">Finance Reports</a></li> 
+                <li>Balance Sheet</li>
+              </ul>
+            </div>
+            <h1 class="text-3xl font-bold tracking-tight">Balance Sheet</h1>
+            <p class="text-base-content/60">Assets = Liabilities + Equity.</p>
+        </div>
+        <div class="flex gap-2">
+            <a href="?export=csv" class="btn btn-primary btn-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Export to CSV
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        
+        <!-- Assets Side -->
+        <div class="bg-base-100 rounded-lg shadow border border-base-200 p-6">
+            <h3 class="text-xl font-bold text-info border-b pb-2 mb-4">Assets</h3>
+            <table class="table w-full mb-6">
+                <tbody>
+                    {% for a in assets %}
+                    <tr>
+                        <td class="font-mono text-base-content/60 w-16">{{ a.code }}</td>
+                        <td>{{ a.name }}</td>
+                        <td class="text-right">₹{{ a.balance|floatformat:2 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="3" class="text-base-content/50 italic">No assets recorded.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div class="mt-auto border-t pt-4 flex justify-between items-center text-lg font-bold text-info">
+                <span>Total Assets:</span>
+                <span>₹{{ total_assets|floatformat:2 }}</span>
+            </div>
+        </div>
+
+        <!-- Liabilities & Equity Side -->
+        <div class="flex flex-col gap-6">
+            
+            <div class="bg-base-100 rounded-lg shadow border border-base-200 p-6">
+                <h3 class="text-xl font-bold text-warning border-b pb-2 mb-4">Liabilities</h3>
+                <table class="table w-full mb-6">
+                    <tbody>
+                        {% for l in liabilities %}
+                        <tr>
+                            <td class="font-mono text-base-content/60 w-16">{{ l.code }}</td>
+                            <td>{{ l.name }}</td>
+                            <td class="text-right">₹{{ l.balance|floatformat:2 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="3" class="text-base-content/50 italic">No liabilities recorded.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <div class="border-t pt-4 flex justify-between items-center text-lg font-bold text-warning">
+                    <span>Total Liabilities:</span>
+                    <span>₹{{ total_liab|floatformat:2 }}</span>
+                </div>
+            </div>
+
+            <div class="bg-base-100 rounded-lg shadow border border-base-200 p-6">
+                <h3 class="text-xl font-bold text-success border-b pb-2 mb-4">Equity</h3>
+                <table class="table w-full mb-6">
+                    <tbody>
+                        {% for e in equity %}
+                        <tr>
+                            <td class="font-mono text-base-content/60 w-16">{{ e.code }}</td>
+                            <td>{{ e.name }}</td>
+                            <td class="text-right">₹{{ e.balance|floatformat:2 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="3" class="text-base-content/50 italic">No equity recorded.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <div class="border-t pt-4 flex justify-between items-center text-lg font-bold text-success">
+                    <span>Total Equity:</span>
+                    <span>₹{{ total_equity|floatformat:2 }}</span>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Final Check -->
+    <div class="mt-8 p-6 bg-base-200 rounded-xl flex justify-between items-center text-2xl font-bold shadow-inner">
+        <span class="text-info">Total Assets</span>
+        <span class="text-base-content/50">=</span>
+        <span class="text-base-content">Liabilities & Equity</span>
+    </div>
+    <div class="flex justify-between px-6 pb-2 text-xl font-mono">
+        <span class="text-info">₹{{ total_assets|floatformat:2 }}</span>
+        <span></span>
+        <span class="{% if total_assets == total_liab_equity %}text-success{% else %}text-error{% endif %}">₹{{ total_liab_equity|floatformat:2 }}</span>
+    </div>
+
+</div>
+{% endblock %}

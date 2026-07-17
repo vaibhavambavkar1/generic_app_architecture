@@ -1,0 +1,79 @@
+{% extends "core/base.html" %}
+
+{% block title %}Income Statement | ERP Framework{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-4xl mx-auto">
+    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+            <div class="text-sm breadcrumbs mb-2">
+              <ul>
+                <li><a href="{% url 'reports:finance_reports_hub' %}">Finance Reports</a></li> 
+                <li>Income Statement</li>
+              </ul>
+            </div>
+            <h1 class="text-3xl font-bold tracking-tight">Income Statement (P&L)</h1>
+            <p class="text-base-content/60">Revenue vs Expenses.</p>
+        </div>
+        <div class="flex gap-2">
+            <a href="?export=csv" class="btn btn-primary btn-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Export to CSV
+            </a>
+        </div>
+    </div>
+
+    <div class="bg-base-100 rounded-lg shadow border border-base-200 p-6">
+        
+        <!-- Revenue Section -->
+        <h3 class="text-xl font-bold text-primary border-b pb-2 mb-4">Revenues</h3>
+        <table class="table w-full mb-6">
+            <tbody>
+                {% for r in revenues %}
+                <tr>
+                    <td class="font-mono text-base-content/60 w-24">{{ r.code }}</td>
+                    <td>{{ r.name }}</td>
+                    <td class="text-right">₹{{ r.balance|floatformat:2 }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="3" class="text-base-content/50 italic">No revenue recorded.</td></tr>
+                {% endfor %}
+                <tr class="font-bold text-lg bg-base-200/50">
+                    <td colspan="2" class="text-right">Total Revenue:</td>
+                    <td class="text-right">₹{{ total_rev|floatformat:2 }}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Expense Section -->
+        <h3 class="text-xl font-bold text-error border-b pb-2 mb-4">Expenses</h3>
+        <table class="table w-full mb-6">
+            <tbody>
+                {% for e in expenses %}
+                <tr>
+                    <td class="font-mono text-base-content/60 w-24">{{ e.code }}</td>
+                    <td>{{ e.name }}</td>
+                    <td class="text-right">₹{{ e.balance|floatformat:2 }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="3" class="text-base-content/50 italic">No expenses recorded.</td></tr>
+                {% endfor %}
+                <tr class="font-bold text-lg bg-base-200/50">
+                    <td colspan="2" class="text-right">Total Expenses:</td>
+                    <td class="text-right">₹{{ total_exp|floatformat:2 }}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Net Income -->
+        <div class="divider"></div>
+        <div class="flex justify-between items-center text-2xl font-bold p-4 rounded-lg {% if net_income >= 0 %}bg-success/10 text-success{% else %}bg-error/10 text-error{% endif %}">
+            <span>Net Income</span>
+            <span>₹{{ net_income|floatformat:2 }}</span>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
