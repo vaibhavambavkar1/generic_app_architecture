@@ -40,10 +40,36 @@ def executive_dashboard(request):
     chart_labels = [str(s['day']) for s in recent_sales]
     chart_data = [float(s['total']) for s in recent_sales]
 
+    # 4. Additional Widgets (Cash, AR, Pending, Low Stock, Top Products)
+    cash_account = Account.objects.filter(code='1000').first()
+    ar_account = Account.objects.filter(code='1100').first()
+    total_cash = cash_account.balance if cash_account else 0
+    total_receivables = ar_account.balance if ar_account else 0
+    
+    pending_approvals_count = StorePurchaseOrder.objects.filter(status='Submitted').count()
+    
+    # Low stock alerts from generic_store_mgmt or inventory. 
+    # For now, let's just get some dummy top products since we don't have stock directly linked in generic product
+    # Wait, POSInvoice uses generic_store_mgmt Product. InventoryItem is separate.
+    # We will use top products from POSInvoice
+    top_products = POSInvoice.objects.filter(is_paid=True, date__gte=thirty_days_ago).values(
+        'lines__product__name'
+    ).annotate(
+        total_sold=Sum('lines__quantity'),
+        total_revenue=Sum('lines__line_total')
+    ).exclude(lines__product__name__isnull=True).order_by('-total_revenue')[:5]
+    
+    high_value_pos = StorePurchaseOrder.objects.filter(total_amount__gte=50000).order_by('-created_at')[:5]
+
     context = {
         'revenue_30d': revenue_30d,
         'total_payables': total_payables,
         'total_inventory_value': total_inventory_value,
+        'total_cash': total_cash,
+        'total_receivables': total_receivables,
+        'pending_approvals_count': pending_approvals_count,
+        'top_products': top_products,
+        'high_value_pos': high_value_pos,
         'chart_labels': json.dumps(chart_labels),
         'chart_data': json.dumps(chart_data)
     }

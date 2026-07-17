@@ -12,33 +12,70 @@
     </div>
 
     <!-- Quick Stats -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="stat bg-base-100 shadow rounded-lg border border-base-200">
-            <div class="stat-title">30-Day POS Revenue</div>
+            <div class="stat-title text-base-content/70">Cash & Bank</div>
+            <div class="stat-value text-info">₹{{ total_cash|floatformat:2 }}</div>
+            <div class="stat-desc">Liquidity available</div>
+        </div>
+        <div class="stat bg-base-100 shadow rounded-lg border border-base-200">
+            <div class="stat-title text-base-content/70">30-Day POS Revenue</div>
             <div class="stat-value text-success">₹{{ revenue_30d|floatformat:2 }}</div>
             <div class="stat-desc">From completed POS invoices</div>
         </div>
         <div class="stat bg-base-100 shadow rounded-lg border border-base-200">
-            <div class="stat-title">Open Payables</div>
+            <div class="stat-title text-base-content/70">Open Payables (AP)</div>
             <div class="stat-value text-error">₹{{ total_payables|floatformat:2 }}</div>
-            <div class="stat-desc">Owed to suppliers (Ledger)</div>
+            <div class="stat-desc">Owed to suppliers</div>
         </div>
         <div class="stat bg-base-100 shadow rounded-lg border border-base-200">
-            <div class="stat-title">Inventory Value</div>
-            <div class="stat-value text-primary">₹{{ total_inventory_value|floatformat:2 }}</div>
-            <div class="stat-desc">Total asset ledger balance</div>
+            <div class="stat-title text-base-content/70">Accounts Recv (AR)</div>
+            <div class="stat-value text-warning">₹{{ total_receivables|floatformat:2 }}</div>
+            <div class="stat-desc">Owed by customers</div>
         </div>
     </div>
 
     <!-- Chart & Reports -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="bg-base-100 shadow rounded-lg border border-base-200 p-4">
-            <h3 class="font-bold text-lg mb-4">Last 7 Days Sales Trend</h3>
-            <canvas id="salesChart" height="250"></canvas>
+        <div class="bg-base-100 shadow rounded-lg border border-base-200 p-6" x-data="salesChart()">
+            <h3 class="font-bold text-lg mb-6">Last 7 Days Sales Trend</h3>
+            
+            <div x-show="data.length === 0" class="h-[250px] flex items-center justify-center text-base-content/50 border-b border-base-300">
+                No sales data available.
+            </div>
+
+            <div x-show="data.length > 0" class="flex items-end justify-between h-[250px] gap-2 pb-2 border-b border-base-300 relative pt-8">
+                <!-- Y-Axis Max Label -->
+                <div class="absolute top-0 left-0 text-xs text-base-content/40 font-mono">₹<span x-text="maxVal.toLocaleString()"></span></div>
+                
+                <template x-for="(val, index) in data" :key="index">
+                    <div class="flex flex-col items-center flex-1 group h-full justify-end">
+                        <div class="relative w-full flex justify-center h-full items-end">
+                            <!-- Tooltip -->
+                            <div class="opacity-0 group-hover:opacity-100 absolute -top-8 bg-neutral text-neutral-content text-xs rounded py-1 px-2 whitespace-nowrap transition-opacity z-10 pointer-events-none shadow-lg">
+                                ₹<span x-text="val.toLocaleString()"></span>
+                            </div>
+                            <!-- Bar -->
+                            <div class="w-full max-w-[48px] bg-primary/80 rounded-t-md transition-all duration-300 hover:bg-primary cursor-pointer hover:shadow-lg hover:shadow-primary/30" :style="`height: ${Math.max((val / maxVal) * 100, 2)}%`"></div>
+                        </div>
+                        <!-- Label -->
+                        <div class="text-[10px] sm:text-xs text-base-content/60 mt-3 font-semibold tracking-wide" x-text="formatLabel(labels[index])"></div>
+                    </div>
+                </template>
+            </div>
         </div>
         
-        <div class="bg-base-100 shadow rounded-lg border border-base-200 p-4 flex flex-col gap-4">
-            <h3 class="font-bold text-lg">Detailed Reports</h3>
+        <div class="bg-base-100 shadow rounded-lg border border-base-200 p-6 flex flex-col gap-4">
+            <h3 class="font-bold text-lg mb-2 flex items-center justify-between">
+                Detailed Reports
+                {% if pending_approvals_count > 0 %}
+                <span class="badge badge-error gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    {{ pending_approvals_count }} Pending Approvals
+                </span>
+                {% endif %}
+            </h3>
+            
             <a href="{% url 'reports:sales_report' %}" class="btn btn-outline btn-block justify-start text-left h-auto py-4">
                 <div>
                     <div class="font-bold">Top Products Sales Report</div>
@@ -51,41 +88,100 @@
                     <div class="text-xs opacity-70 font-normal">Aggregated ledger stock balances per warehouse.</div>
                 </div>
             </a>
+            <a href="{% url 'reports:finance_reports_hub' %}" class="btn btn-outline btn-block justify-start text-left h-auto py-4">
+                <div>
+                    <div class="font-bold">Financial Statements Hub</div>
+                    <div class="text-xs opacity-70 font-normal">Access Trial Balance, General Ledger, P&L, and Balance Sheet.</div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Additional Widgets Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-8">
+        <!-- Top Products -->
+        <div class="bg-base-100 shadow rounded-lg border border-base-200 overflow-hidden">
+            <div class="p-4 border-b border-base-200 bg-base-200/30">
+                <h3 class="font-bold text-lg">Top Products (30 Days)</h3>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="table w-full">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th class="text-right">Qty Sold</th>
+                            <th class="text-right">Revenue</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tp in top_products %}
+                        <tr>
+                            <td class="font-semibold">{{ tp.lines__product__name }}</td>
+                            <td class="text-right">{{ tp.total_sold }}</td>
+                            <td class="text-right font-bold text-success">₹{{ tp.total_revenue|floatformat:2 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-center py-4 text-base-content/50">No sales data available.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- High Value POs -->
+        <div class="bg-base-100 shadow rounded-lg border border-base-200 overflow-hidden">
+            <div class="p-4 border-b border-base-200 bg-base-200/30">
+                <h3 class="font-bold text-lg">High Value Purchases (≥ ₹50k)</h3>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="table w-full">
+                    <thead>
+                        <tr>
+                            <th>PO Number</th>
+                            <th>Status</th>
+                            <th class="text-right">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for po in high_value_pos %}
+                        <tr>
+                            <td class="font-bold text-primary">{{ po.po_number }}</td>
+                            <td>
+                                <span class="badge badge-sm badge-outline">{{ po.status }}</span>
+                            </td>
+                            <td class="text-right font-bold text-error">₹{{ po.total_amount|floatformat:2 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-center py-4 text-base-content/50">No high-value POs recently.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        const ctx = document.getElementById('salesChart');
-        if (ctx) {
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: {{ chart_labels|safe }},
-                    datasets: [{
-                        label: 'Daily Revenue (₹)',
-                        data: {{ chart_data|safe }},
-                        borderColor: '#4ADE80',
-                        backgroundColor: 'rgba(74, 222, 128, 0.1)',
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.3
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
-                    },
-                    scales: {
-                        y: { beginAtZero: true }
-                    }
+    function salesChart() {
+        return {
+            labels: {{ chart_labels|safe }},
+            data: {{ chart_data|safe }},
+            get maxVal() {
+                return Math.max(...this.data, 1);
+            },
+            formatLabel(dateStr) {
+                try {
+                    const date = new Date(dateStr);
+                    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                } catch(e) {
+                    return dateStr;
                 }
-            });
+            }
         }
-    });
+    }
 </script>
 {% endblock %}
