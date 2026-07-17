@@ -1775,7 +1775,11 @@ def warehouse_transfer_create(request):
     if request.method == "POST":
         form = WarehouseTransferForm(request.POST)
         if form.is_valid():
-            transfer = form.save()
+            transfer = form.save(commit=False)
+            initial_state = State.objects.filter(workflow__model_name='inventory.WarehouseTransfer', is_initial=True).first()
+            if initial_state:
+                transfer.workflow_state = initial_state
+            transfer.save()
             messages.success(request, "Warehouse transfer created.")
             if request.headers.get('HX-Request'):
                 response = HttpResponse()
@@ -1789,4 +1793,20 @@ def warehouse_transfer_create(request):
 @login_required
 def warehouse_transfer_detail(request, pk):
     transfer = get_object_or_404(WarehouseTransfer, pk=pk)
-    return render(request, 'inventory/warehouse_transfer_detail.html', {'transfer': transfer})
+    
+    content_type = ContentType.objects.get_for_model(transfer)
+    audit_logs = AuditLog.objects.filter(
+        content_type=content_type,
+        object_id=transfer.id
+    ).select_related('user').order_by('-timestamp')
+    
+    context = {
+        'transfer': transfer,
+        'instance': transfer,
+        'transitions': transfer.get_available_transitions(request.user),
+        'app_label': 'inventory',
+        'model_name': 'warehousetransfer',
+        'audit_logs': audit_logs
+    }
+    
+    return render(request, 'inventory/warehouse_transfer_detail.html', context)

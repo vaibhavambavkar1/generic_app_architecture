@@ -1,0 +1,62 @@
+{% extends "core/base.html" %}
+
+{% block title %}Transfer #{{ instance.id }} | ERP Framework{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+            <h1 class="text-3xl font-bold tracking-tight">Transfer #{{ instance.id }}</h1>
+            <p class="text-base-content/60">Review and manage warehouse transfer.</p>
+        </div>
+        <div class="flex gap-2">
+            <a href="{% url 'inventory:warehouse_transfer_list' %}" class="btn btn-ghost btn-sm">Back to List</a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Details Panel -->
+        <div class="bg-base-100 p-6 rounded-lg shadow border border-base-200">
+            <h3 class="font-bold text-lg mb-4">Transfer Details</h3>
+            <dl class="space-y-2 text-sm">
+                <div class="flex justify-between border-b border-base-200 pb-1">
+                    <dt class="text-base-content/70">Product:</dt>
+                    <dd class="font-medium">{{ instance.product.name }} ({{ instance.product.sku }})</dd>
+                </div>
+                <div class="flex justify-between border-b border-base-200 pb-1">
+                    <dt class="text-base-content/70">From Warehouse:</dt>
+                    <dd class="font-medium">{{ instance.from_warehouse.name }}</dd>
+                </div>
+                <div class="flex justify-between border-b border-base-200 pb-1">
+                    <dt class="text-base-content/70">To Warehouse:</dt>
+                    <dd class="font-medium">{{ instance.to_warehouse.name }}</dd>
+                </div>
+                <div class="flex justify-between border-b border-base-200 pb-1">
+                    <dt class="text-base-content/70">Quantity:</dt>
+                    <dd class="font-mono font-bold">{{ instance.quantity }}</dd>
+                </div>
+                <div class="flex justify-between border-b border-base-200 pb-1">
+                    <dt class="text-base-content/70">Status:</dt>
+                    <dd>
+                        <span class="badge {% if instance.status == 'Completed' %}badge-success{% elif instance.status == 'In Transit' %}badge-info{% else %}badge-warning{% endif %} badge-sm">{{ instance.status }}</span>
+                    </dd>
+                </div>
+            </dl>
+        </div>
+        
+        <!-- Workflow / Actions Panel -->
+        <div class="space-y-6">
+            <div class="bg-base-100 p-6 rounded-lg shadow border border-base-200">
+                <h3 class="font-bold text-lg mb-4">Workflow Actions</h3>
+                <!-- Dynamic HTMX Transition Swapper -->
+                {% include "core/components/workflow/action_buttons.html" with instance=instance transitions=transitions app_label=app_label model_name=model_name %}
+            </div>
+            
+            <div class="bg-base-100 p-6 rounded-lg shadow border border-base-200">
+                <h3 class="font-bold text-lg mb-4">Audit Trail</h3>
+                {% include "core/components/workflow/audit_history.html" with audit_logs=audit_logs %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
