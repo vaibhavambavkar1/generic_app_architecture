@@ -21,7 +21,7 @@ def dashboard(request):
 
 @login_required
 def pr_list(request):
-    prs = PurchaseRequest.objects.all().order_by('-created_at')
+    prs = PurchaseRequest.objects.all().order_by('-id')
     return render(request, 'purchasing/pr_list.html', {'prs': prs})
 
 @login_required
@@ -43,7 +43,7 @@ def pr_create(request):
 
 @login_required
 def grn_list(request):
-    grns = GoodsReceiptNote.objects.select_related('purchase_order').all().order_by('-created_at')
+    grns = GoodsReceiptNote.objects.select_related('purchase_order').all().order_by('-id')
     return render(request, 'purchasing/grn_list.html', {'grns': grns})
 
 @login_required
