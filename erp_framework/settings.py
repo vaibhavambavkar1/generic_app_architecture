@@ -55,6 +55,8 @@ INSTALLED_APPS = [
     'finance',
     'reports',
     'bookings',
+    'logistics_core',
+    'fleet_mgmt',
     'django_htmx',
     'django_celery_beat',
     'rest_framework',
