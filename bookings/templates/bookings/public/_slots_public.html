@@ -15,15 +15,13 @@
                 <div class="text-xs">Select this date range to proceed.</div>
             </div>
         </div>
-        <form method="post" action="{% url 'bookings:public_checkout' %}">
-            {% csrf_token %}
+        <form method="get" action="{% url 'bookings:public_checkout' %}">
             <input type="hidden" name="resource_id" value="{{ resource.id }}" />
             <input type="hidden" name="date" value="{{ date|date:'Y-m-d' }}" />
             <button class="btn btn-primary w-full">Proceed to Booking</button>
         </form>
     {% else %}
-        <form method="post" action="{% url 'bookings:public_checkout' %}">
-            {% csrf_token %}
+        <form method="get" action="{% url 'bookings:public_checkout' %}">
             <input type="hidden" name="resource_id" value="{{ resource.id }}" />
             <input type="hidden" name="date" value="{{ date|date:'Y-m-d' }}" />
             
