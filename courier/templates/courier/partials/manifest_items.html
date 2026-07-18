@@ -1,0 +1,39 @@
+<div class="overflow-x-auto w-full">
+    <table class="table w-full table-zebra">
+        <thead>
+            <tr>
+                <th>Seq</th>
+                <th>Waybill No.</th>
+                <th>Receiver</th>
+                <th>Destination</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>{{ item.sequence }}</td>
+                <td class="font-bold">{{ item.waybill.waybill_number }}</td>
+                <td>
+                    <div class="font-semibold">{{ item.waybill.receiver_name }}</div>
+                    <div class="text-xs opacity-70">{{ item.waybill.receiver_phone }}</div>
+                </td>
+                <td>{{ item.waybill.destination_zone.name|default:"N/A" }}</td>
+                <td>
+                    <div class="badge {% if item.waybill.status == 'Manifested' %}badge-info{% else %}badge-ghost{% endif %} badge-sm">
+                        {{ item.waybill.status }}
+                    </div>
+                </td>
+                <td>
+                    <button class="btn btn-ghost btn-xs text-error">Remove</button>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" class="text-center py-4 opacity-70">No waybills added yet. Scan to begin.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

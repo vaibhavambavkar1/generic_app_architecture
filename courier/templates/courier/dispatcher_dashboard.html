@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+
+{% block title %}Dispatcher Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-7xl">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-base-content">Dispatcher Dashboard</h1>
+        <button class="btn btn-primary" hx-get="#" hx-target="#modal-container" hx-toggle="modal">Create New Manifest</button>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Open Manifests Sidebar -->
+        <div class="card bg-base-100 shadow-xl lg:col-span-1">
+            <div class="card-body">
+                <h2 class="card-title text-xl mb-4">Open Manifests</h2>
+                
+                {% if open_manifests %}
+                <ul class="menu bg-base-200 rounded-box w-full">
+                    {% for manifest in open_manifests %}
+                    <li>
+                        <a class="{% if manifest.id == active_manifest.id %}active{% endif %}" href="?manifest_id={{ manifest.id }}">
+                            <div class="flex flex-col">
+                                <span class="font-bold">{{ manifest.manifest_number }}</span>
+                                <span class="text-sm opacity-70">Driver: {{ manifest.driver.user.get_full_name|default:"Unassigned" }}</span>
+                            </div>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-sm opacity-70">No open dispatch manifests available.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Manifest Management Area -->
+        <div class="card bg-base-100 shadow-xl lg:col-span-2">
+            <div class="card-body">
+                {% if active_manifest %}
+                <div class="flex justify-between items-start mb-6">
+                    <div>
+                        <h2 class="card-title text-2xl">{{ active_manifest.manifest_number }}</h2>
+                        <p class="text-sm opacity-70 mt-1">Vehicle: {{ active_manifest.vehicle.registration_number|default:"N/A" }} | Date: {{ active_manifest.date }}</p>
+                    </div>
+                    <div class="badge badge-primary">{{ active_manifest.status }}</div>
+                </div>
+
+                <!-- Scanner Input (HTMX) -->
+                <div class="form-control w-full mb-6">
+                    <label class="label">
+                        <span class="label-text font-semibold">Scan Waybill to Add</span>
+                    </label>
+                    <div class="flex gap-2">
+                        <input type="text" id="waybill_scanner" name="waybill_number" placeholder="Enter or scan Waybill Number..." class="input input-bordered w-full"
+                               hx-post="{% url 'courier:add_waybill_to_manifest' active_manifest.id %}"
+                               hx-trigger="keyup[key=='Enter']"
+                               hx-target="#manifest_items_table"
+                               hx-indicator="#scanner-indicator"
+                               hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                               onkeyup="if(event.key === 'Enter') { setTimeout(() => this.value = '', 50); }" />
+                        <button class="btn btn-primary"
+                                hx-post="{% url 'courier:add_waybill_to_manifest' active_manifest.id %}"
+                                hx-include="#waybill_scanner"
+                                hx-target="#manifest_items_table"
+                                hx-indicator="#scanner-indicator"
+                                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                                onclick="setTimeout(() => document.getElementById('waybill_scanner').value = '', 50);">
+                            Add
+                        </button>
+                    </div>
+                    <div id="scanner-indicator" class="htmx-indicator mt-2">
+                        <span class="loading loading-spinner loading-sm"></span> Adding...
+                    </div>
+                    <!-- Feedback container for errors -->
+                    <div id="manifest-messages"></div>
+                </div>
+
+                <div class="divider">Waybills on Manifest</div>
+
+                <div id="manifest_items_table">
+                    {% include 'courier/partials/manifest_items.html' with manifest=active_manifest items=active_manifest.items.all %}
+                </div>
+                
+                <div class="card-actions justify-end mt-6">
+                    <button class="btn btn-error btn-outline">Cancel</button>
+                    <button class="btn btn-success text-white">Dispatch Now</button>
+                </div>
+
+                {% else %}
+                <div class="flex flex-col items-center justify-center h-64 text-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 opacity-30 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                    <h3 class="text-lg font-semibold">No Manifest Selected</h3>
+                    <p class="opacity-70 mt-2">Select a manifest from the sidebar or create a new one.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

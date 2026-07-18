@@ -57,6 +57,8 @@ INSTALLED_APPS = [
     'bookings',
     'logistics_core',
     'fleet_mgmt',
+    'courier',
+    'freight',
     'django_htmx',
     'django_celery_beat',
     'rest_framework',
