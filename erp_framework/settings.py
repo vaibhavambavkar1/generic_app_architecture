@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     'courier',
     'freight',
     'wms_3pl',
+    'logistics_finance',
     'django_htmx',
     'django_celery_beat',
     'rest_framework',

@@ -38,6 +38,7 @@ urlpatterns = [
     path('bookings/', include('bookings.urls', namespace='bookings')),
     path('courier/', include('courier.urls', namespace='courier')),
     path('freight/', include('freight.urls', namespace='freight')),
+    path('logistics-finance/', include('logistics_finance.urls', namespace='logistics_finance')),
 ]
 
 if settings.DEBUG:
