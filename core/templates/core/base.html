@@ -114,5 +114,14 @@
         {% include "core/components/chat_panel.html" %}
     {% endif %}
 
+    <!-- Global HTMX Modal Container -->
+    <dialog id="generalModal" class="modal">
+        <div class="modal-box bg-base-100" id="modal-container">
+            <!-- HTMX content loads here -->
+        </div>
+        <form method="dialog" class="modal-backdrop">
+            <button>close</button>
+        </form>
+    </dialog>
 </body>
 </html>

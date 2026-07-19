@@ -52,3 +52,38 @@ def download_waybill_pdf(request, waybill_id):
     waybill = get_object_or_404(Waybill, id=waybill_id)
     return generate_waybill_pdf(waybill)
 
+from django.contrib import messages
+from django.shortcuts import redirect
+
+def dispatch_manifest(request, manifest_id):
+    if request.method == "POST":
+        manifest = get_object_or_404(DispatchManifest, id=manifest_id)
+        if manifest.status == 'Draft':
+            manifest.dispatch()
+            manifest.save()
+            messages.success(request, f"Manifest {manifest.manifest_number} successfully dispatched!")
+        else:
+            messages.error(request, f"Manifest {manifest.manifest_number} cannot be dispatched from state {manifest.status}.")
+    return redirect('courier:dispatcher_dashboard')
+
+from .forms import DispatchManifestForm
+
+import uuid
+
+def manifest_create(request):
+    if request.method == 'POST':
+        form = DispatchManifestForm(request.POST)
+        if form.is_valid():
+            manifest = form.save(commit=False)
+            manifest.manifest_number = f"MAN-{uuid.uuid4().hex[:8].upper()}"
+            manifest.status = 'Draft'
+            manifest.save()
+            messages.success(request, f"Manifest {manifest.manifest_number} created!")
+            
+            response = HttpResponse()
+            response['HX-Redirect'] = request.build_absolute_uri('/courier/dashboard/')
+            return response
+    else:
+        form = DispatchManifestForm()
+        
+    return render(request, 'courier/modals/manifest_form.html', {'form': form})
