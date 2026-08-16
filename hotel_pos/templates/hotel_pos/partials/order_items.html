@@ -1,0 +1,30 @@
+{% if order and order.items.count > 0 %}
+    {% for item in order.items.all %}
+    <li class="flex items-center justify-between p-3 border-b border-base-200">
+        <div>
+            <span class="font-bold">{{ item.menu_item.name }}</span>
+            <div class="text-xs text-base-content/70">
+                x{{ item.quantity }} @ ${{ item.price }} 
+                {% if item.workflow_state %}
+                    <span class="badge badge-sm 
+                        {% if item.workflow_state.name == 'Pending' %}badge-warning
+                        {% elif item.workflow_state.name == 'Cooking' %}badge-info
+                        {% elif item.workflow_state.name == 'Served' %}badge-success
+                        {% endif %}">
+                        {{ item.workflow_state.name }}
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="font-bold text-primary">
+            ${{ item.total_price }}
+        </div>
+    </li>
+    {% endfor %}
+    <li class="mt-4 flex items-center justify-between text-lg font-bold">
+        <span>Total</span>
+        <span>${{ order.total_amount|default:"0.00" }}</span>
+    </li>
+{% else %}
+    <li class="text-center text-base-content/50 py-4">No items in this order.</li>
+{% endif %}

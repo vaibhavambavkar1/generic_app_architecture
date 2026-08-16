@@ -7,8 +7,7 @@ import json
 import csv
 from django.http import HttpResponse
 
-from finance.models import Account, AccountCategory, JournalEntryLine, JournalEntry
-from inventory.models import StockLedger
+
 from hotel_pos.models import Order
 
 @login_required

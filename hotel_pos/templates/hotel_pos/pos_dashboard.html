@@ -9,7 +9,9 @@
         <h1 class="text-2xl font-bold mb-6">Menu Items</h1>
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {% for item in items %}
-            <button hx-post="{% url 'hotel_pos:add_to_order' item.id %}" hx-target="#order-items" hx-swap="beforeend" class="btn btn-outline h-auto py-4 flex flex-col items-center justify-center gap-2 hover:bg-primary hover:border-primary hover:text-white transition-all">
+            <button 
+                {% if active_order %}hx-post="{% url 'hotel_pos:add_to_order' active_order.id item.id %}" hx-target="#order-items" hx-swap="innerHTML"{% else %}disabled{% endif %} 
+                class="btn btn-outline h-auto py-4 flex flex-col items-center justify-center gap-2 {% if active_order %}hover:bg-primary hover:border-primary hover:text-white{% endif %} transition-all">
                 <span class="font-bold text-center leading-tight">{{ item.name }}</span>
                 <span class="text-primary font-semibold text-lg">${{ item.price }}</span>
             </button>
@@ -19,13 +21,28 @@
     
     <!-- Order Section -->
     <div class="w-full lg:w-1/3 bg-base-100 rounded-box shadow-lg p-6 flex flex-col h-full border border-base-200">
-        <h2 class="text-xl font-bold mb-4 border-b border-base-200 pb-2">Current Order</h2>
+        <h2 class="text-xl font-bold mb-4 border-b border-base-200 pb-2">
+            {% if active_order %}
+                Table {{ active_order.table.number }} 
+                <span class="badge badge-primary">{{ active_order.workflow_state.name|default:"Open" }}</span>
+            {% else %}
+                No Active Table
+            {% endif %}
+        </h2>
         <ul id="order-items" class="flex-grow overflow-y-auto space-y-2">
-            <!-- Items appended here via HTMX -->
+            {% if active_order %}
+                {% include 'hotel_pos/partials/order_items.html' with order=active_order %}
+            {% else %}
+                <li class="text-center text-base-content/50 py-4">Please select a table to begin.</li>
+            {% endif %}
         </ul>
-        <div class="mt-4 pt-4 border-t border-base-200">
-            <button class="btn btn-primary w-full shadow-lg">Send to Kitchen (KOT)</button>
+        {% if active_order %}
+        <div class="mt-4 pt-4 border-t border-base-200 flex flex-col gap-2">
+            <button hx-post="{% url 'hotel_pos:send_to_kitchen' active_order.id %}" hx-target="#order-items" class="btn btn-info w-full shadow-lg text-white">Send to Kitchen (KOT)</button>
+            <button hx-post="{% url 'hotel_pos:generate_bill' active_order.id %}" hx-target="#order-items" class="btn btn-success w-full shadow-lg text-white">Generate Bill</button>
+            <a href="{% url 'hotel_pos:table_dashboard' %}" class="btn btn-outline w-full shadow-lg">Back to Tables</a>
         </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

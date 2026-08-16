@@ -16,9 +16,9 @@
     </div>
     
     <!-- Polls every 5 seconds -->
-    <div hx-get="{% url 'hotel_pos:kds' %}" hx-trigger="every 5s" hx-swap="outerHTML" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div id="kds-grid" hx-get="{% url 'hotel_pos:kds' %}" hx-select="#kds-grid" hx-trigger="every 5s" hx-swap="outerHTML" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {% for kot in kots %}
-        <div class="card bg-base-100 shadow-xl border-t-4 border-warning">
+        <div id="kot-{{ kot.id }}" class="card bg-base-100 shadow-xl border-t-4 border-warning transition-all">
             <div class="card-body p-5">
                 <div class="flex justify-between items-start mb-2">
                     <h2 class="card-title text-lg">Table {{ kot.order.table.number }}</h2>
@@ -32,7 +32,7 @@
                 </div>
                 {% endif %}
                 <div class="card-actions justify-end mt-4">
-                    <button class="btn btn-success w-full text-white">Mark Ready</button>
+                    <button hx-post="{% url 'hotel_pos:mark_item_served' kot.id %}" hx-target="#kot-{{ kot.id }}" hx-swap="outerHTML swap:1s" class="btn btn-success w-full text-white">Mark Ready</button>
                 </div>
             </div>
         </div>

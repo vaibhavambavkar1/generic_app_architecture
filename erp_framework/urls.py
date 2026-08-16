@@ -27,8 +27,6 @@ urlpatterns = [
     path('core/', include('core.urls')),
     path('hotel-pos/', include('hotel_pos.urls', namespace='hotel_pos')),
     path('inventory/', include('inventory.urls')),
-    path('hrms/', include('hrms.urls')),
-    path('finance/', include('finance.urls', namespace='finance')),
     path('reports/', include('reports.urls', namespace='reports')),
 ]
 
