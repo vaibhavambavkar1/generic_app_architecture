@@ -1707,9 +1707,9 @@ def warehouse_list(request):
 
 @login_required
 def stock_ledger(request):
-    entries = StockLedger.objects.select_related('product', 'warehouse').all()
-    if request.GET.get('product_id'):
-        entries = entries.filter(product_id=request.GET['product_id'])
+    entries = StockLedger.objects.select_related('inventory_item', 'warehouse').all()
+    if request.GET.get('inventory_item_id'):
+        entries = entries.filter(inventory_item_id=request.GET['inventory_item_id'])
     if request.GET.get('warehouse_id'):
         entries = entries.filter(warehouse_id=request.GET['warehouse_id'])
     return render(request, 'inventory/stock_ledger.html', {'entries': entries[:100]})
@@ -1719,7 +1719,7 @@ from django.core.exceptions import ValidationError
 
 @login_required
 def stock_adjustment_list(request):
-    adjustments = StockAdjustment.objects.select_related('product', 'warehouse').all()
+    adjustments = StockAdjustment.objects.select_related('inventory_item', 'warehouse').all()
     return render(request, 'inventory/stock_adjustment_list.html', {'adjustments': adjustments})
 
 @login_required
@@ -1765,7 +1765,7 @@ def stock_adjustment_approve_modal(request, pk):
 
 @login_required
 def warehouse_transfer_list(request):
-    transfers = WarehouseTransfer.objects.select_related('product', 'from_warehouse', 'to_warehouse').all()
+    transfers = WarehouseTransfer.objects.select_related('inventory_item', 'from_warehouse', 'to_warehouse').all()
     return render(request, 'inventory/warehouse_transfer_list.html', {'transfers': transfers})
 
 from .forms import WarehouseTransferForm

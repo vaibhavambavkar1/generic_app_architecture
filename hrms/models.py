@@ -231,3 +231,21 @@ class OKR(AuditableMixin):
 
     def __str__(self):
         return f"{self.objective} ({self.completion_percentage}%)"
+
+
+# --- Hotel Management Additions ---
+class Shift(AuditableMixin):
+    name = models.CharField(max_length=100)
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.start_time} - {self.end_time})"
+
+class Attendance(AuditableMixin):
+    employee = models.ForeignKey('hrms.Employee', on_delete=models.CASCADE)
+    shift = models.ForeignKey(Shift, on_delete=models.SET_NULL, null=True, blank=True)
+    date = models.DateField(auto_now_add=True)
+    check_in = models.DateTimeField(null=True, blank=True)
+    check_out = models.DateTimeField(null=True, blank=True)

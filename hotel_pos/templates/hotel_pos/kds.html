@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Kitchen Display System</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white p-6">
+    <h1 class="text-3xl font-bold mb-6">Kitchen Display System (KDS)</h1>
+    <!-- Polls every 5 seconds -->
+    <div hx-get="{% url 'hotel_pos:kds' %}" hx-trigger="every 5s" hx-swap="outerHTML" class="grid grid-cols-4 gap-4">
+        {% for kot in kots %}
+        <div class="bg-gray-800 p-4 rounded border-t-4 border-yellow-500">
+            <div class="flex justify-between mb-2">
+                <span class="font-bold">Table: {{ kot.order.table.number }}</span>
+                <span class="text-sm text-gray-400">Order #{{ kot.order.id }}</span>
+            </div>
+            <div class="text-xl font-bold">{{ kot.quantity }}x {{ kot.menu_item.name }}</div>
+            {% if kot.notes %}
+            <div class="text-red-400 text-sm mt-2">Note: {{ kot.notes }}</div>
+            {% endif %}
+            <button class="mt-4 w-full bg-green-600 py-2 rounded">Mark Ready</button>
+        </div>
+        {% empty %}
+        <div class="col-span-4 text-center text-gray-500 text-xl py-10">No active kitchen orders.</div>
+        {% endfor %}
+    </div>
+</body>
+</html>

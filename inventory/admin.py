@@ -42,7 +42,7 @@ class PurchaseOrderAdmin(ImportExportModelAdmin, SimpleHistoryAdmin):
 class StockLedgerInline(admin.TabularInline):
     model = StockLedger
     extra = 0
-    readonly_fields = ('product', 'batch', 'transaction_type', 'quantity', 'reference_document', 'timestamp')
+    readonly_fields = ('inventory_item', 'batch', 'transaction_type', 'quantity', 'reference_document', 'timestamp')
     can_delete = False
 
 class WarehouseAdmin(admin.ModelAdmin):
@@ -52,28 +52,28 @@ class WarehouseAdmin(admin.ModelAdmin):
     inlines = [StockLedgerInline]
 
 class BatchAdmin(admin.ModelAdmin):
-    list_display = ('batch_number', 'product', 'manufacturing_date', 'expiry_date')
-    search_fields = ('batch_number', 'product__name')
+    list_display = ('batch_number', 'inventory_item', 'manufacturing_date', 'expiry_date')
+    search_fields = ('batch_number', 'inventory_item__name')
     list_filter = ('manufacturing_date', 'expiry_date')
 
 class SerialNumberAdmin(admin.ModelAdmin):
-    list_display = ('serial', 'product', 'is_sold')
-    search_fields = ('serial', 'product__name')
+    list_display = ('serial', 'inventory_item', 'is_sold')
+    search_fields = ('serial', 'inventory_item__name')
     list_filter = ('is_sold',)
 
 class StockLedgerAdmin(admin.ModelAdmin):
-    list_display = ('product', 'warehouse', 'transaction_type', 'quantity', 'timestamp')
-    search_fields = ('product__name', 'warehouse__name', 'reference_document')
+    list_display = ('inventory_item', 'warehouse', 'transaction_type', 'quantity', 'timestamp')
+    search_fields = ('inventory_item__name', 'warehouse__name', 'reference_document')
     list_filter = ('transaction_type', 'warehouse', 'timestamp')
 
 class StockAdjustmentAdmin(admin.ModelAdmin):
-    list_display = ('warehouse', 'product', 'quantity_adjusted', 'status')
-    search_fields = ('warehouse__name', 'product__name', 'reason')
+    list_display = ('warehouse', 'inventory_item', 'quantity_adjusted', 'status')
+    search_fields = ('warehouse__name', 'inventory_item__name', 'reason')
     list_filter = ('status',)
 
 class WarehouseTransferAdmin(admin.ModelAdmin):
-    list_display = ('from_warehouse', 'to_warehouse', 'product', 'quantity', 'status')
-    search_fields = ('from_warehouse__name', 'to_warehouse__name', 'product__name')
+    list_display = ('from_warehouse', 'to_warehouse', 'inventory_item', 'quantity', 'status')
+    search_fields = ('from_warehouse__name', 'to_warehouse__name', 'inventory_item__name')
     list_filter = ('status',)
 
 admin.site.register(Supplier, SupplierAdmin)

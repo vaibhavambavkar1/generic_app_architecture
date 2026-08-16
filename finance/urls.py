@@ -16,7 +16,7 @@ urlpatterns = [
     path('journal/<int:pk>/post/', views.journal_post, name='journal_post'),
     
     # AR/AP Invoicing
-    path('invoicing/', views.invoicing_dashboard, name='invoicing_dashboard'),
+    
     path('invoicing/pay/<str:invoice_type>/<int:pk>/', views.process_invoice_payment, name='process_invoice_payment'),
     path('invoicing/ar/<int:pk>/pdf/', views.generate_b2b_invoice_pdf, name='generate_b2b_invoice_pdf'),
 ]

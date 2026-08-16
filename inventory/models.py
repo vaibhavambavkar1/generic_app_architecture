@@ -127,7 +127,7 @@ class InventoryItem(AuditableMixin):
 
 class SupplierCatalogItem(AuditableMixin):
     supplier = models.ForeignKey('Supplier', on_delete=models.CASCADE, related_name='catalog_entries')
-    item = models.ForeignKey('InventoryItem', on_delete=models.CASCADE, related_name='catalog_items')
+    item = models.ForeignKey('InventoryItem', null=True, blank=True, on_delete=models.CASCADE, related_name='catalog_items')
     price = models.DecimalField(max_digits=10, decimal_places=2)
 
     class Meta:
@@ -238,7 +238,7 @@ class InventoryItemPriceLog(models.Model):
 # RETAIL / POS STORE INVENTORY (PHASE 2)
 # ==========================================
 
-from generic_store_mgmt.models import Product
+
 
 class Warehouse(AuditableMixin):
     name = models.CharField(max_length=150, unique=True)
@@ -249,24 +249,24 @@ class Warehouse(AuditableMixin):
         return self.name
 
 class Batch(AuditableMixin):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='batches')
+    inventory_item = models.ForeignKey('InventoryItem', on_delete=models.CASCADE, related_name='batches', null=True)
     batch_number = models.CharField(max_length=100)
     manufacturing_date = models.DateField(null=True, blank=True)
     expiry_date = models.DateField(null=True, blank=True)
 
     class Meta:
-        unique_together = ('product', 'batch_number')
+        unique_together = ('inventory_item', 'batch_number')
 
     def __str__(self):
-        return f"{self.product.name} - Batch: {self.batch_number}"
+        return f"{self.inventory_item.name} - Batch: {self.batch_number}"
 
 class SerialNumber(AuditableMixin):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='serial_numbers')
+    inventory_item = models.ForeignKey('InventoryItem', on_delete=models.CASCADE, related_name='serial_numbers', null=True)
     serial = models.CharField(max_length=100, unique=True)
     is_sold = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"{self.product.name} - SN: {self.serial}"
+        return f"{self.inventory_item.name} - SN: {self.serial}"
 
 class StockLedger(models.Model):
     TRANSACTION_TYPES = (
@@ -277,7 +277,7 @@ class StockLedger(models.Model):
         ('TRANSFER', 'Warehouse Transfer'),
         ('ADJUST', 'Stock Adjustment'),
     )
-    product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name='ledger_entries')
+    inventory_item = models.ForeignKey('InventoryItem', null=True, blank=True, on_delete=models.PROTECT, related_name='ledger_entries')
     warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT, related_name='ledger_entries')
     batch = models.ForeignKey(Batch, on_delete=models.SET_NULL, null=True, blank=True)
     transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPES)
@@ -293,16 +293,16 @@ class StockLedger(models.Model):
     class Meta:
         ordering = ['-timestamp']
         indexes = [
-            models.Index(fields=['product', 'warehouse']),
+            models.Index(fields=['inventory_item', 'warehouse']),
             models.Index(fields=['timestamp']),
         ]
 
     def __str__(self):
-        return f"{self.transaction_type} | {self.product.name} | Qty: {self.quantity}"
+        return f"{self.transaction_type} | {self.inventory_item.name} | Qty: {self.quantity}"
 
 class StockAdjustment(WorkflowMixin):
     warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT)
-    product = models.ForeignKey(Product, on_delete=models.PROTECT)
+    inventory_item = models.ForeignKey('InventoryItem', null=True, blank=True, on_delete=models.PROTECT)
     reason = models.CharField(max_length=255, help_text="e.g. Damage, Expiry, Audit count mismatch")
     quantity_adjusted = models.IntegerField(help_text="Can be positive or negative")
     
@@ -310,7 +310,7 @@ class StockAdjustment(WorkflowMixin):
     def approve_adjustment(self):
         # Insert a ledger entry on approval
         StockLedger.objects.create(
-            product=self.product,
+            inventory_item=self.inventory_item,
             warehouse=self.warehouse,
             transaction_type='ADJUST',
             quantity=self.quantity_adjusted,
@@ -320,14 +320,14 @@ class StockAdjustment(WorkflowMixin):
 class WarehouseTransfer(WorkflowMixin):
     from_warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT, related_name='transfers_out')
     to_warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT, related_name='transfers_in')
-    product = models.ForeignKey(Product, on_delete=models.PROTECT)
+    inventory_item = models.ForeignKey('InventoryItem', null=True, blank=True, on_delete=models.PROTECT)
     quantity = models.PositiveIntegerField()
     
     @transition(field='status', source='Draft', target='In Transit')
     def dispatch_transfer(self):
         # Outgoing ledger entry
         StockLedger.objects.create(
-            product=self.product,
+            inventory_item=self.inventory_item,
             warehouse=self.from_warehouse,
             transaction_type='TRANSFER',
             quantity=-self.quantity,
@@ -338,9 +338,18 @@ class WarehouseTransfer(WorkflowMixin):
     def receive_transfer(self):
         # Incoming ledger entry
         StockLedger.objects.create(
-            product=self.product,
+            inventory_item=self.inventory_item,
             warehouse=self.to_warehouse,
             transaction_type='TRANSFER',
             quantity=self.quantity,
             reference_document=f"TRF-{self.id}-IN"
         )
+
+
+# --- Hotel Management Additions ---
+class WastageLog(AuditableMixin):
+    inventory_item = models.ForeignKey('InventoryItem', on_delete=models.CASCADE, null=True)
+    batch = models.ForeignKey(Batch, on_delete=models.SET_NULL, null=True, blank=True)
+    quantity = models.DecimalField(max_digits=10, decimal_places=3)
+    reason = models.TextField()
+    date_recorded = models.DateTimeField(auto_now_add=True)

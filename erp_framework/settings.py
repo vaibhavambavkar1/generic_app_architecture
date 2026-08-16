@@ -45,22 +45,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'core',
     'inventory',
-    'crm',
     'hrms',
-    'itam',
-    'helpdesk',
-    'generic_store_mgmt',
-    'purchasing',
-    'sales',
     'finance',
     'reports',
-    'bookings',
-    'logistics_core',
-    'fleet_mgmt',
-    'courier',
-    'freight',
-    'wms_3pl',
-    'logistics_finance',
     'django_htmx',
     'django_celery_beat',
     'rest_framework',
@@ -71,6 +58,9 @@ INSTALLED_APPS = [
     'allauth',
     'allauth.account',
     'django_tables2',
+    'hotel_core',
+    'hotel_pos',
+    'hotel_recipes',
 ]
 
 MIDDLEWARE = [
@@ -86,7 +76,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_htmx.middleware.HtmxMiddleware',
     'simple_history.middleware.HistoryRequestMiddleware',
-    'bookings.middleware.TenantMiddleware',
+
     #'core.middleware.LicenseEnforcementMiddleware',
     'core.middleware.ExceptionLoggingMiddleware',
 ]

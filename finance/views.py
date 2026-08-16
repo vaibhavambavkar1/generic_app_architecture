@@ -174,28 +174,9 @@ def journal_delete(request, pk):
 
 # --- AR/AP Invoicing Dashboard ---
 
-from sales.models import B2BSalesInvoice
-from purchasing.models import SupplierBill
 from core.models import PaymentTransaction, PaymentMethod
-from finance.models import InvoicePaymentAllocation
 
-@login_required
-def invoicing_dashboard(request):
-    """
-    Unified AR/AP Dashboard for managing B2B Invoices and Supplier Bills.
-    """
-    active_tab = request.GET.get('tab', 'ar')
-    
-    context = {'active_tab': active_tab}
-    
-    if active_tab == 'ar':
-        # Accounts Receivable (Sales Invoices)
-        context['ar_invoices'] = B2BSalesInvoice.objects.all().order_by('-issue_date')
-    else:
-        # Accounts Payable (Supplier Bills)
-        context['ap_bills'] = SupplierBill.objects.all().order_by('-issue_date')
-        
-    return render(request, 'finance/invoicing/dashboard.html', context)
+
 
 @login_required
 def process_invoice_payment(request, invoice_type, pk):

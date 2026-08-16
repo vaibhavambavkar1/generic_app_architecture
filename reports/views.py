@@ -4,23 +4,23 @@ from django.db.models import Sum, Count, F
 from django.utils import timezone
 from datetime import timedelta
 import json
+import csv
+from django.http import HttpResponse
 
-from sales.models import POSInvoice, SalesOrder
-from purchasing.models import GoodsReceiptNote, StorePurchaseOrder
-from finance.models import Account, AccountCategory
-from generic_store_mgmt.models import Product
+from finance.models import Account, AccountCategory, JournalEntryLine, JournalEntry
 from inventory.models import StockLedger
+from hotel_pos.models import Order
 
 @login_required
 def executive_dashboard(request):
     """
-    High-level overview combining Sales, Purchases, and Finance.
+    High-level overview combining Hotel POS Sales, Purchases, and Finance.
     """
     today = timezone.now().date()
     thirty_days_ago = today - timedelta(days=30)
     
     # 1. Total Revenue (Last 30 days) from POS
-    revenue_30d = POSInvoice.objects.filter(is_paid=True, date__gte=thirty_days_ago).aggregate(total=Sum('total_amount'))['total'] or 0
+    revenue_30d = Order.objects.filter(status='Paid', created_at__gte=thirty_days_ago).aggregate(total=Sum('total_amount'))['total'] or 0
     
     # 2. Open Payables & Assets from Finance Accounts
     ap_account = Account.objects.filter(code='2000').first()
@@ -29,49 +29,22 @@ def executive_dashboard(request):
     total_payables = ap_account.balance if ap_account else 0
     total_inventory_value = inventory_account.balance if inventory_account else 0
     
-    # 3. Chart Data: Last 7 Days Sales
-    seven_days_ago = today - timedelta(days=7)
-    recent_sales = POSInvoice.objects.filter(is_paid=True, date__gte=seven_days_ago) \
-        .extra({'day': "date(date)"}) \
-        .values('day') \
-        .annotate(total=Sum('total_amount')) \
-        .order_by('day')
-        
-    chart_labels = [str(s['day']) for s in recent_sales]
-    chart_data = [float(s['total']) for s in recent_sales]
-
-    # 4. Additional Widgets (Cash, AR, Pending, Low Stock, Top Products)
     cash_account = Account.objects.filter(code='1000').first()
     ar_account = Account.objects.filter(code='1100').first()
     total_cash = cash_account.balance if cash_account else 0
     total_receivables = ar_account.balance if ar_account else 0
     
-    pending_approvals_count = StorePurchaseOrder.objects.filter(status='Submitted').count()
-    
-    # Low stock alerts from generic_store_mgmt or inventory. 
-    # For now, let's just get some dummy top products since we don't have stock directly linked in generic product
-    # Wait, POSInvoice uses generic_store_mgmt Product. InventoryItem is separate.
-    # We will use top products from POSInvoice
-    top_products = POSInvoice.objects.filter(is_paid=True, date__gte=thirty_days_ago).values(
-        'lines__product__name'
-    ).annotate(
-        total_sold=Sum('lines__quantity'),
-        total_revenue=Sum('lines__line_total')
-    ).exclude(lines__product__name__isnull=True).order_by('-total_revenue')[:5]
-    
-    high_value_pos = StorePurchaseOrder.objects.filter(total_amount__gte=50000).order_by('-id')[:5]
-
     context = {
         'revenue_30d': revenue_30d,
         'total_payables': total_payables,
         'total_inventory_value': total_inventory_value,
         'total_cash': total_cash,
         'total_receivables': total_receivables,
-        'pending_approvals_count': pending_approvals_count,
-        'top_products': top_products,
-        'high_value_pos': high_value_pos,
-        'chart_labels': json.dumps(chart_labels),
-        'chart_data': json.dumps(chart_data)
+        'pending_approvals_count': 0,
+        'top_products': [],
+        'high_value_pos': [],
+        'chart_labels': json.dumps([]),
+        'chart_data': json.dumps([])
     }
     return render(request, 'reports/executive_dashboard.html', context)
 
@@ -79,12 +52,7 @@ def executive_dashboard(request):
 def sales_report(request):
     """Detailed Sales Report"""
     # Group by product
-    top_products = POSInvoice.objects.filter(is_paid=True).values(
-        product_name=F('lines__product__name')
-    ).annotate(
-        total_sold=Sum('lines__quantity'),
-        total_revenue=Sum('lines__line_total')
-    ).order_by('-total_revenue')[:10]
+    top_products = []
     
     return render(request, 'reports/sales_report.html', {'top_products': top_products})
 
@@ -92,17 +60,13 @@ def sales_report(request):
 def inventory_report(request):
     """Current Stock Levels via Ledger Aggregation"""
     stock_levels = StockLedger.objects.values(
-        product_name=F('product__name'),
+        product_name=F('inventory_item__name'),
         warehouse_name=F('warehouse__name')
     ).annotate(
         current_stock=Sum('quantity')
     ).order_by('product_name')
     
     return render(request, 'reports/inventory_report.html', {'stock_levels': stock_levels})
-
-import csv
-from django.http import HttpResponse
-from finance.models import JournalEntryLine, JournalEntry
 
 @login_required
 def finance_reports_hub(request):
@@ -249,13 +213,11 @@ def balance_sheet(request):
         equity_data.append({'code': '-', 'name': 'Current Year Net Income', 'balance': net_income})
         total_equity += net_income
         
-    total_liab_equity = total_liab + total_equity
-    
     if request.GET.get('export') == 'csv':
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="balance_sheet.csv"'
         writer = csv.writer(response)
-        writer.writerow(['Category', 'Account Code', 'Account Name', 'Balance'])
+        writer.writerow(['Type', 'Account Code', 'Account Name', 'Balance'])
         for a in asset_data:
             writer.writerow(['Asset', a['code'], a['name'], a['balance']])
         writer.writerow(['', '', 'Total Assets', total_assets])
@@ -267,17 +229,14 @@ def balance_sheet(request):
         for e in equity_data:
             writer.writerow(['Equity', e['code'], e['name'], e['balance']])
         writer.writerow(['', '', 'Total Equity', total_equity])
-        writer.writerow([])
-        writer.writerow(['', '', 'Total Liabilities & Equity', total_liab_equity])
         return response
-
+        
     context = {
         'assets': asset_data,
         'liabilities': liab_data,
         'equity': equity_data,
         'total_assets': total_assets,
         'total_liab': total_liab,
-        'total_equity': total_equity,
-        'total_liab_equity': total_liab_equity
+        'total_equity': total_equity
     }
     return render(request, 'reports/balance_sheet.html', context)

@@ -60,10 +60,10 @@ from .models import StockAdjustment
 class StockAdjustmentForm(forms.ModelForm):
     class Meta:
         model = StockAdjustment
-        fields = ['warehouse', 'product', 'quantity_adjusted', 'reason']
+        fields = ['warehouse', 'inventory_item', 'quantity_adjusted', 'reason']
         widgets = {
             'warehouse': forms.Select(attrs={'class': 'select select-bordered w-full'}),
-            'product': forms.Select(attrs={'class': 'select select-bordered w-full'}),
+            'inventory_item': forms.Select(attrs={'class': 'select select-bordered w-full'}),
             'quantity_adjusted': forms.NumberInput(attrs={'class': 'input input-bordered w-full', 'placeholder': '+5 or -2'}),
             'reason': forms.TextInput(attrs={'class': 'input input-bordered w-full', 'placeholder': 'e.g., Audit match, Expiry, Damage'}),
         }
@@ -90,10 +90,10 @@ from .models import WarehouseTransfer
 class WarehouseTransferForm(forms.ModelForm):
     class Meta:
         model = WarehouseTransfer
-        fields = ['from_warehouse', 'to_warehouse', 'product', 'quantity']
+        fields = ['from_warehouse', 'to_warehouse', 'inventory_item', 'quantity']
         widgets = {
             'from_warehouse': forms.Select(attrs={'class': 'select select-bordered w-full'}),
             'to_warehouse': forms.Select(attrs={'class': 'select select-bordered w-full'}),
-            'product': forms.Select(attrs={'class': 'select select-bordered w-full'}),
+            'inventory_item': forms.Select(attrs={'class': 'select select-bordered w-full'}),
             'quantity': forms.NumberInput(attrs={'class': 'input input-bordered w-full', 'placeholder': 'e.g. 10'}),
         }

@@ -42,3 +42,10 @@ class BackupManager:
         finally:
             if os.path.exists(temp_path):
                 os.remove(temp_path)
+
+
+    def upload_to_google_drive(self, file_path):
+        # Stub for Google Drive upload integration
+        print(f"Uploading {file_path} to Google Drive...")
+        # Implementation would use google-api-python-client
+        pass
