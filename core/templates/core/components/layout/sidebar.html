@@ -1,6 +1,15 @@
 {% load ui_tags %}
 {% get_sidebar_menus as menu_items %}
 
+<!-- Mobile Sidebar Backdrop -->
+<div 
+    x-show="sidebarOpen" 
+    class="fixed inset-0 z-40 bg-black/50 lg:hidden transition-opacity" 
+    @click="sidebarOpen = false" 
+    x-transition.opacity
+    style="display: none;">
+</div>
+
 <aside
     class="fixed inset-y-0 left-0 z-50 w-64 overflow-y-auto transition-transform transform bg-base-200 border-r border-base-300 lg:translate-x-0 lg:static lg:inset-0"
     :class="{'translate-x-0 ease-out': sidebarOpen, '-translate-x-full ease-in': !sidebarOpen}">
@@ -20,7 +29,25 @@
             </a>
         </li>
 
-        <li class="menu-title px-4 mt-4">Modules</li>
+        <li class="menu-title px-4 mt-4 text-xs uppercase tracking-wider text-base-content/50">Hotel & Restaurant</li>
+        <li>
+            <a href="{% url 'hotel_pos:pos_dashboard' %}" class="flex items-center gap-3 text-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                POS Dashboard
+            </a>
+        </li>
+        <li>
+            <a href="{% url 'hotel_pos:kds' %}" class="flex items-center gap-3 text-secondary">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Kitchen Display (KDS)
+            </a>
+        </li>
+
+        <li class="menu-title px-4 mt-4 text-xs uppercase tracking-wider text-base-content/50">Other Modules</li>
 
         {% for item in menu_items %}
         <li>
@@ -39,12 +66,6 @@
             <a href="{% url 'core:email_inbox' %}" class="flex items-center gap-3">
                 <svg class="w-5 h-5 text-base-content/70" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                 Internal Email
-            </a>
-        </li>
-        <li>
-            <a href="{% url 'finance:invoicing_dashboard' %}" class="flex items-center gap-3">
-                <svg class="w-5 h-5 text-base-content/70" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                AR/AP Invoicing
             </a>
         </li>
         <li>
@@ -232,60 +253,10 @@
         </li>
         {% endcomment %}
 
-        <!-- BOOKINGS & SCHEDULING SECTION -->
-        <li class="menu-title mt-4 text-xs uppercase tracking-wider text-base-content/50">Bookings & Scheduling</li>
-        <li>
-            <details>
-                <summary class="flex items-center gap-3 cursor-pointer">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    Bookings
-                </summary>
-                <ul class="ml-4 border-l border-base-300 pl-4 mt-2">
-                    <li><a href="{% url 'bookings:dashboard' %}">Dashboard</a></li>
-                    <li><a href="{% url 'bookings:calendar' %}">Calendar</a></li>
-                    <li><a href="{% url 'bookings:resource_list' %}">Resources</a></li>
-                    <li><a href="{% url 'bookings:schedule_list' %}">Schedules</a></li>
-                </ul>
-            </details>
-        </li>
 
-        <!-- LOGISTICS & FREIGHT SECTION -->
-        <li class="menu-title mt-4 text-xs uppercase tracking-wider text-base-content/50">Logistics & Freight</li>
-        <li>
-            <a href="{% url 'courier:dispatcher_dashboard' %}" class="flex items-center gap-3 text-warning">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                </svg>
-                Courier Dispatch
-            </a>
-        </li>
-        <li>
-            <a href="{% url 'logistics_finance:dashboard' %}" class="flex items-center gap-3 text-success">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Logistics Finance
-            </a>
-        </li>
 
         <!-- POS / STORE MGMT SECTION -->
         <li class="menu-title mt-4 text-xs uppercase tracking-wider text-base-content/50">Retail & POS</li>
-        <li>
-            <a href="{% url 'generic_store_mgmt:dashboard' %}" class="flex items-center gap-3">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-                Store Master Data
-            </a>
-        </li>
         <li>
             <details>
                 <summary class="flex items-center gap-3 cursor-pointer">
@@ -301,41 +272,6 @@
                     <li><a href="{% url 'inventory:stock_ledger' %}">Stock Ledger</a></li>
                     <li><a href="{% url 'inventory:stock_adjustment_list' %}">Stock Adjustments</a></li>
                     <li><a href="{% url 'inventory:warehouse_transfer_list' %}">Warehouse Transfers</a></li>
-                </ul>
-            </details>
-        </li>
-        <li>
-            <details>
-                <summary class="flex items-center gap-3 cursor-pointer">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                    </svg>
-                    Purchasing
-                </summary>
-                <ul class="ml-4 border-l border-base-300 pl-4 mt-2">
-                    <li><a href="{% url 'purchasing:dashboard' %}">Dashboard</a></li>
-                    <li><a href="{% url 'purchasing:pr_list' %}">Purchase Requests</a></li>
-                    <li><a href="{% url 'purchasing:grn_list' %}">Goods Receipts (GRN)</a></li>
-                </ul>
-            </details>
-        </li>
-        <li>
-            <details>
-                <summary class="flex items-center gap-3 cursor-pointer">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Sales & POS
-                </summary>
-                <ul class="ml-4 border-l border-base-300 pl-4 mt-2">
-                    <li><a href="{% url 'sales:pos_terminal' %}">POS Terminal</a></li>
-                    <li><a href="{% url 'sales:pos_invoice_list' %}">Retail Sales</a></li>
-                    <li><a href="{% url 'sales:quotation_list' %}">Quotations</a></li>
-                    <li><a href="{% url 'sales:sales_order_list' %}">Sales Orders</a></li>
                 </ul>
             </details>
         </li>

@@ -1,4 +1,4 @@
-<header class="navbar bg-base-100 border-b border-base-200 px-6 justify-between h-16">
+<header class="navbar bg-base-100/90 backdrop-blur-md border-b border-base-200 px-6 justify-between h-16 sticky top-0 z-40">
     <div class="flex-none">
         <button @click="sidebarOpen = true" class="btn btn-square btn-ghost lg:hidden">
             <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -14,8 +14,8 @@
                 type="text" 
                 name="q" 
                 x-model="query"
-                placeholder="Global search (SKU, PO, Supplier)..." 
-                class="input input-bordered w-full pr-10 text-sm h-10" 
+                placeholder="Search Hotel, Guests, Orders, Recipes..." 
+                class="input input-bordered w-full pr-10 text-sm h-10 bg-base-200 focus:bg-base-100 transition-colors" 
                 hx-get="{% url 'core:global_search' %}" 
                 hx-trigger="keyup changed delay:300ms, search" 
                 hx-target="#search-results-dropdown" 

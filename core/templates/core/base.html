@@ -10,13 +10,23 @@
             darkMode: 'class',
             theme: {
                 extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
                     colors: {
-                        primary: '#3b82f6',
+                        primary: '#4f46e5',
+                        secondary: '#10b981',
                     }
                 }
             }
         }
     </script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
     <!-- DaisyUI CDN -->
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
 
@@ -61,7 +71,7 @@
         }
     </style>
 </head>
-<body class="h-full flex overflow-hidden bg-base-100 text-base-content" x-data="{ sidebarOpen: false }" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+<body class="h-full flex overflow-hidden bg-base-100 text-base-content font-sans antialiased" x-data="{ sidebarOpen: false }" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
     <!-- Toast Messages -->
     {% if messages %}
     <div class="toast toast-top toast-end z-50" x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 4000)">

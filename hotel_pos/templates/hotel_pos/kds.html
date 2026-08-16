@@ -1,30 +1,49 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Kitchen Display System</title>
-    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-900 text-white p-6">
-    <h1 class="text-3xl font-bold mb-6">Kitchen Display System (KDS)</h1>
+{% extends 'core/base.html' %}
+
+{% block title %}Kitchen Display System (KDS) | Hotel Management{% endblock %}
+
+{% block content %}
+<div class="h-full">
+    <div class="flex items-center justify-between mb-6 border-b border-base-200 pb-4">
+        <h1 class="text-3xl font-bold">Kitchen Display System (KDS)</h1>
+        <div class="badge badge-primary badge-lg gap-2">
+            <span class="relative flex h-3 w-3">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-base-100 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-3 w-3 bg-base-100"></span>
+            </span>
+            Live Updates
+        </div>
+    </div>
+    
     <!-- Polls every 5 seconds -->
-    <div hx-get="{% url 'hotel_pos:kds' %}" hx-trigger="every 5s" hx-swap="outerHTML" class="grid grid-cols-4 gap-4">
+    <div hx-get="{% url 'hotel_pos:kds' %}" hx-trigger="every 5s" hx-swap="outerHTML" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {% for kot in kots %}
-        <div class="bg-gray-800 p-4 rounded border-t-4 border-yellow-500">
-            <div class="flex justify-between mb-2">
-                <span class="font-bold">Table: {{ kot.order.table.number }}</span>
-                <span class="text-sm text-gray-400">Order #{{ kot.order.id }}</span>
+        <div class="card bg-base-100 shadow-xl border-t-4 border-warning">
+            <div class="card-body p-5">
+                <div class="flex justify-between items-start mb-2">
+                    <h2 class="card-title text-lg">Table {{ kot.order.table.number }}</h2>
+                    <span class="text-sm font-mono text-base-content/50">#{{ kot.order.id }}</span>
+                </div>
+                <p class="text-2xl font-bold my-2">{{ kot.quantity }}x {{ kot.menu_item.name }}</p>
+                {% if kot.notes %}
+                <div class="alert alert-error text-sm p-2 mt-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-4 w-4" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                    <span>{{ kot.notes }}</span>
+                </div>
+                {% endif %}
+                <div class="card-actions justify-end mt-4">
+                    <button class="btn btn-success w-full text-white">Mark Ready</button>
+                </div>
             </div>
-            <div class="text-xl font-bold">{{ kot.quantity }}x {{ kot.menu_item.name }}</div>
-            {% if kot.notes %}
-            <div class="text-red-400 text-sm mt-2">Note: {{ kot.notes }}</div>
-            {% endif %}
-            <button class="mt-4 w-full bg-green-600 py-2 rounded">Mark Ready</button>
         </div>
         {% empty %}
-        <div class="col-span-4 text-center text-gray-500 text-xl py-10">No active kitchen orders.</div>
+        <div class="col-span-full flex flex-col items-center justify-center p-12 text-base-content/50 bg-base-200/50 rounded-box border-2 border-dashed border-base-300">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+            <p class="text-xl font-medium">No pending orders in the kitchen.</p>
+        </div>
         {% endfor %}
     </div>
-</body>
-</html>
+</div>
+{% endblock %}

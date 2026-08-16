@@ -22,9 +22,10 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
-    path('', RedirectView.as_view(url='/inventory/', permanent=False)),
+    path('', RedirectView.as_view(url='/hotel-pos/dashboard/', permanent=False)),
     path('admin/', admin.site.urls),
     path('core/', include('core.urls')),
+    path('hotel-pos/', include('hotel_pos.urls', namespace='hotel_pos')),
     path('inventory/', include('inventory.urls')),
     path('hrms/', include('hrms.urls')),
     path('finance/', include('finance.urls', namespace='finance')),
