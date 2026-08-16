@@ -26,21 +26,7 @@ urlpatterns = [
     path('audit-logs/', views.AuditLogListView.as_view(), name='audit_logs'),
     path('search/', views.global_search, name='global_search'),
     
-    # Workflow & RBAC Administration
-    path('workflow-dashboard/', views.workflow_dashboard, name='workflow_dashboard'),
-    path('workflow/transition/<int:transition_id>/edit/', views.edit_transition_row, name='edit_transition_row'),
-    path('workflow/transition/<int:transition_id>/cancel/', views.cancel_edit_transition_row, name='cancel_edit_transition_row'),
-    path('workflow/transition/<int:transition_id>/update/', views.update_approval_route, name='update_approval_route'),
-    
-    # Chat Routes
-    path('chat/messages/', views.chat_messages, name='chat_messages'),
-    path('chat/send/', views.send_chat_message, name='send_chat_message'),
-    
-    # Internal Email Routes
-    path('email/inbox/', views.email_inbox, name='email_inbox'),
-    path('email/sent/', views.email_sent, name='email_sent'),
-    path('email/compose/', views.email_compose, name='email_compose'),
-    path('email/<int:pk>/', views.email_detail, name='email_detail'),
+
 ]
 
 # HTML Auth URLs

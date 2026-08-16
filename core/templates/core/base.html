@@ -119,10 +119,7 @@
         </main>
     </div>
 
-    <!-- Global Chat Panel UI -->
-    {% if request.user.is_authenticated %}
-        {% include "core/components/chat_panel.html" %}
-    {% endif %}
+
 
     <!-- Global HTMX Modal Container -->
     <dialog id="generalModal" class="modal">
