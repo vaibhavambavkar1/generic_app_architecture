@@ -2,7 +2,7 @@
     {% for item in order.items.all %}
     <li class="flex items-center justify-between p-3 border-b border-base-200">
         <div>
-            <span class="font-bold">{{ item.menu_item.name }}</span>
+            <span class="font-bold {% if item.workflow_state.name == 'Cancelled' %}line-through opacity-50{% endif %}">{{ item.menu_item.name }}</span>
             <div class="text-xs text-base-content/70">
                 x{{ item.quantity }} @ ${{ item.price }} 
                 {% if item.workflow_state %}
@@ -10,14 +10,22 @@
                         {% if item.workflow_state.name == 'Pending' %}badge-warning
                         {% elif item.workflow_state.name == 'Cooking' %}badge-info
                         {% elif item.workflow_state.name == 'Served' %}badge-success
+                        {% elif item.workflow_state.name == 'Cancelled' %}badge-error
                         {% endif %}">
                         {{ item.workflow_state.name }}
                     </span>
                 {% endif %}
             </div>
         </div>
-        <div class="font-bold text-primary">
-            ${{ item.total_price }}
+        <div class="flex items-center gap-2">
+            <div class="font-bold text-primary {% if item.workflow_state.name == 'Cancelled' %}line-through opacity-50{% endif %}">
+                ${{ item.total_price }}
+            </div>
+            {% if item.workflow_state.name != 'Cancelled' and item.workflow_state.name != 'Served' %}
+            <button hx-post="{% url 'hotel_pos:cancel_item' item.id %}" hx-target="#order-items" class="btn btn-ghost btn-xs text-error px-1">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+            {% endif %}
         </div>
     </li>
     {% endfor %}

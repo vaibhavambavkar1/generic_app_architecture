@@ -89,7 +89,7 @@ def delete_table(request, table_id):
 def pos_dashboard(request, table_id=None):
     """ HTMX powered POS dashboard """
     categories = [] # Would fetch from MenuCategory
-    items = MenuItem.objects.filter(is_active=True)
+    items = MenuItem.objects.filter(is_active=True).select_related('category').order_by('category__name', 'name')
     tables = Table.objects.filter(is_active=True)
     
     active_order = None
@@ -121,11 +121,15 @@ def add_to_order(request, order_id, item_id):
     order = get_object_or_404(Order, id=order_id)
     item = get_object_or_404(MenuItem, id=item_id)
     
+    # Fetch the Pending state explicitly
+    from core.models import State
+    pending_state = State.objects.filter(workflow__name='Order Item Lifecycle', name='Pending').first()
+    
     # Check if this item is already in the order in 'Pending' state
     order_item, created = OrderItem.objects.get_or_create(
         order=order, 
         menu_item=item,
-        workflow_state__name='Pending',
+        workflow_state=pending_state,
         defaults={'price': item.price, 'quantity': 1}
     )
     
@@ -206,3 +210,40 @@ def receipt_printer(request, order_id):
     
     # Fallback if xhtml2pdf is not installed
     return HttpResponse(html)
+
+def cancel_item(request, item_id):
+    item = get_object_or_404(OrderItem, id=item_id)
+    order = item.order
+    
+    if item.workflow_state and item.workflow_state.name == 'Served':
+        # Do nothing if item is already served
+        return render(request, 'hotel_pos/partials/order_items.html', {'order': order})
+        
+    cancelled_state = State.objects.filter(workflow__name='Order Item Lifecycle', name='Cancelled').first()
+    if cancelled_state:
+        item.workflow_state = cancelled_state
+        item.save()
+        
+        # update order total
+        valid_items = order.items.exclude(workflow_state__name='Cancelled')
+        order.total_amount = sum(i.total_price for i in valid_items)
+        order.save()
+        
+    return render(request, 'hotel_pos/partials/order_items.html', {'order': order})
+
+def cancel_order(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+    
+    cancelled_state_order = State.objects.filter(workflow__name='Order Lifecycle', name='Cancelled').first()
+    cancelled_state_item = State.objects.filter(workflow__name='Order Item Lifecycle', name='Cancelled').first()
+    
+    if cancelled_state_order:
+        order.workflow_state = cancelled_state_order
+        order.save()
+        
+    if cancelled_state_item:
+        order.items.update(workflow_state=cancelled_state_item)
+        
+    response = HttpResponse()
+    response['HX-Redirect'] = reverse('hotel_pos:table_dashboard')
+    return response

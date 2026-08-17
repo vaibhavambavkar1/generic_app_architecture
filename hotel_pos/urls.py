@@ -16,4 +16,6 @@ urlpatterns = [
     path('send-to-kitchen/<int:order_id>/', views.send_to_kitchen, name='send_to_kitchen'),
     path('generate-bill/<int:order_id>/', views.generate_bill, name='generate_bill'),
     path('mark-item-served/<int:item_id>/', views.mark_item_served, name='mark_item_served'),
+    path('cancel-item/<int:item_id>/', views.cancel_item, name='cancel_item'),
+    path('cancel-order/<int:order_id>/', views.cancel_order, name='cancel_order'),
 ]
