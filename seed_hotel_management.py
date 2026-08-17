@@ -116,7 +116,11 @@ def seed():
         )
         # Fix the created_at/start_time for the shift
         CashierShift.objects.filter(pk=shift.pk).update(start_time=shift_date.replace(hour=8, minute=0))
-        
+                # Get default states
+        from core.models import State
+        open_state = State.objects.filter(workflow__name='Order Lifecycle', name='Open').first()
+        pending_state = State.objects.filter(workflow__name='Order Item Lifecycle', name='Pending').first()
+
         # 5 to 15 orders per day
         daily_sales = Decimal("0.00")
         for _ in range(random.randint(5, 15)):
@@ -124,7 +128,8 @@ def seed():
                 branch=branch,
                 table=random.choice(tables),
                 waiter=user,
-                shift=shift
+                shift=shift,
+                workflow_state=open_state
             )
             # Add 1 to 4 items
             order_total = Decimal("0.00")
@@ -133,7 +138,8 @@ def seed():
                 qty = random.randint(1, 3)
                 OrderItem.objects.create(
                     order=order, menu_item=m_item, quantity=qty,
-                    price=m_item.price
+                    price=m_item.price,
+                    workflow_state=pending_state
                 )
                 order_total += (m_item.price * qty)
                 

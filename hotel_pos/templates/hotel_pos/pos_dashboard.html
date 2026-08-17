@@ -45,4 +45,10 @@
         {% endif %}
     </div>
 </div>
+
+<script>
+    document.body.addEventListener("openReceipt", function(evt){
+        window.open(evt.detail.openReceipt, "_blank");
+    })
+</script>
 {% endblock %}

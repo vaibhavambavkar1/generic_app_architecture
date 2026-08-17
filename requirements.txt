@@ -27,3 +27,4 @@ django-fsm-2>=3.0.0
 django-tables2>=2.7.0
 django-guardian>=2.4.0
 django-import-export>=3.3.0
+xhtml2pdf>=0.2.16

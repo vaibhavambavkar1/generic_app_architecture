@@ -5,6 +5,9 @@ app_name = 'hotel_pos'
 
 urlpatterns = [
     path('tables/', views.table_dashboard, name='table_dashboard'),
+    path('tables/add/', views.add_table, name='add_table'),
+    path('tables/edit/<int:table_id>/', views.edit_table, name='edit_table'),
+    path('tables/delete/<int:table_id>/', views.delete_table, name='delete_table'),
     path('dashboard/', views.pos_dashboard, name='pos_dashboard'),
     path('dashboard/<int:table_id>/', views.pos_dashboard, name='pos_dashboard_table'),
     path('kds/', views.kitchen_display_system, name='kds'),

@@ -3,6 +3,8 @@ from django.http import HttpResponse, JsonResponse
 from django.urls import reverse
 from .models import Order, OrderItem, MenuItem, Table
 from core.models import State
+from hotel_core.models import HotelBranch
+from django.views.decorators.http import require_POST
 import json
 
 def table_dashboard(request):
@@ -27,6 +29,62 @@ def table_dashboard(request):
         })
         
     return render(request, 'hotel_pos/table_dashboard.html', {'table_data': table_data})
+
+from django.contrib import messages
+
+@require_POST
+def add_table(request):
+    number = request.POST.get('number', '').strip()
+    capacity = request.POST.get('capacity', 4)
+    branch = HotelBranch.objects.first()
+    
+    if branch and number:
+        if Table.objects.filter(branch=branch, number__iexact=number, is_active=True).exists():
+            messages.error(request, f"Table '{number}' already exists.")
+        else:
+            Table.objects.create(branch=branch, number=number, capacity=capacity)
+            messages.success(request, f"Table '{number}' created successfully.")
+        
+    return redirect('hotel_pos:table_dashboard')
+
+@require_POST
+def edit_table(request, table_id):
+    table = get_object_or_404(Table, id=table_id)
+    number = request.POST.get('number', '').strip()
+    capacity = request.POST.get('capacity')
+    
+    if number and number.lower() != table.number.lower():
+        if Table.objects.filter(branch=table.branch, number__iexact=number, is_active=True).exists():
+            messages.error(request, f"Table '{number}' already exists.")
+            return redirect('hotel_pos:table_dashboard')
+        table.number = number
+        
+    if capacity:
+        table.capacity = capacity
+    
+    table.save()
+    messages.success(request, f"Table '{table.number}' updated successfully.")
+    
+    return redirect('hotel_pos:table_dashboard')
+
+@require_POST
+def delete_table(request, table_id):
+    table = get_object_or_404(Table, id=table_id)
+    # Don't delete if there is an active order
+    active_order = Order.objects.filter(
+        table=table
+    ).exclude(
+        workflow_state__name__in=['Closed', 'Paid']
+    ).first()
+    
+    if not active_order:
+        table.is_active = False # Soft delete
+        table.save()
+        messages.success(request, f"Table '{table.number}' deleted successfully.")
+    else:
+        messages.error(request, f"Cannot delete Table '{table.number}' because it has an active order.")
+        
+    return redirect('hotel_pos:table_dashboard')
 
 def pos_dashboard(request, table_id=None):
     """ HTMX powered POS dashboard """
@@ -103,11 +161,13 @@ def generate_bill(request, order_id):
         order.total_amount = total
         order.save()
         
-    return render(request, 'hotel_pos/partials/order_items.html', {'order': order})
+    response = render(request, 'hotel_pos/partials/order_items.html', {'order': order})
+    response['HX-Trigger'] = json.dumps({'openReceipt': f"/hotel-pos/receipt/{order.id}/"})
+    return response
 
 def kitchen_display_system(request):
     """ Kitchen Display System (KDS) """
-    active_kots = OrderItem.objects.filter(workflow_state__name='Cooking').order_by('created_at')
+    active_kots = OrderItem.objects.filter(workflow_state__name='Cooking').order_by('id')
     return render(request, 'hotel_pos/kds.html', {'kots': active_kots})
 
 def mark_item_served(request, item_id):
@@ -121,7 +181,28 @@ def mark_item_served(request, item_id):
     return HttpResponse("") # Removes the item from KDS
 
 def receipt_printer(request, order_id):
-    """ View for Thermal Receipt Printer """
+    """ View for Thermal Receipt Printer (PDF) """
+    from django.template.loader import render_to_string
+    try:
+        from xhtml2pdf import pisa
+    except ImportError:
+        pisa = None
+        
     order = get_object_or_404(Order, id=order_id)
     items = order.items.all()
-    return render(request, 'hotel_pos/receipt_printer.html', {'order': order, 'items': items})
+    
+    html = render_to_string('hotel_pos/receipt_printer.html', {'order': order, 'items': items})
+    
+    if pisa:
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'inline; filename="receipt_{order.id}.pdf"'
+        
+        # Create PDF
+        pisa_status = pisa.CreatePDF(html, dest=response)
+        
+        if pisa_status.err:
+            return HttpResponse('We had some errors <pre>' + html + '</pre>')
+        return response
+    
+    # Fallback if xhtml2pdf is not installed
+    return HttpResponse(html)
