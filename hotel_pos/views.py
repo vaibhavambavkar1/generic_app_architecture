@@ -155,14 +155,26 @@ def send_to_kitchen(request, order_id):
 
 def generate_bill(request, order_id):
     order = get_object_or_404(Order, id=order_id)
-    billed_state = State.objects.filter(workflow__name='Order Lifecycle', name='Billed').first()
-    
-    if billed_state:
-        order.workflow_state = billed_state
+    if request.method == 'POST':
+        billed_state = State.objects.filter(workflow__name='Order Lifecycle', name='Billed').first()
+        if billed_state:
+            order.workflow_state = billed_state
         
         # calculate total amount
-        total = sum(i.total_price for i in order.items.all())
-        order.total_amount = total
+        valid_items = order.items.filter(workflow_state__name='Served')
+        total = sum(i.total_price for i in valid_items)
+        
+        apply_tax = request.POST.get('apply_tax') == 'on'
+        tax_amount = 0
+        if apply_tax:
+            from .models import TaxConfiguration
+            taxes = TaxConfiguration.objects.filter(branch=order.branch, is_active=True)
+            total_tax_percentage = sum(t.percentage for t in taxes)
+            tax_amount = total * (total_tax_percentage / 100)
+            
+        order.tax_amount = tax_amount
+        order.total_amount = total + tax_amount
+        order.is_tax_applied = apply_tax
         order.save()
         
     response = render(request, 'hotel_pos/partials/order_items.html', {'order': order})
@@ -193,7 +205,7 @@ def receipt_printer(request, order_id):
         pisa = None
         
     order = get_object_or_404(Order, id=order_id)
-    items = order.items.all()
+    items = order.items.filter(workflow_state__name='Served')
     
     html = render_to_string('hotel_pos/receipt_printer.html', {'order': order, 'items': items})
     

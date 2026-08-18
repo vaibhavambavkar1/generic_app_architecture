@@ -13,26 +13,58 @@
 </head>
 <!-- Auto print onload for thermal printers -->
 <body onload="window.print()">
-    <div class="text-center font-bold text-xl mb-2">{{ order.branch.name }}</div>
-    <div class="text-center mb-2">{{ order.branch.address }}</div>
-    <div class="border-bottom text-center">Receipt #{{ order.id }}</div>
+    <div class="text-center font-bold" style="font-size: 18px; margin-bottom: 5px;">{{ order.branch.name|default:"Hotel & Restaurant" }}</div>
+    <div class="text-center mb-2">{{ order.branch.address|default:"" }}</div>
     
-    <div class="flex-between"><span>Date:</span> <span>{{ order.created_at|date:"Y-m-d H:i" }}</span></div>
-    <div class="flex-between"><span>Table:</span> <span>{{ order.table.number|default:"Takeaway" }}</span></div>
-    <div class="border-bottom mb-2"></div>
+    <table width="100%" style="border-bottom: 1px dashed #000; margin-bottom: 10px; padding-bottom: 5px;">
+        <tr>
+            <td><strong>Receipt #:</strong> {{ order.id }}</td>
+            <td style="text-align: right;"><strong>Date:</strong> {{ order.created_at|date:"Y-m-d H:i" }}</td>
+        </tr>
+        <tr>
+            <td><strong>Table:</strong> {{ order.table.number|default:"Takeaway" }}</td>
+            <td style="text-align: right;"><strong>Cashier:</strong> {{ order.shift.user.username|default:"Admin" }}</td>
+        </tr>
+    </table>
     
-    {% for item in items %}
-    <div class="flex-between">
-        <span>{{ item.quantity }}x {{ item.menu_item.name }}</span>
-        <span>${{ item.total_price }}</span>
-    </div>
-    {% endfor %}
+    <table width="100%" style="border-collapse: collapse; margin-bottom: 10px;">
+        <thead>
+            <tr style="border-bottom: 1px dashed #000;">
+                <th style="text-align: left; padding: 5px 0;">Item</th>
+                <th style="text-align: center; padding: 5px 0;">Qty</th>
+                <th style="text-align: right; padding: 5px 0;">Price</th>
+                <th style="text-align: right; padding: 5px 0;">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td style="padding: 3px 0;">{{ item.menu_item.name }}</td>
+                <td style="text-align: center; padding: 3px 0;">{{ item.quantity }}</td>
+                <td style="text-align: right; padding: 3px 0;">INR {{ item.price }}</td>
+                <td style="text-align: right; padding: 3px 0;">INR {{ item.total_price }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
     
-    <div class="border-bottom mt-2"></div>
-    <div class="flex-between font-bold text-lg mt-2">
-        <span>TOTAL</span>
-        <span>${{ order.total_amount }}</span>
-    </div>
-    <div class="text-center mt-4">Thank you for dining with us!</div>
+    <table width="100%" style="border-top: 1px dashed #000; margin-top: 5px; padding-top: 5px;">
+        <tr>
+            <td style="text-align: left; font-size: 16px;"><strong>SUBTOTAL:</strong></td>
+            <td style="text-align: right; font-size: 16px;"><strong>INR {{ order.subtotal }}</strong></td>
+        </tr>
+        {% if order.is_tax_applied %}
+        <tr>
+            <td style="text-align: left; font-size: 16px;"><strong>TAX:</strong></td>
+            <td style="text-align: right; font-size: 16px;"><strong>INR {{ order.tax_amount }}</strong></td>
+        </tr>
+        {% endif %}
+        <tr>
+            <td style="text-align: left; font-size: 16px; border-top: 1px solid #000; padding-top: 5px;"><strong>TOTAL DUE:</strong></td>
+            <td style="text-align: right; font-size: 16px; border-top: 1px solid #000; padding-top: 5px;"><strong>INR {{ order.total_amount }}</strong></td>
+        </tr>
+    </table>
+    
+    <div class="text-center" style="margin-top: 20px; font-style: italic;">Thank you for dining with us!</div>
 </body>
 </html>

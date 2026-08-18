@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Table, MenuCategory, MenuItem, CashierShift, Order, OrderItem
+from .models import Table, MenuCategory, MenuItem, CashierShift, Order, OrderItem, TaxConfiguration
 
 # Unregister periodic tasks from django_celery_beat which was loaded earlier
 try:
@@ -48,3 +48,9 @@ class CashierShiftAdmin(admin.ModelAdmin):
 @admin.register(OrderItem)
 class OrderItemAdmin(admin.ModelAdmin):
     list_display = ('order', 'menu_item', 'quantity', 'price')
+
+@admin.register(TaxConfiguration)
+class TaxConfigurationAdmin(admin.ModelAdmin):
+    list_display = ('name', 'branch', 'percentage', 'is_active')
+    list_filter = ('is_active', 'branch')
+    search_fields = ('name',)

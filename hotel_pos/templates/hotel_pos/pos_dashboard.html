@@ -16,7 +16,7 @@
                 {% if active_order %}hx-post="{% url 'hotel_pos:add_to_order' active_order.id item.id %}" hx-target="#order-items" hx-swap="innerHTML"{% else %}disabled{% endif %} 
                 class="btn btn-outline h-auto py-4 flex flex-col items-center justify-center gap-2 {% if active_order %}hover:bg-primary hover:border-primary hover:text-white{% endif %} transition-all">
                 <span class="font-bold text-center leading-tight">{{ item.name }}</span>
-                <span class="text-primary font-semibold text-lg">${{ item.price }}</span>
+                <span class="text-primary font-semibold text-lg">INR {{ item.price }}</span>
             </button>
             {% endfor %}
         </div>
@@ -43,7 +43,15 @@
         {% if active_order %}
         <div class="mt-4 pt-4 border-t border-base-200 flex flex-col gap-2">
             <button hx-post="{% url 'hotel_pos:send_to_kitchen' active_order.id %}" hx-target="#order-items" class="btn btn-info w-full shadow-lg text-white">Send to Kitchen (KOT)</button>
-            <button hx-post="{% url 'hotel_pos:generate_bill' active_order.id %}" hx-target="#order-items" class="btn btn-success w-full shadow-lg text-white">Generate Bill</button>
+            <form hx-post="{% url 'hotel_pos:generate_bill' active_order.id %}" hx-target="#order-items" class="w-full">
+                <div class="form-control w-full mb-2">
+                    <label class="cursor-pointer label bg-base-200 rounded-box px-4">
+                        <span class="label-text font-bold">Apply Configured Tax</span>
+                        <input type="checkbox" name="apply_tax" class="toggle toggle-primary" />
+                    </label>
+                </div>
+                <button type="submit" class="btn btn-success w-full shadow-lg text-white">Generate Bill</button>
+            </form>
             <button hx-post="{% url 'hotel_pos:cancel_order' active_order.id %}" hx-confirm="Are you sure you want to cancel this entire order?" class="btn btn-error w-full shadow-lg text-white">Cancel Order</button>
             <a href="{% url 'hotel_pos:table_dashboard' %}" class="btn btn-outline w-full shadow-lg">Back to Tables</a>
         </div>
@@ -53,7 +61,7 @@
 
 <script>
     document.body.addEventListener("openReceipt", function(evt){
-        window.open(evt.detail.openReceipt, "_blank");
+        window.open(evt.detail.value || evt.detail.openReceipt, "_blank");
     })
 </script>
 {% endblock %}
