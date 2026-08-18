@@ -62,7 +62,10 @@
                 </button>
             </form>
             <button hx-post="{% url 'hotel_pos:cancel_order' active_order.id %}" hx-confirm="Are you sure you want to cancel this entire order?" class="btn btn-error w-full shadow-lg text-white">Cancel Order</button>
-            <a href="{% url 'hotel_pos:table_dashboard' %}" class="btn btn-outline w-full shadow-lg">Back to Tables</a>
+            <div class="grid grid-cols-2 gap-2">
+                <a href="{% url 'hotel_pos:table_dashboard' %}" class="btn btn-outline shadow-lg">Tables</a>
+                <a href="{% url 'hotel_pos:order_history' %}" class="btn btn-outline btn-accent shadow-lg">Bill History</a>
+            </div>
         </div>
         {% endif %}
     </div>

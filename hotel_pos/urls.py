@@ -19,4 +19,7 @@ urlpatterns = [
     path('cancel-item/<int:item_id>/', views.cancel_item, name='cancel_item'),
     path('cancel-order/<int:order_id>/', views.cancel_order, name='cancel_order'),
     path('release-table/<int:order_id>/', views.release_table, name='release_table'),
+    path('orders/', views.order_history, name='order_history'),
+    path('reopen-order/<int:order_id>/', views.reopen_order, name='reopen_order'),
+    path('kds/bump-ticket/<int:order_id>/', views.bump_kot_ticket, name='bump_kot_ticket'),
 ]

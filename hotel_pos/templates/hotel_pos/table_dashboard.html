@@ -1,23 +1,31 @@
 {% extends 'core/base.html' %}
 
-{% block title %}Table Management | Hotel Management{% endblock %}
+{% block title %}Table Management | Hotel POS{% endblock %}
 
 {% block content %}
-<div class="h-full">
-    <div class="flex items-center justify-between mb-6 border-b border-base-200 pb-4">
-        <h1 class="text-3xl font-bold">Table Management</h1>
-        <div class="flex gap-6 items-center">
-            <div class="flex gap-4">
-                <div class="flex items-center gap-2">
-                    <div class="w-4 h-4 rounded-full bg-success"></div>
-                    <span class="text-sm font-medium">Free</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <div class="w-4 h-4 rounded-full bg-error"></div>
-                    <span class="text-sm font-medium">Occupied</span>
-                </div>
+<div class="h-full flex flex-col gap-6" x-data="{ activeFilter: 'all', searchQuery: '' }">
+    <!-- Top Header -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-base-200 pb-4">
+        <div class="flex items-center gap-3">
+            <div class="p-2.5 rounded-xl bg-primary/10 text-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                </svg>
             </div>
-            <button class="btn btn-primary btn-sm" onclick="add_table_modal.showModal()">
+            <div>
+                <h1 class="text-3xl font-black tracking-tight">Table Management</h1>
+                <p class="text-sm text-base-content/70">Real-time dining room floor overview, order occupancy, and table release.</p>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-2.5">
+            <a href="{% url 'hotel_pos:order_history' %}" class="btn btn-outline btn-sm gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Bills & History
+            </a>
+            <button class="btn btn-primary btn-sm gap-2 shadow-lg shadow-primary/20" onclick="add_table_modal.showModal()">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                 </svg>
@@ -25,143 +33,418 @@
             </button>
         </div>
     </div>
-    
-    <!-- Add Table Modal -->
-    <dialog id="add_table_modal" class="modal">
-        <div class="modal-box">
-            <h3 class="font-bold text-lg mb-4">Add New Table</h3>
-            <form method="POST" action="{% url 'hotel_pos:add_table' %}">
-                {% csrf_token %}
-                <div class="form-control mb-4">
-                    <label class="label"><span class="label-text">Table Number/Name</span></label>
-                    <input type="text" name="number" class="input input-bordered w-full" placeholder="e.g. 12 or Balcony-1" required />
-                </div>
-                <div class="form-control mb-6">
-                    <label class="label"><span class="label-text">Capacity (Seats)</span></label>
-                    <input type="number" name="capacity" class="input input-bordered w-full" value="4" min="1" max="20" required />
-                </div>
-                <div class="modal-action">
-                    <button type="button" class="btn" onclick="add_table_modal.close()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Table</button>
-                </div>
-            </form>
+
+    <!-- Live Floor Status KPI Cards -->
+    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+        <!-- Total Tables -->
+        <div class="card bg-base-100 border border-base-200 shadow-sm p-3.5 hover:shadow-md transition-shadow">
+            <div class="flex items-center justify-between text-base-content/60 text-xs font-bold uppercase tracking-wider">
+                <span>Total Tables</span>
+                <span class="p-1 rounded-lg bg-base-200 text-base-content/80">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                </span>
+            </div>
+            <div class="text-2xl font-black mt-1 font-mono text-base-content">{{ stats.total_tables }}</div>
+            <div class="text-[11px] text-base-content/50 mt-0.5">Floor capacity: {{ stats.total_capacity }} seats</div>
         </div>
-        <form method="dialog" class="modal-backdrop">
-            <button>close</button>
-        </form>
-    </dialog>
-    
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+
+        <!-- Available Tables -->
+        <div class="card bg-base-100 border border-success/30 shadow-sm p-3.5 hover:shadow-md transition-shadow cursor-pointer" @click="activeFilter = 'free'">
+            <div class="flex items-center justify-between text-success text-xs font-bold uppercase tracking-wider">
+                <span>Available</span>
+                <span class="flex h-2 w-2 relative">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
+                </span>
+            </div>
+            <div class="text-2xl font-black mt-1 font-mono text-success">{{ stats.free_count }}</div>
+            <div class="text-[11px] text-success/70 mt-0.5">Ready for guests</div>
+        </div>
+
+        <!-- In Service / Dining -->
+        <div class="card bg-base-100 border border-error/30 shadow-sm p-3.5 hover:shadow-md transition-shadow cursor-pointer" @click="activeFilter = 'occupied'">
+            <div class="flex items-center justify-between text-error text-xs font-bold uppercase tracking-wider">
+                <span>In Dining</span>
+                <span class="flex h-2 w-2 relative">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-error opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-error"></span>
+                </span>
+            </div>
+            <div class="text-2xl font-black mt-1 font-mono text-error">{{ stats.occupied_count }}</div>
+            <div class="text-[11px] text-error/70 mt-0.5">{{ stats.occupied_capacity }} diners seated</div>
+        </div>
+
+        <!-- Billed / Ready for Checkout -->
+        <div class="card bg-base-100 border border-warning/40 shadow-sm p-3.5 hover:shadow-md transition-shadow cursor-pointer" @click="activeFilter = 'billed'">
+            <div class="flex items-center justify-between text-warning text-xs font-bold uppercase tracking-wider">
+                <span>Billed / Checkout</span>
+                <span class="p-1 rounded-lg bg-warning/10 text-warning">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </span>
+            </div>
+            <div class="text-2xl font-black mt-1 font-mono text-warning">{{ stats.billed_count }}</div>
+            <div class="text-[11px] text-warning/80 mt-0.5">Awaiting release</div>
+        </div>
+
+        <!-- Seating Occupancy -->
+        <div class="card bg-base-100 border border-base-200 shadow-sm p-3.5 hover:shadow-md transition-shadow col-span-2 sm:col-span-2 lg:col-span-1">
+            <div class="flex items-center justify-between text-base-content/60 text-xs font-bold uppercase tracking-wider">
+                <span>Seating Rate</span>
+                <span class="p-1 rounded-lg bg-primary/10 text-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                </span>
+            </div>
+            <div class="text-2xl font-black mt-1 font-mono text-primary">
+                {% if stats.total_capacity > 0 %}
+                    {{ stats.occupied_capacity }}/{{ stats.total_capacity }}
+                {% else %}
+                    0/0
+                {% endif %}
+            </div>
+            <div class="text-[11px] text-base-content/50 mt-0.5">Seats occupied</div>
+        </div>
+    </div>
+
+    <!-- Filter Pills & Search Bar -->
+    <div class="card bg-base-100 shadow-sm border border-base-200 p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3.5">
+        <!-- Filter Tabs -->
+        <div class="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
+            <button 
+                type="button" 
+                class="btn btn-sm text-xs font-bold" 
+                :class="activeFilter === 'all' ? 'btn-primary' : 'btn-ghost'"
+                @click="activeFilter = 'all'">
+                All Tables <span class="badge badge-sm ml-1" :class="activeFilter === 'all' ? 'badge-neutral' : 'badge-ghost'">{{ stats.total_tables }}</span>
+            </button>
+            <button 
+                type="button" 
+                class="btn btn-sm text-xs font-bold" 
+                :class="activeFilter === 'free' ? 'btn-success text-white' : 'btn-ghost text-success'"
+                @click="activeFilter = 'free'">
+                Available <span class="badge badge-sm ml-1" :class="activeFilter === 'free' ? 'badge-neutral' : 'badge-ghost'">{{ stats.free_count }}</span>
+            </button>
+            <button 
+                type="button" 
+                class="btn btn-sm text-xs font-bold" 
+                :class="activeFilter === 'occupied' ? 'btn-error text-white' : 'btn-ghost text-error'"
+                @click="activeFilter = 'occupied'">
+                Occupied <span class="badge badge-sm ml-1" :class="activeFilter === 'occupied' ? 'badge-neutral' : 'badge-ghost'">{{ stats.occupied_count }}</span>
+            </button>
+            <button 
+                type="button" 
+                class="btn btn-sm text-xs font-bold" 
+                :class="activeFilter === 'billed' ? 'btn-warning text-black' : 'btn-ghost text-warning'"
+                @click="activeFilter = 'billed'">
+                Billed <span class="badge badge-sm ml-1" :class="activeFilter === 'billed' ? 'badge-neutral' : 'badge-ghost'">{{ stats.billed_count }}</span>
+            </button>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="form-control w-full sm:w-72">
+            <div class="relative flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 absolute left-3 text-base-content/40 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input 
+                    type="text" 
+                    x-model="searchQuery" 
+                    placeholder="Quick filter (e.g. 1, T12, 4 seats)..." 
+                    class="input input-bordered input-sm w-full pl-9 pr-8" />
+                <button 
+                    type="button" 
+                    x-show="searchQuery" 
+                    @click="searchQuery = ''" 
+                    class="absolute right-2.5 text-xs text-base-content/50 hover:text-base-content">✕</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table Cards Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
         {% for data in table_data %}
-            {% if data.is_occupied %}
-                <div class="card bg-error text-error-content shadow-xl relative overflow-hidden group flex flex-col justify-between">
-                    <!-- Action buttons (visible on hover) -->
-                    <div class="absolute top-2 left-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                        <button onclick="openEditModal({{ data.table.id }}, '{{ data.table.number }}', {{ data.table.capacity }})" class="btn btn-xs btn-circle btn-ghost bg-white/20 hover:bg-white/40">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>
-                        </button>
-                    </div>
-                    <!-- Main clickable area -->
-                    <a href="{% url 'hotel_pos:pos_dashboard_table' data.table.id %}" class="card-body p-6 items-center text-center hover:-translate-y-1 transition-transform cursor-pointer">
-                        <div class="absolute top-2 right-2 flex gap-1 opacity-50">
-                            {% for i in "x"|ljust:data.table.capacity %}
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
-                            </svg>
-                            {% endfor %}
-                        </div>
-                        <h2 class="card-title text-4xl font-black mb-1">T{{ data.table.number }}</h2>
-                        <div class="flex items-center gap-1 my-1">
-                            <span class="badge badge-sm font-bold uppercase tracking-wider {% if data.active_order.workflow_state.name == 'Billed' %}badge-warning text-warning-content{% else %}badge-ghost bg-white/20 text-white{% endif %}">
-                                {{ data.active_order.workflow_state.name|default:"Occupied" }}
-                            </span>
-                        </div>
-                        <p class="text-xs opacity-90 font-mono mt-1">Order #{{ data.active_order.id }} • INR {{ data.active_order.total_amount }}</p>
-                    </a>
-                    <!-- Release Table Action Button -->
-                    <div class="px-4 pb-4">
-                        <form method="POST" action="{% url 'hotel_pos:release_table' data.active_order.id %}" onsubmit="return confirm('Release Table T{{ data.table.number }} and mark Order #{{ data.active_order.id }} as completed?');">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-sm w-full bg-white text-error hover:bg-white/90 font-bold shadow-md border-0 flex items-center justify-center gap-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            <!-- Card Container with Alpine.js Filtering -->
+            <div 
+                x-data="{ 
+                    status: '{{ data.order_status|lower }}', 
+                    isOccupied: {{ data.is_occupied|yesno:'true,false' }},
+                    tableNumber: '{{ data.table.number|lower }}',
+                    capacity: '{{ data.table.capacity }}'
+                }"
+                x-show="
+                    (activeFilter === 'all' || 
+                     (activeFilter === 'free' && !isOccupied) || 
+                     (activeFilter === 'occupied' && isOccupied) || 
+                     (activeFilter === 'billed' && status === 'billed')) &&
+                    (searchQuery === '' || 
+                     tableNumber.includes(searchQuery.toLowerCase()) || 
+                     ('t' + tableNumber).includes(searchQuery.toLowerCase()) || 
+                     ('table ' + tableNumber).includes(searchQuery.toLowerCase()) ||
+                     (capacity + ' seats').includes(searchQuery.toLowerCase()) ||
+                     (capacity + ' seat').includes(searchQuery.toLowerCase()))
+                "
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0 scale-95"
+                x-transition:enter-end="opacity-100 scale-100"
+                class="flex flex-col">
+
+                {% if data.is_occupied %}
+                    <!-- OCCUPIED / BILLED TABLE CARD -->
+                    <div class="card bg-base-100 border shadow-md hover:shadow-xl transition-all duration-200 overflow-hidden flex flex-col justify-between h-full relative group
+                        {% if data.order_status == 'Billed' %}
+                            border-warning/60 ring-2 ring-warning/20 bg-gradient-to-b from-warning/5 to-base-100
+                        {% else %}
+                            border-error/40 bg-gradient-to-b from-error/5 to-base-100
+                        {% endif %}">
+                        
+                        <!-- Top Header Bar of Card -->
+                        <div class="p-4 pb-0 flex items-center justify-between">
+                            <!-- Capacity Badge -->
+                            <div class="flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-md bg-base-200 text-base-content/70">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
                                 </svg>
-                                Release Table
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            {% else %}
-                <div class="card bg-success text-success-content shadow-xl relative overflow-hidden group">
-                    <!-- Action buttons (visible on hover) -->
-                    <div class="absolute top-2 left-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                        <button onclick="openEditModal({{ data.table.id }}, '{{ data.table.number }}', {{ data.table.capacity }})" class="btn btn-xs btn-circle btn-ghost bg-white/20 hover:bg-white/40">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>
-                        </button>
-                        <button onclick="openDeleteModal({{ data.table.id }}, '{{ data.table.number }}')" class="btn btn-xs btn-circle btn-ghost bg-white/20 hover:bg-white/40">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
-                        </button>
-                    </div>
-                    <!-- Main clickable area -->
-                    <a href="{% url 'hotel_pos:pos_dashboard_table' data.table.id %}" class="card-body p-6 items-center text-center hover:-translate-y-1 transition-transform cursor-pointer">
-                        <div class="absolute top-2 right-2 flex gap-1 opacity-50">
-                            {% for i in "x"|ljust:data.table.capacity %}
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
-                            </svg>
-                            {% endfor %}
+                                {{ data.table.capacity }} Seats
+                            </div>
+
+                            <!-- Edit button (visible on hover) -->
+                            <div class="opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onclick="openEditModal({{ data.table.id }}, '{{ data.table.number }}', {{ data.table.capacity }})" class="btn btn-xs btn-ghost btn-circle" title="Edit Table">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>
+                                </button>
+                            </div>
                         </div>
-                        <h2 class="card-title text-4xl font-black mb-2">T{{ data.table.number }}</h2>
-                        <p class="font-medium opacity-90 text-sm uppercase tracking-wider">Free</p>
-                    </a>
-                </div>
-            {% endif %}
+
+                        <!-- Card Body / Click to open POS -->
+                        <a href="{% url 'hotel_pos:pos_dashboard_table' data.table.id %}" class="card-body p-4 pt-2 text-center flex flex-col items-center justify-center cursor-pointer hover:bg-base-200/30 transition-colors">
+                            <!-- Table Title -->
+                            <h2 class="text-4xl font-black tracking-tight text-base-content mb-1">
+                                T{{ data.table.number }}
+                            </h2>
+
+                            <!-- Status Badge -->
+                            <div class="mb-3">
+                                {% if data.order_status == 'Billed' %}
+                                    <span class="badge badge-warning font-bold text-xs uppercase tracking-wider py-2.5 px-3 shadow-sm gap-1 text-black">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                        Billed • Ready
+                                    </span>
+                                {% else %}
+                                    <span class="badge badge-error font-bold text-xs uppercase tracking-wider py-2.5 px-3 shadow-sm gap-1 text-white">
+                                        <span class="h-1.5 w-1.5 rounded-full bg-white animate-pulse"></span>
+                                        Dining • {{ data.order_status }}
+                                    </span>
+                                {% endif %}
+                            </div>
+
+                            <!-- Order Meta Info Box -->
+                            <div class="w-full bg-base-200/60 rounded-xl p-2.5 text-xs text-base-content/80 space-y-1">
+                                <div class="flex justify-between font-mono">
+                                    <span class="opacity-60">Order #{{ data.active_order.id }}</span>
+                                    <span class="font-bold">{{ data.active_order.items.count }} item{{ data.active_order.items.count|pluralize }}</span>
+                                </div>
+                                <div class="flex justify-between items-center pt-1 border-t border-base-300">
+                                    <span class="text-[11px] opacity-60">Bill Total</span>
+                                    <span class="font-mono font-black text-sm text-primary">INR {{ data.active_order.total_amount }}</span>
+                                </div>
+                            </div>
+                        </a>
+
+                        <!-- Card Action Footer -->
+                        <div class="p-3 pt-0 border-t border-base-200/60 bg-base-100 flex flex-col gap-1.5">
+                            <div class="grid grid-cols-2 gap-1.5 pt-2">
+                                <a href="{% url 'hotel_pos:pos_dashboard_table' data.table.id %}" class="btn btn-sm btn-outline btn-primary text-xs font-bold gap-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                    Open POS
+                                </a>
+
+                                {% if data.order_status == 'Billed' %}
+                                <a href="{% url 'hotel_pos:receipt_printer' data.active_order.id %}" target="_blank" class="btn btn-sm btn-outline gap-1 text-xs" title="Print Receipt">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                                    Receipt
+                                </a>
+                                {% else %}
+                                <form method="POST" action="{% url 'hotel_pos:release_table' data.active_order.id %}" onsubmit="return confirm('Force release Table T{{ data.table.number }}?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-ghost text-error w-full text-xs" title="Release Table">
+                                        Release
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+
+                            <!-- Dedicated Prominent Release Button for Billed Tables -->
+                            {% if data.order_status == 'Billed' %}
+                            <form method="POST" action="{% url 'hotel_pos:release_table' data.active_order.id %}" onsubmit="return confirm('Complete payment and release Table T{{ data.table.number }}?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm w-full btn-warning text-black font-bold shadow-md gap-1.5">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                                    Release Table
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                {% else %}
+                    <!-- AVAILABLE / FREE TABLE CARD -->
+                    <div class="card bg-base-100 border border-success/30 hover:border-success shadow-sm hover:shadow-xl transition-all duration-200 overflow-hidden flex flex-col justify-between h-full relative group bg-gradient-to-b from-success/5 to-base-100">
+                        <!-- Top Header Bar of Card -->
+                        <div class="p-4 pb-0 flex items-center justify-between">
+                            <!-- Capacity Badge -->
+                            <div class="flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-md bg-base-200 text-base-content/70">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                                </svg>
+                                {{ data.table.capacity }} Seats
+                            </div>
+
+                            <!-- Action buttons (visible on hover) -->
+                            <div class="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
+                                <button onclick="openEditModal({{ data.table.id }}, '{{ data.table.number }}', {{ data.table.capacity }})" class="btn btn-xs btn-ghost btn-circle" title="Edit Table">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>
+                                </button>
+                                <button onclick="openDeleteModal({{ data.table.id }}, '{{ data.table.number }}')" class="btn btn-xs btn-ghost btn-circle text-error" title="Delete Table">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Card Body / Click to take order -->
+                        <a href="{% url 'hotel_pos:pos_dashboard_table' data.table.id %}" class="card-body p-6 text-center flex flex-col items-center justify-center cursor-pointer hover:bg-base-200/20 transition-colors">
+                            <h2 class="text-4xl font-black tracking-tight text-base-content mb-1">
+                                T{{ data.table.number }}
+                            </h2>
+
+                            <span class="badge badge-success font-bold text-xs uppercase tracking-wider py-2.5 px-3 text-white gap-1.5 mb-2 shadow-sm">
+                                <span class="h-1.5 w-1.5 rounded-full bg-white"></span>
+                                Available
+                            </span>
+
+                            <span class="text-xs text-base-content/50 group-hover:text-primary transition-colors flex items-center gap-1 mt-2 font-medium">
+                                Take Order
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                </svg>
+                            </span>
+                        </a>
+
+                        <!-- Bottom action bar -->
+                        <div class="p-3 pt-0 border-t border-base-200/50">
+                            <a href="{% url 'hotel_pos:pos_dashboard_table' data.table.id %}" class="btn btn-sm btn-outline btn-success w-full text-xs font-bold gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                                New Order
+                            </a>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
         {% endfor %}
     </div>
 </div>
 
+<!-- Add Table Modal -->
+<dialog id="add_table_modal" class="modal">
+    <div class="modal-box max-w-md p-6">
+        <div class="flex items-center justify-between border-b pb-3 mb-4">
+            <h3 class="font-black text-xl flex items-center gap-2">
+                <span class="p-1.5 rounded-lg bg-primary/10 text-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                </span>
+                Add New Table
+            </h3>
+            <button type="button" class="btn btn-sm btn-circle btn-ghost" onclick="add_table_modal.close()">✕</button>
+        </div>
+
+        <form method="POST" action="{% url 'hotel_pos:add_table' %}">
+            {% csrf_token %}
+            <div class="form-control mb-4">
+                <label class="label"><span class="label-text font-bold">Table Number / Label</span></label>
+                <input type="text" name="number" class="input input-bordered w-full font-mono font-bold" placeholder="e.g. 15, Balcony-1, Patio-A" required />
+            </div>
+
+            <div class="form-control mb-6">
+                <label class="label"><span class="label-text font-bold">Seating Capacity</span></label>
+                <input type="number" id="add_capacity" name="capacity" class="input input-bordered w-full font-mono" value="4" min="1" max="50" required />
+                <!-- Quick Preset Buttons -->
+                <div class="flex gap-2 mt-2">
+                    <button type="button" class="btn btn-xs btn-outline" onclick="document.getElementById('add_capacity').value=2">2 Seats</button>
+                    <button type="button" class="btn btn-xs btn-outline" onclick="document.getElementById('add_capacity').value=4">4 Seats</button>
+                    <button type="button" class="btn btn-xs btn-outline" onclick="document.getElementById('add_capacity').value=6">6 Seats</button>
+                    <button type="button" class="btn btn-xs btn-outline" onclick="document.getElementById('add_capacity').value=8">8 Seats</button>
+                </div>
+            </div>
+
+            <div class="modal-action border-t pt-4">
+                <button type="button" class="btn btn-ghost" onclick="add_table_modal.close()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Table</button>
+            </div>
+        </form>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button>close</button></form>
+</dialog>
+
 <!-- Edit Table Modal -->
 <dialog id="edit_table_modal" class="modal">
-    <div class="modal-box">
-        <h3 class="font-bold text-lg mb-4">Edit Table <span id="edit_table_display"></span></h3>
+    <div class="modal-box max-w-md p-6">
+        <div class="flex items-center justify-between border-b pb-3 mb-4">
+            <h3 class="font-black text-xl flex items-center gap-2">
+                <span class="p-1.5 rounded-lg bg-info/10 text-info">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>
+                </span>
+                Edit Table <span id="edit_table_display" class="text-primary font-mono"></span>
+            </h3>
+            <button type="button" class="btn btn-sm btn-circle btn-ghost" onclick="edit_table_modal.close()">✕</button>
+        </div>
+
         <form id="edit_table_form" method="POST" action="">
             {% csrf_token %}
             <div class="form-control mb-4">
-                <label class="label"><span class="label-text">Table Number/Name</span></label>
-                <input type="text" id="edit_number" name="number" class="input input-bordered w-full" required />
+                <label class="label"><span class="label-text font-bold">Table Number / Label</span></label>
+                <input type="text" id="edit_number" name="number" class="input input-bordered w-full font-mono font-bold" required />
             </div>
+
             <div class="form-control mb-6">
-                <label class="label"><span class="label-text">Capacity (Seats)</span></label>
-                <input type="number" id="edit_capacity" name="capacity" class="input input-bordered w-full" min="1" max="20" required />
+                <label class="label"><span class="label-text font-bold">Seating Capacity</span></label>
+                <input type="number" id="edit_capacity" name="capacity" class="input input-bordered w-full font-mono" min="1" max="50" required />
+                <!-- Quick Preset Buttons -->
+                <div class="flex gap-2 mt-2">
+                    <button type="button" class="btn btn-xs btn-outline" onclick="document.getElementById('edit_capacity').value=2">2 Seats</button>
+                    <button type="button" class="btn btn-xs btn-outline" onclick="document.getElementById('edit_capacity').value=4">4 Seats</button>
+                    <button type="button" class="btn btn-xs btn-outline" onclick="document.getElementById('edit_capacity').value=6">6 Seats</button>
+                    <button type="button" class="btn btn-xs btn-outline" onclick="document.getElementById('edit_capacity').value=8">8 Seats</button>
+                </div>
             </div>
-            <div class="modal-action">
-                <button type="button" class="btn" onclick="edit_table_modal.close()">Cancel</button>
+
+            <div class="modal-action border-t pt-4">
+                <button type="button" class="btn btn-ghost" onclick="edit_table_modal.close()">Cancel</button>
                 <button type="submit" class="btn btn-primary">Save Changes</button>
             </div>
         </form>
     </div>
-    <form method="dialog" class="modal-backdrop">
-        <button>close</button>
-    </form>
+    <form method="dialog" class="modal-backdrop"><button>close</button></form>
 </dialog>
 
 <!-- Delete Table Modal -->
 <dialog id="delete_table_modal" class="modal">
-    <div class="modal-box">
-        <h3 class="font-bold text-lg mb-4">Delete Table</h3>
-        <p>Are you sure you want to delete table <span id="delete_table_display" class="font-bold"></span>?</p>
-        <p class="text-sm text-base-content/70 mt-2">This action cannot be undone.</p>
+    <div class="modal-box max-w-sm p-6">
+        <div class="flex items-center gap-3 text-error mb-3">
+            <div class="p-2 rounded-full bg-error/10">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+            </div>
+            <h3 class="font-black text-lg text-base-content">Delete Table</h3>
+        </div>
+        <p class="text-sm text-base-content/80">Are you sure you want to delete table <span id="delete_table_display" class="font-bold text-error font-mono"></span>?</p>
+        <p class="text-xs text-base-content/50 mt-1">This will remove the table from the floor view.</p>
+
         <form id="delete_table_form" method="POST" action="">
             {% csrf_token %}
-            <div class="modal-action mt-6">
-                <button type="button" class="btn" onclick="delete_table_modal.close()">Cancel</button>
-                <button type="submit" class="btn btn-error">Delete</button>
+            <div class="modal-action mt-6 border-t pt-4">
+                <button type="button" class="btn btn-ghost btn-sm" onclick="delete_table_modal.close()">Cancel</button>
+                <button type="submit" class="btn btn-error btn-sm text-white">Delete Table</button>
             </div>
         </form>
     </div>
-    <form method="dialog" class="modal-backdrop">
-        <button>close</button>
-    </form>
+    <form method="dialog" class="modal-backdrop"><button>close</button></form>
 </dialog>
 
 <script>

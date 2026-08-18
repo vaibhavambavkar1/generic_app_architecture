@@ -9,26 +9,53 @@ import json
 
 def table_dashboard(request):
     """ View for Floor Staff to manage tables """
-    # Fetch all tables and annotate if they have an active order
     tables = Table.objects.filter(is_active=True).order_by('number')
     
     table_data = []
+    free_count = 0
+    occupied_count = 0
+    billed_count = 0
+    total_capacity = 0
+    occupied_capacity = 0
+    
     for table in tables:
-        # Find an open order for this table
-        # An order is active if its workflow state is not 'Closed' or 'Paid'
+        total_capacity += table.capacity
         active_order = Order.objects.filter(
             table=table
         ).exclude(
             workflow_state__name__in=['Closed', 'Paid']
-        ).first()
+        ).select_related('workflow_state', 'waiter').prefetch_related('items__menu_item').first()
         
+        is_occupied = active_order is not None
+        order_status = active_order.workflow_state.name if (active_order and active_order.workflow_state) else ('Open' if is_occupied else 'Free')
+        
+        if is_occupied:
+            occupied_count += 1
+            occupied_capacity += table.capacity
+            if order_status == 'Billed':
+                billed_count += 1
+        else:
+            free_count += 1
+            
         table_data.append({
             'table': table,
-            'is_occupied': active_order is not None,
+            'is_occupied': is_occupied,
+            'order_status': order_status,
             'active_order': active_order,
         })
         
-    return render(request, 'hotel_pos/table_dashboard.html', {'table_data': table_data})
+    context = {
+        'table_data': table_data,
+        'stats': {
+            'total_tables': len(tables),
+            'free_count': free_count,
+            'occupied_count': occupied_count,
+            'billed_count': billed_count,
+            'total_capacity': total_capacity,
+            'occupied_capacity': occupied_capacity,
+        }
+    }
+    return render(request, 'hotel_pos/table_dashboard.html', context)
 
 from django.contrib import messages
 
@@ -182,11 +209,81 @@ def generate_bill(request, order_id):
     return response
 
 def kitchen_display_system(request):
-    """ Kitchen Display System (KDS) """
-    active_kots = OrderItem.objects.filter(workflow_state__name='Cooking').order_by('id')
-    return render(request, 'hotel_pos/kds.html', {'kots': active_kots})
+    """
+    Advanced Kitchen Display System (KDS):
+    - Groups cooking items into KOT Order Tickets (by Table & Order)
+    - Provides aggregated prep item summary counts
+    - Tracks elapsed wait times with color-coded urgency
+    - Supports station filtering and ticket bumping
+    """
+    from django.db.models import Sum, Count
+    from django.utils import timezone
+    now = timezone.now()
+    
+    # 1. Orders with items currently cooking
+    active_orders = Order.objects.filter(
+        items__workflow_state__name='Cooking'
+    ).distinct().select_related('table', 'waiter', 'branch').prefetch_related(
+        'items__menu_item__category', 'items__workflow_state'
+    ).order_by('created_at')
+    
+    tickets = []
+    total_cooking_items = 0
+    
+    for order in active_orders:
+        cooking_items = order.items.filter(workflow_state__name='Cooking').select_related('menu_item')
+        if cooking_items.exists():
+            order_qty = sum(item.quantity for item in cooking_items)
+            total_cooking_items += order_qty
+            
+            # Calculate elapsed minutes
+            elapsed_seconds = (now - order.created_at).total_seconds()
+            elapsed_minutes = int(elapsed_seconds // 60)
+            
+            # Urgency level: normal (<10m), warning (10-20m), urgent (>20m)
+            if elapsed_minutes < 10:
+                urgency = 'normal'
+            elif elapsed_minutes < 20:
+                urgency = 'warning'
+            else:
+                urgency = 'urgent'
+                
+            tickets.append({
+                'order': order,
+                'items': cooking_items,
+                'items_count': cooking_items.count(),
+                'total_qty': order_qty,
+                'elapsed_minutes': elapsed_minutes,
+                'urgency': urgency,
+            })
+            
+    # 2. Aggregated preparation summary by dish
+    prep_summary = OrderItem.objects.filter(
+        workflow_state__name='Cooking'
+    ).values('menu_item__name').annotate(
+        total_qty=Sum('quantity')
+    ).order_by('-total_qty')
+    
+    # 3. Items served today
+    served_today_count = OrderItem.objects.filter(
+        workflow_state__name='Served',
+        order__created_at__date=now.date()
+    ).count()
+    
+    context = {
+        'tickets': tickets,
+        'prep_summary': prep_summary,
+        'stats': {
+            'active_tickets_count': len(tickets),
+            'total_cooking_items': total_cooking_items,
+            'served_today_count': served_today_count,
+        }
+    }
+    return render(request, 'hotel_pos/kds.html', context)
 
+@require_POST
 def mark_item_served(request, item_id):
+    """ Mark individual KOT item as Served """
     item = get_object_or_404(OrderItem, id=item_id)
     served_state = State.objects.filter(workflow__name='Order Item Lifecycle', name='Served').first()
     
@@ -194,7 +291,22 @@ def mark_item_served(request, item_id):
         item.workflow_state = served_state
         item.save()
         
-    return HttpResponse("") # Removes the item from KDS
+    if request.headers.get('HX-Request'):
+        return HttpResponse("")
+    return redirect('hotel_pos:kds')
+
+@require_POST
+def bump_kot_ticket(request, order_id):
+    """ Mark all cooking items for a table order as Served (Bump Ticket) """
+    order = get_object_or_404(Order, id=order_id)
+    served_state = State.objects.filter(workflow__name='Order Item Lifecycle', name='Served').first()
+    
+    if served_state:
+        order.items.filter(workflow_state__name='Cooking').update(workflow_state=served_state)
+        
+    if request.headers.get('HX-Request'):
+        return HttpResponse("")
+    return redirect('hotel_pos:kds')
 
 def receipt_printer(request, order_id):
     """ View for Thermal Receipt Printer (PDF) """
@@ -353,3 +465,124 @@ def release_table(request, order_id):
         return response
         
     return redirect('hotel_pos:table_dashboard')
+
+from django.core.paginator import Paginator
+from django.db.models import Q, Sum, Count
+from django.utils import timezone
+
+def order_history(request):
+    """
+    View to list all orders (past and active), with filtering, searching,
+    reprinting bills, and viewing detailed order breakdowns.
+    """
+    now = timezone.now()
+    all_orders = Order.objects.all()
+    today_orders = all_orders.filter(created_at__date=now.date())
+    
+    total_revenue = all_orders.filter(workflow_state__name__in=['Closed', 'Paid', 'Billed']).aggregate(Sum('total_amount'))['total_amount__sum'] or 0
+    today_revenue = today_orders.filter(workflow_state__name__in=['Closed', 'Paid', 'Billed']).aggregate(Sum('total_amount'))['total_amount__sum'] or 0
+    completed_count = all_orders.filter(workflow_state__name__in=['Closed', 'Paid']).count()
+    active_count = all_orders.exclude(workflow_state__name__in=['Closed', 'Paid', 'Cancelled']).count()
+    
+    orders_qs = Order.objects.select_related('table', 'branch', 'waiter', 'workflow_state').prefetch_related('items__menu_item', 'items__workflow_state').order_by('-created_at')
+    
+    # 1. Search Query (Order ID, Table Number, Customer Name)
+    q = request.GET.get('q', '').strip()
+    if q:
+        query_filter = Q(customer_name__icontains=q) | Q(table__number__icontains=q)
+        if q.isdigit():
+            query_filter |= Q(id=int(q))
+        elif q.lower().startswith('t') and q[1:].isdigit():
+            query_filter |= Q(table__number=q[1:])
+        orders_qs = orders_qs.filter(query_filter)
+        
+    # 2. Status Filter
+    status_filter = request.GET.get('status', '').strip()
+    if status_filter:
+        if status_filter == 'active':
+            orders_qs = orders_qs.exclude(workflow_state__name__in=['Closed', 'Paid', 'Cancelled'])
+        elif status_filter == 'completed':
+            orders_qs = orders_qs.filter(workflow_state__name__in=['Closed', 'Paid'])
+        else:
+            orders_qs = orders_qs.filter(workflow_state__name__iexact=status_filter)
+            
+    # 3. Date Filter
+    date_filter = request.GET.get('date', 'all')
+    if date_filter == 'today':
+        orders_qs = orders_qs.filter(created_at__date=now.date())
+    elif date_filter == 'week':
+        orders_qs = orders_qs.filter(created_at__gte=now - timezone.timedelta(days=7))
+        
+    # Pagination: 10 records per page
+    paginator = Paginator(orders_qs, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'orders': page_obj,
+        'q': q,
+        'status_filter': status_filter,
+        'date_filter': date_filter,
+        'total_count': paginator.count,
+        'stats': {
+            'total_revenue': total_revenue,
+            'today_revenue': today_revenue,
+            'completed_count': completed_count,
+            'active_count': active_count,
+            'total_orders': all_orders.count(),
+        }
+    }
+    return render(request, 'hotel_pos/order_history.html', context)
+
+@require_POST
+def reopen_order(request, order_id):
+    """
+    Recovers an accidentally closed/released order and restores it on the table if available.
+    """
+    from django.contrib.contenttypes.models import ContentType
+    from core.models import AuditLog
+
+    order = get_object_or_404(Order, id=order_id)
+    table = order.table
+    
+    if table:
+        # Check if table has another active order
+        existing_active = Order.objects.filter(table=table).exclude(
+            id=order.id
+        ).exclude(
+            workflow_state__name__in=['Closed', 'Paid', 'Cancelled']
+        ).first()
+        
+        if existing_active:
+            messages.error(request, f"Cannot re-open Order #{order.id} on Table T{table.number} because Table T{table.number} currently has active Order #{existing_active.id}. Please clear that order first.")
+            return redirect('hotel_pos:order_history')
+            
+    # Set back to Billed or Open state
+    billed_state = State.objects.filter(workflow__name='Order Lifecycle', name='Billed').first()
+    open_state = State.objects.filter(workflow__name='Order Lifecycle', name='Open').first()
+    target_state = billed_state or open_state
+    
+    old_state_name = order.workflow_state.name if order.workflow_state else 'Closed'
+    if target_state:
+        order.workflow_state = target_state
+        
+    if request.user.is_authenticated:
+        order._audit_user_id = request.user.id
+    order.save()
+    
+    # Audit log
+    content_type = ContentType.objects.get_for_model(Order)
+    AuditLog.objects.create(
+        user=request.user if request.user.is_authenticated else None,
+        action='UPDATE',
+        content_type=content_type,
+        object_id=order.id,
+        old_values={'workflow_state': old_state_name},
+        new_values={'event': 'ORDER_REOPENED_AFTER_ACCIDENTAL_RELEASE', 'workflow_state': target_state.name if target_state else 'Billed'}
+    )
+    
+    messages.success(request, f"Order #{order.id} on Table T{table.number if table else 'N/A'} re-opened successfully!")
+    
+    if table:
+        return redirect('hotel_pos:pos_dashboard_table', table_id=table.id)
+    return redirect('hotel_pos:order_history')
