@@ -243,6 +243,9 @@ def cancel_item(request, item_id):
         
     return render(request, 'hotel_pos/partials/order_items.html', {'order': order})
 
+import logging
+logger = logging.getLogger(__name__)
+
 def cancel_order(request, order_id):
     order = get_object_or_404(Order, id=order_id)
     
@@ -259,3 +262,94 @@ def cancel_order(request, order_id):
     response = HttpResponse()
     response['HX-Redirect'] = reverse('hotel_pos:table_dashboard')
     return response
+
+@require_POST
+def release_table(request, order_id):
+    """
+    Complete order processing, finalize bill, record audit logs, and release the table.
+    """
+    from django.contrib.contenttypes.models import ContentType
+    from core.models import AuditLog
+
+    order = get_object_or_404(Order, id=order_id)
+    table_number = order.table.number if order.table else "N/A"
+    
+    # 1. Finalize totals from served items if not already computed
+    valid_items = order.items.filter(workflow_state__name='Served')
+    subtotal = sum(i.total_price for i in valid_items)
+    
+    if order.total_amount == 0 and subtotal > 0:
+        if order.is_tax_applied:
+            from .models import TaxConfiguration
+            taxes = TaxConfiguration.objects.filter(branch=order.branch, is_active=True)
+            total_tax_percentage = sum(t.percentage for t in taxes)
+            tax_amount = subtotal * (total_tax_percentage / 100)
+            order.tax_amount = tax_amount
+            order.total_amount = subtotal + tax_amount
+        else:
+            order.total_amount = subtotal
+            
+    # 2. Transition order to Closed state
+    closed_state = State.objects.filter(workflow__name='Order Lifecycle', name='Closed').first()
+    if not closed_state:
+        closed_state = State.objects.filter(workflow__name='Order Lifecycle', name='Paid').first()
+        
+    old_state_name = order.workflow_state.name if order.workflow_state else 'Open'
+    if closed_state:
+        order.workflow_state = closed_state
+        
+    if request.user.is_authenticated:
+        order._audit_user_id = request.user.id
+        
+    order.save()
+    
+    # 3. Compile audit trail details
+    items_summary = [
+        {
+            'name': item.menu_item.name,
+            'quantity': item.quantity,
+            'unit_price': str(item.price),
+            'total_price': str(item.total_price),
+            'status': item.workflow_state.name if item.workflow_state else 'Unknown'
+        }
+        for item in order.items.all()
+    ]
+    
+    # Write to AuditLog
+    content_type = ContentType.objects.get_for_model(Order)
+    AuditLog.objects.create(
+        user=request.user if request.user.is_authenticated else None,
+        action='UPDATE',
+        content_type=content_type,
+        object_id=order.id,
+        old_values={
+            'workflow_state': old_state_name,
+            'table_number': table_number,
+            'status': 'Occupied'
+        },
+        new_values={
+            'event': 'ORDER_COMPLETED_AND_TABLE_RELEASED',
+            'workflow_state': 'Closed',
+            'table_number': table_number,
+            'subtotal': str(order.subtotal),
+            'tax_amount': str(order.tax_amount),
+            'total_amount': str(order.total_amount),
+            'items_count': order.items.count(),
+            'served_items_count': valid_items.count(),
+            'items': items_summary
+        }
+    )
+    
+    logger.info(
+        f"[ORDER COMPLETED & TABLE RELEASED] Order #{order.id} for Table T{table_number} released by {request.user}. "
+        f"Subtotal: INR {order.subtotal}, Tax: INR {order.tax_amount}, Total: INR {order.total_amount}"
+    )
+    
+    messages.success(request, f"Table T{table_number} released successfully. Order #{order.id} marked as completed.")
+    
+    if request.headers.get('HX-Request'):
+        response = HttpResponse()
+        response['HX-Redirect'] = reverse('hotel_pos:table_dashboard')
+        return response
+        
+    return redirect('hotel_pos:table_dashboard')

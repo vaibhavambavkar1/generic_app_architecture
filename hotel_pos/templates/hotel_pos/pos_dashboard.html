@@ -52,6 +52,15 @@
                 </div>
                 <button type="submit" class="btn btn-success w-full shadow-lg text-white">Generate Bill</button>
             </form>
+            <form method="POST" action="{% url 'hotel_pos:release_table' active_order.id %}" onsubmit="return confirm('Complete order processing and release Table {{ active_order.table.number }}?');" class="w-full">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-warning w-full shadow-lg text-black font-bold flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Complete & Release Table
+                </button>
+            </form>
             <button hx-post="{% url 'hotel_pos:cancel_order' active_order.id %}" hx-confirm="Are you sure you want to cancel this entire order?" class="btn btn-error w-full shadow-lg text-white">Cancel Order</button>
             <a href="{% url 'hotel_pos:table_dashboard' %}" class="btn btn-outline w-full shadow-lg">Back to Tables</a>
         </div>

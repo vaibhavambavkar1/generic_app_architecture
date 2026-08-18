@@ -54,7 +54,7 @@
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
         {% for data in table_data %}
             {% if data.is_occupied %}
-                <div class="card bg-error text-error-content shadow-xl relative overflow-hidden group">
+                <div class="card bg-error text-error-content shadow-xl relative overflow-hidden group flex flex-col justify-between">
                     <!-- Action buttons (visible on hover) -->
                     <div class="absolute top-2 left-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                         <button onclick="openEditModal({{ data.table.id }}, '{{ data.table.number }}', {{ data.table.capacity }})" class="btn btn-xs btn-circle btn-ghost bg-white/20 hover:bg-white/40">
@@ -70,10 +70,26 @@
                             </svg>
                             {% endfor %}
                         </div>
-                        <h2 class="card-title text-4xl font-black mb-2">T{{ data.table.number }}</h2>
-                        <p class="font-medium opacity-90 text-sm uppercase tracking-wider">Occupied</p>
-                        <p class="text-xs mt-2 opacity-75 font-mono">Order #{{ data.active_order.id }}</p>
+                        <h2 class="card-title text-4xl font-black mb-1">T{{ data.table.number }}</h2>
+                        <div class="flex items-center gap-1 my-1">
+                            <span class="badge badge-sm font-bold uppercase tracking-wider {% if data.active_order.workflow_state.name == 'Billed' %}badge-warning text-warning-content{% else %}badge-ghost bg-white/20 text-white{% endif %}">
+                                {{ data.active_order.workflow_state.name|default:"Occupied" }}
+                            </span>
+                        </div>
+                        <p class="text-xs opacity-90 font-mono mt-1">Order #{{ data.active_order.id }} • INR {{ data.active_order.total_amount }}</p>
                     </a>
+                    <!-- Release Table Action Button -->
+                    <div class="px-4 pb-4">
+                        <form method="POST" action="{% url 'hotel_pos:release_table' data.active_order.id %}" onsubmit="return confirm('Release Table T{{ data.table.number }} and mark Order #{{ data.active_order.id }} as completed?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm w-full bg-white text-error hover:bg-white/90 font-bold shadow-md border-0 flex items-center justify-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                </svg>
+                                Release Table
+                            </button>
+                        </form>
+                    </div>
                 </div>
             {% else %}
                 <div class="card bg-success text-success-content shadow-xl relative overflow-hidden group">

@@ -18,4 +18,5 @@ urlpatterns = [
     path('mark-item-served/<int:item_id>/', views.mark_item_served, name='mark_item_served'),
     path('cancel-item/<int:item_id>/', views.cancel_item, name='cancel_item'),
     path('cancel-order/<int:order_id>/', views.cancel_order, name='cancel_order'),
+    path('release-table/<int:order_id>/', views.release_table, name='release_table'),
 ]
