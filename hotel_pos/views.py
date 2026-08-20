@@ -2,9 +2,10 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, JsonResponse
 from django.urls import reverse
 from .models import Order, OrderItem, MenuItem, Table
-from core.models import State
+from core.models import State, Organization
 from hotel_core.models import HotelBranch
 from django.views.decorators.http import require_POST
+from decimal import Decimal
 import json
 
 def table_dashboard(request):
@@ -63,14 +64,38 @@ from django.contrib import messages
 def add_table(request):
     number = request.POST.get('number', '').strip()
     capacity = request.POST.get('capacity', 4)
+    try:
+        capacity = int(capacity)
+    except (ValueError, TypeError):
+        capacity = 4
+        
     branch = HotelBranch.objects.first()
+    if not branch:
+        org, _ = Organization.objects.get_or_create(
+            name="Main Hotel & Resorts",
+            defaults={"owner_name": "Admin", "email": "admin@example.com"}
+        )
+        branch, _ = HotelBranch.objects.get_or_create(
+            name="Downtown Grand",
+            defaults={"code": "DTG", "organization": org, "is_active": True}
+        )
     
-    if branch and number:
-        if Table.objects.filter(branch=branch, number__iexact=number, is_active=True).exists():
+    if not number:
+        messages.error(request, "Table number/name is required.")
+        return redirect('hotel_pos:table_dashboard')
+        
+    existing = Table.objects.filter(branch=branch, number__iexact=number).first()
+    if existing:
+        if existing.is_active:
             messages.error(request, f"Table '{number}' already exists.")
         else:
-            Table.objects.create(branch=branch, number=number, capacity=capacity)
-            messages.success(request, f"Table '{number}' created successfully.")
+            existing.is_active = True
+            existing.capacity = capacity
+            existing.save()
+            messages.success(request, f"Table '{number}' restored and activated successfully.")
+    else:
+        Table.objects.create(branch=branch, number=number, capacity=capacity)
+        messages.success(request, f"Table '{number}' created successfully.")
         
     return redirect('hotel_pos:table_dashboard')
 
@@ -80,15 +105,22 @@ def edit_table(request, table_id):
     number = request.POST.get('number', '').strip()
     capacity = request.POST.get('capacity')
     
-    if number and number.lower() != table.number.lower():
-        if Table.objects.filter(branch=table.branch, number__iexact=number, is_active=True).exists():
+    if not number:
+        messages.error(request, "Table number/name is required.")
+        return redirect('hotel_pos:table_dashboard')
+        
+    if number.lower() != table.number.lower():
+        if Table.objects.filter(branch=table.branch, number__iexact=number, is_active=True).exclude(id=table.id).exists():
             messages.error(request, f"Table '{number}' already exists.")
             return redirect('hotel_pos:table_dashboard')
         table.number = number
         
     if capacity:
-        table.capacity = capacity
-    
+        try:
+            table.capacity = int(capacity)
+        except (ValueError, TypeError):
+            pass
+            
     table.save()
     messages.success(request, f"Table '{table.number}' updated successfully.")
     
@@ -187,17 +219,17 @@ def generate_bill(request, order_id):
         if billed_state:
             order.workflow_state = billed_state
         
-        # calculate total amount
+        # calculate total amount from Served items
         valid_items = order.items.filter(workflow_state__name='Served')
-        total = sum(i.total_price for i in valid_items)
+        total = sum((i.total_price for i in valid_items), Decimal('0.00'))
         
         apply_tax = request.POST.get('apply_tax') == 'on'
-        tax_amount = 0
+        tax_amount = Decimal('0.00')
         if apply_tax:
             from .models import TaxConfiguration
             taxes = TaxConfiguration.objects.filter(branch=order.branch, is_active=True)
-            total_tax_percentage = sum(t.percentage for t in taxes)
-            tax_amount = total * (total_tax_percentage / 100)
+            total_tax_percentage = sum((Decimal(str(t.percentage)) for t in taxes), Decimal('0.00'))
+            tax_amount = (total * (total_tax_percentage / Decimal('100'))).quantize(Decimal('0.01'))
             
         order.tax_amount = tax_amount
         order.total_amount = total + tax_amount
@@ -388,14 +420,14 @@ def release_table(request, order_id):
     
     # 1. Finalize totals from served items if not already computed
     valid_items = order.items.filter(workflow_state__name='Served')
-    subtotal = sum(i.total_price for i in valid_items)
+    subtotal = sum((i.total_price for i in valid_items), Decimal('0.00'))
     
     if order.total_amount == 0 and subtotal > 0:
         if order.is_tax_applied:
             from .models import TaxConfiguration
             taxes = TaxConfiguration.objects.filter(branch=order.branch, is_active=True)
-            total_tax_percentage = sum(t.percentage for t in taxes)
-            tax_amount = subtotal * (total_tax_percentage / 100)
+            total_tax_percentage = sum((Decimal(str(t.percentage)) for t in taxes), Decimal('0.00'))
+            tax_amount = (subtotal * (total_tax_percentage / Decimal('100'))).quantize(Decimal('0.01'))
             order.tax_amount = tax_amount
             order.total_amount = subtotal + tax_amount
         else:
