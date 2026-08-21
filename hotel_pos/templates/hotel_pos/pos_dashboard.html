@@ -40,32 +40,9 @@
                 <li class="text-center text-base-content/50 py-4">Please select a table to begin.</li>
             {% endif %}
         </ul>
-        {% if active_order %}
-        <div class="mt-4 pt-4 border-t border-base-200 flex flex-col gap-2">
-            <button hx-post="{% url 'hotel_pos:send_to_kitchen' active_order.id %}" hx-target="#order-items" class="btn btn-info w-full shadow-lg text-white">Send to Kitchen (KOT)</button>
-            <form hx-post="{% url 'hotel_pos:generate_bill' active_order.id %}" hx-target="#order-items" class="w-full">
-                <div class="form-control w-full mb-2">
-                    <label class="cursor-pointer label bg-base-200 rounded-box px-4">
-                        <span class="label-text font-bold">Apply Configured Tax</span>
-                        <input type="checkbox" name="apply_tax" class="toggle toggle-primary" />
-                    </label>
-                </div>
-                <button type="submit" class="btn btn-success w-full shadow-lg text-white">Generate Bill</button>
-            </form>
-            <form method="POST" action="{% url 'hotel_pos:release_table' active_order.id %}" onsubmit="return confirm('Complete order processing and release Table {{ active_order.table.number }}?');" class="w-full">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-warning w-full shadow-lg text-black font-bold flex items-center justify-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                    Complete & Release Table
-                </button>
-            </form>
-            <button hx-post="{% url 'hotel_pos:cancel_order' active_order.id %}" hx-confirm="Are you sure you want to cancel this entire order?" class="btn btn-error w-full shadow-lg text-white">Cancel Order</button>
-            <div class="grid grid-cols-2 gap-2">
-                <a href="{% url 'hotel_pos:table_dashboard' %}" class="btn btn-outline shadow-lg">Tables</a>
-                <a href="{% url 'hotel_pos:order_history' %}" class="btn btn-outline btn-accent shadow-lg">Bill History</a>
-            </div>
+        {% if not active_order %}
+        <div id="order-actions-panel" class="mt-4 pt-4 border-t border-base-200">
+            <a href="{% url 'hotel_pos:table_dashboard' %}" class="btn btn-outline btn-primary w-full shadow-sm">Select Table from Dashboard</a>
         </div>
         {% endif %}
     </div>

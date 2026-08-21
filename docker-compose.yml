@@ -2,11 +2,14 @@ services:
   web:
     container_name: erp_framework_web_dev
     build: .
+    command: gunicorn erp_framework.wsgi:application --bind 0.0.0.0:8000 --reload
     env_file:
       - .env
     environment:
       # Point DB_HOST to the external MySQL container's name
       DB_HOST: mysql
+      PYTHONUNBUFFERED: 1
+      PYTHONDONTWRITEBYTECODE: 1
     ports:
       - "8000:8000"
     volumes:

@@ -5,6 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}ERP Framework{% endblock %}</title>
     
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234f46e5'><path d='M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10'/></svg>">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- DaisyUI CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
+
+    <!-- Suppress Tailwind CDN production notice in console -->
+    <script>
+        (function() {
+            const originalWarn = console.warn;
+            console.warn = function(...args) {
+                if (args[0] && typeof args[0] === 'string' && args[0].includes('cdn.tailwindcss.com')) {
+                    return;
+                }
+                originalWarn.apply(console, args);
+            };
+        })();
+    </script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -21,20 +46,21 @@
             }
         }
     </script>
-    
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- DaisyUI CDN -->
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
-
-    <!-- Tailwind CSS (CDN for rapid prototyping, replace with build in production) -->
-    <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
+    <script>
+        document.addEventListener('htmx:configRequest', (evt) => {
+            let csrfToken = '{{ csrf_token }}';
+            if (!csrfToken || csrfToken === 'NOTPROVIDED') {
+                const match = document.cookie.match(/csrftoken=([^;]+)/);
+                if (match) csrfToken = match[1];
+            }
+            if (csrfToken) {
+                evt.detail.headers['X-CSRFToken'] = csrfToken;
+            }
+        });
+    </script>
     
     <script>
         // Prevent FOUC on page load
@@ -60,6 +86,9 @@
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
 
     <style>
+        [x-cloak] {
+            display: none !important;
+        }
         .htmx-indicator{
             display:none;
         }
@@ -69,36 +98,69 @@
         .htmx-request.htmx-indicator{
             display:inline-block;
         }
+        /* Top-Right Corner Modal Positioning */
+        dialog.modal,
+        .modal {
+            align-items: flex-start !important;
+            justify-content: flex-end !important;
+            padding: 1.25rem !important;
+        }
+        .modal-box {
+            margin-top: 1rem !important;
+            margin-right: 1rem !important;
+            max-height: calc(100vh - 3.5rem) !important;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.25), 0 10px 10px -5px rgba(0, 0, 0, 0.1) !important;
+            animation: slideInTopRight 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes slideInTopRight {
+            from {
+                opacity: 0;
+                transform: translateY(-12px) translateX(12px) scale(0.97);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) translateX(0) scale(1);
+            }
+        }
     </style>
 </head>
 <body class="h-full flex overflow-hidden bg-base-100 text-base-content font-sans antialiased" x-data="{ sidebarOpen: false }" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
-    <!-- Toast Messages -->
-    {% if messages %}
-    <div class="toast toast-top toast-end z-50" x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 4000)">
-        {% for message in messages %}
-        <div class="alert alert-{% if message.tags == 'error' %}error{% elif message.tags == 'success' %}success{% else %}info{% endif %} shadow-lg">
-            <span>{{ message }}</span>
-        </div>
-        {% endfor %}
-    </div>
-    {% endif %}
-    
-    <!-- HTMX PDF Receipt Toast (AlpineJS) -->
-    <div class="toast toast-bottom toast-end z-50" 
-         x-data="{ show: false, downloadUrl: '' }" 
-         @show-receipt-prompt.camel.window="show = true; downloadUrl = $event.detail.url; setTimeout(() => show = false, 15000)">
-        <div class="alert bg-success text-success-content shadow-lg border-none" x-show="show" x-transition>
-            <div>
-                <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current flex-shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                <div class="font-bold">Transaction Success</div>
-                <div class="text-xs">The record was successfully updated.</div>
+    <!-- Top-Right Global Toast Stack -->
+    <div id="globalTopRightToasts" class="toast toast-top toast-end z-50 flex flex-col gap-2 mt-2 mr-2">
+        {% if messages %}
+        <div x-cloak x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 4500)" class="flex flex-col gap-2">
+            {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}error{% elif message.tags == 'success' %}success{% else %}info{% endif %} shadow-xl text-xs py-2.5 px-3.5 flex items-center justify-between gap-3">
+                <span>{{ message }}</span>
+                <button type="button" class="btn btn-xs btn-ghost btn-circle" @click="show = false">✕</button>
             </div>
-            <div class="flex-none gap-2">
-                <a :href="downloadUrl" target="_blank" class="btn btn-sm btn-ghost btn-outline border-white text-white hover:bg-white hover:text-success" @click="show = false">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- HTMX PDF Receipt Toast (Top Right) -->
+    <div class="toast toast-top toast-end z-50 mt-14 mr-2" 
+         x-cloak
+         style="display: none;"
+         x-data="{ show: false, downloadUrl: '' }" 
+         x-show="show"
+         x-transition
+         @show-receipt-prompt.camel.window="show = true; downloadUrl = $event.detail.url; setTimeout(() => show = false, 15000)">
+        <div class="alert bg-success text-success-content shadow-xl border-none text-xs py-3 px-4">
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <div>
+                    <div class="font-bold text-sm">Transaction Success</div>
+                    <div class="text-[11px] opacity-90">The record was successfully updated.</div>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <a :href="downloadUrl" target="_blank" class="btn btn-xs btn-ghost btn-outline border-white text-white hover:bg-white hover:text-success" @click="show = false">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                     Download PDF
                 </a>
-                <button type="button" class="btn btn-sm btn-ghost btn-circle" @click="show = false">✕</button>
+                <button type="button" class="btn btn-xs btn-ghost btn-circle" @click="show = false">✕</button>
             </div>
         </div>
     </div>
@@ -119,9 +181,7 @@
         </main>
     </div>
 
-
-
-    <!-- Global HTMX Modal Container -->
+    <!-- Global HTMX Modal Container (Top-Right) -->
     <dialog id="generalModal" class="modal">
         <div class="modal-box bg-base-100" id="modal-container">
             <!-- HTMX content loads here -->
@@ -130,5 +190,103 @@
             <button>close</button>
         </form>
     </dialog>
+
+    <!-- Global Top-Right Confirmation Popup Modal -->
+    <dialog id="topRightConfirmModal" class="modal">
+        <div class="modal-box max-w-sm p-5 border border-base-200 shadow-2xl rounded-2xl bg-base-100">
+            <div class="flex items-start gap-3.5 mb-2">
+                <div id="topRightConfirmIcon" class="p-2.5 rounded-xl bg-warning/15 text-warning shrink-0 mt-0.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <h3 id="topRightConfirmTitle" class="font-bold text-sm text-base-content">Confirmation</h3>
+                    <p id="topRightConfirmMessage" class="text-xs text-base-content/75 mt-1 leading-relaxed">Are you sure you want to proceed?</p>
+                </div>
+                <button type="button" class="btn btn-xs btn-circle btn-ghost text-base-content/50" onclick="window.closeTopRightConfirm(false)">✕</button>
+            </div>
+            <div class="modal-action mt-4 pt-3 border-t border-base-200 flex justify-end gap-2">
+                <button type="button" class="btn btn-xs btn-ghost font-medium" onclick="window.closeTopRightConfirm(false)">Cancel</button>
+                <button type="button" id="topRightConfirmSubmitBtn" class="btn btn-xs btn-primary font-bold shadow-md" onclick="window.closeTopRightConfirm(true)">Confirm</button>
+            </div>
+        </div>
+        <form method="dialog" class="modal-backdrop"><button onclick="window.closeTopRightConfirm(false)">close</button></form>
+    </dialog>
+
+    <!-- Global Top-Right Confirmation & Toast Interceptor Script -->
+    <script>
+        let currentConfirmResolve = null;
+
+        window.showTopRightConfirm = function(optionsOrMsg) {
+            return new Promise((resolve) => {
+                currentConfirmResolve = resolve;
+                const modal = document.getElementById('topRightConfirmModal');
+                const titleEl = document.getElementById('topRightConfirmTitle');
+                const msgEl = document.getElementById('topRightConfirmMessage');
+                const btnEl = document.getElementById('topRightConfirmSubmitBtn');
+                const iconEl = document.getElementById('topRightConfirmIcon');
+
+                let msg = typeof optionsOrMsg === 'string' ? optionsOrMsg : (optionsOrMsg.message || 'Are you sure you want to proceed?');
+                let title = typeof optionsOrMsg === 'object' && optionsOrMsg.title ? optionsOrMsg.title : 'Confirmation';
+                let btnText = typeof optionsOrMsg === 'object' && optionsOrMsg.confirmText ? optionsOrMsg.confirmText : 'Confirm';
+                let isDestructive = msg.toLowerCase().includes('delete') || msg.toLowerCase().includes('cancel');
+
+                titleEl.textContent = title;
+                msgEl.textContent = msg;
+                btnEl.textContent = btnText;
+
+                if (isDestructive) {
+                    btnEl.className = 'btn btn-xs btn-error text-white font-bold shadow-md';
+                    iconEl.className = 'p-2.5 rounded-xl bg-error/15 text-error shrink-0 mt-0.5';
+                } else {
+                    btnEl.className = 'btn btn-xs btn-primary text-white font-bold shadow-md';
+                    iconEl.className = 'p-2.5 rounded-xl bg-primary/15 text-primary shrink-0 mt-0.5';
+                }
+
+                modal.showModal();
+            });
+        };
+
+        window.closeTopRightConfirm = function(result) {
+            const modal = document.getElementById('topRightConfirmModal');
+            modal.close();
+            if (currentConfirmResolve) {
+                currentConfirmResolve(result);
+                currentConfirmResolve = null;
+            }
+        };
+
+        // 1. Intercept HTMX hx-confirm event to use Top-Right Modal
+        document.addEventListener('htmx:confirm', function(evt) {
+            evt.preventDefault();
+            const question = evt.detail.question;
+            window.showTopRightConfirm(question).then((confirmed) => {
+                if (confirmed) {
+                    evt.detail.issueRequest(true);
+                }
+            });
+        });
+
+        // 2. Intercept forms / elements with data-confirm
+        document.addEventListener('click', function(evt) {
+            const confirmBtn = evt.target.closest('[data-confirm]');
+            if (confirmBtn) {
+                evt.preventDefault();
+                evt.stopPropagation();
+                const msg = confirmBtn.getAttribute('data-confirm');
+                window.showTopRightConfirm(msg).then((confirmed) => {
+                    if (confirmed) {
+                        const form = confirmBtn.closest('form');
+                        if (form) {
+                            form.submit();
+                        } else if (confirmBtn.tagName === 'A' && confirmBtn.href) {
+                            window.location.href = confirmBtn.href;
+                        }
+                    }
+                });
+            }
+        }, true);
+    </script>
 </body>
 </html>

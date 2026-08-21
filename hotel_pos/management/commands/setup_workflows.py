@@ -17,10 +17,13 @@ class Command(BaseCommand):
         o_billed, _ = State.objects.get_or_create(workflow=order_wf, name='Billed')
         o_paid, _ = State.objects.get_or_create(workflow=order_wf, name='Paid')
         o_closed, _ = State.objects.get_or_create(workflow=order_wf, name='Closed', defaults={'is_final': True})
+        o_cancelled, _ = State.objects.get_or_create(workflow=order_wf, name='Cancelled', defaults={'is_final': True})
         
         Transition.objects.get_or_create(workflow=order_wf, from_state=o_open, to_state=o_billed, name='Generate Bill')
         Transition.objects.get_or_create(workflow=order_wf, from_state=o_billed, to_state=o_paid, name='Receive Payment')
         Transition.objects.get_or_create(workflow=order_wf, from_state=o_paid, to_state=o_closed, name='Close Order')
+        Transition.objects.get_or_create(workflow=order_wf, from_state=o_open, to_state=o_cancelled, name='Cancel Order')
+        Transition.objects.get_or_create(workflow=order_wf, from_state=o_billed, to_state=o_cancelled, name='Cancel Billed Order')
         
         # 2. OrderItem Workflow
         item_wf, _ = Workflow.objects.get_or_create(
@@ -31,8 +34,11 @@ class Command(BaseCommand):
         i_pending, _ = State.objects.get_or_create(workflow=item_wf, name='Pending', defaults={'is_initial': True})
         i_cooking, _ = State.objects.get_or_create(workflow=item_wf, name='Cooking')
         i_served, _ = State.objects.get_or_create(workflow=item_wf, name='Served', defaults={'is_final': True})
+        i_cancelled, _ = State.objects.get_or_create(workflow=item_wf, name='Cancelled', defaults={'is_final': True})
         
         Transition.objects.get_or_create(workflow=item_wf, from_state=i_pending, to_state=i_cooking, name='Send to Kitchen')
         Transition.objects.get_or_create(workflow=item_wf, from_state=i_cooking, to_state=i_served, name='Mark Served')
+        Transition.objects.get_or_create(workflow=item_wf, from_state=i_pending, to_state=i_cancelled, name='Cancel Pending Item')
+        Transition.objects.get_or_create(workflow=item_wf, from_state=i_cooking, to_state=i_cancelled, name='Cancel Cooking Item')
         
-        self.stdout.write(self.style.SUCCESS('Successfully set up Hotel POS Workflows!'))
+        self.stdout.write(self.style.SUCCESS('Successfully set up Hotel POS Workflows with Cancelled states!'))

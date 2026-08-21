@@ -13,4 +13,4 @@ COPY . .
 # Set the entrypoint
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
 
-CMD ["gunicorn","erp_framework.wsgi:application","--bind","0.0.0.0:8000"]
+CMD ["gunicorn", "erp_framework.wsgi:application", "--bind", "0.0.0.0:8000", "--reload"]

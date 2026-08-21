@@ -66,6 +66,38 @@ class Order(WorkflowMixin):
     def subtotal(self):
         return self.total_amount - self.tax_amount
 
+    @property
+    def active_items(self):
+        return self.items.exclude(workflow_state__name='Cancelled').select_related('menu_item', 'workflow_state')
+
+    @property
+    def has_unserved_items(self):
+        """ Returns True if any active items are in Pending or Cooking state """
+        return self.items.filter(workflow_state__name__in=['Pending', 'Cooking']).exists()
+
+    @property
+    def has_cooking_items(self):
+        return self.items.filter(workflow_state__name='Cooking').exists()
+
+    @property
+    def has_pending_items(self):
+        return self.items.filter(workflow_state__name='Pending').exists()
+
+    @property
+    def has_served_items(self):
+        return self.items.filter(workflow_state__name='Served').exists()
+
+    @property
+    def can_generate_bill_and_release(self):
+        """
+        Billing and Table Release are allowed IF AND ONLY IF:
+        - All active items are in 'Served' state (no items in 'Pending' or 'Cooking').
+        - There is at least 1 served item, or the order is already in 'Billed' state.
+        """
+        if self.has_unserved_items:
+            return False
+        return self.has_served_items or (self.workflow_state and self.workflow_state.name in ['Billed', 'Paid'])
+
 class OrderItem(WorkflowMixin):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
     menu_item = models.ForeignKey(MenuItem, on_delete=models.CASCADE)

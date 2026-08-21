@@ -1,13 +1,33 @@
+import json
+import logging
+from decimal import Decimal
+from datetime import timedelta
+
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, JsonResponse
 from django.urls import reverse
-from .models import Order, OrderItem, MenuItem, Table
-from core.models import State, Organization
-from hotel_core.models import HotelBranch
 from django.views.decorators.http import require_POST
-from decimal import Decimal
-import json
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.contrib import messages
+from django.contrib.contenttypes.models import ContentType
+from django.core.paginator import Paginator
+from django.db.models import Q, Sum, Count
+from django.utils import timezone
+from django.template.loader import render_to_string
 
+from core.models import State, Organization, AuditLog, Workflow
+from hotel_core.models import HotelBranch
+from .models import Order, OrderItem, MenuItem, Table, TaxConfiguration
+
+try:
+    from xhtml2pdf import pisa
+except ImportError:
+    pisa = None
+
+logger = logging.getLogger(__name__)
+
+
+@ensure_csrf_cookie
 def table_dashboard(request):
     """ View for Floor Staff to manage tables """
     tables = Table.objects.filter(is_active=True).order_by('number')
@@ -24,11 +44,17 @@ def table_dashboard(request):
         active_order = Order.objects.filter(
             table=table
         ).exclude(
-            workflow_state__name__in=['Closed', 'Paid']
+            workflow_state__name__in=['Closed', 'Paid', 'Cancelled']
         ).select_related('workflow_state', 'waiter').prefetch_related('items__menu_item').first()
         
         is_occupied = active_order is not None
         order_status = active_order.workflow_state.name if (active_order and active_order.workflow_state) else ('Open' if is_occupied else 'Free')
+        
+        can_release = active_order.can_generate_bill_and_release if active_order else False
+        has_unserved = active_order.has_unserved_items if active_order else False
+        has_cooking = active_order.has_cooking_items if active_order else False
+        has_pending = active_order.has_pending_items if active_order else False
+        has_served = active_order.has_served_items if active_order else False
         
         if is_occupied:
             occupied_count += 1
@@ -43,6 +69,11 @@ def table_dashboard(request):
             'is_occupied': is_occupied,
             'order_status': order_status,
             'active_order': active_order,
+            'can_release': can_release,
+            'has_unserved': has_unserved,
+            'has_cooking': has_cooking,
+            'has_pending': has_pending,
+            'has_served': has_served,
         })
         
     context = {
@@ -58,10 +89,10 @@ def table_dashboard(request):
     }
     return render(request, 'hotel_pos/table_dashboard.html', context)
 
-from django.contrib import messages
 
 @require_POST
 def add_table(request):
+    """ Adds a new table or restores a soft-deleted table with new capacity """
     number = request.POST.get('number', '').strip()
     capacity = request.POST.get('capacity', 4)
     try:
@@ -99,8 +130,10 @@ def add_table(request):
         
     return redirect('hotel_pos:table_dashboard')
 
+
 @require_POST
 def edit_table(request, table_id):
+    """ Updates table number and seating capacity """
     table = get_object_or_404(Table, id=table_id)
     number = request.POST.get('number', '').strip()
     capacity = request.POST.get('capacity')
@@ -126,18 +159,19 @@ def edit_table(request, table_id):
     
     return redirect('hotel_pos:table_dashboard')
 
+
 @require_POST
 def delete_table(request, table_id):
+    """ Soft-deletes a table if it has no active occupied order """
     table = get_object_or_404(Table, id=table_id)
-    # Don't delete if there is an active order
     active_order = Order.objects.filter(
         table=table
     ).exclude(
-        workflow_state__name__in=['Closed', 'Paid']
+        workflow_state__name__in=['Closed', 'Paid', 'Cancelled']
     ).first()
     
     if not active_order:
-        table.is_active = False # Soft delete
+        table.is_active = False  # Soft delete
         table.save()
         messages.success(request, f"Table '{table.number}' deleted successfully.")
     else:
@@ -145,28 +179,28 @@ def delete_table(request, table_id):
         
     return redirect('hotel_pos:table_dashboard')
 
+
+@ensure_csrf_cookie
 def pos_dashboard(request, table_id=None):
-    """ HTMX powered POS dashboard """
-    categories = [] # Would fetch from MenuCategory
+    """ HTMX powered POS dashboard for taking table orders """
     items = MenuItem.objects.filter(is_active=True).select_related('category').order_by('category__name', 'name')
     tables = Table.objects.filter(is_active=True)
     
     active_order = None
     if table_id:
         table = get_object_or_404(Table, id=table_id)
-        # Try to find an open order
+        # Try to find an open active order (excluding closed, paid, and cancelled)
         active_order = Order.objects.filter(
             table=table
         ).exclude(
-            workflow_state__name__in=['Closed', 'Paid']
+            workflow_state__name__in=['Closed', 'Paid', 'Cancelled']
         ).first()
         
-        # If no open order, create a new one
+        # If no open order, create a new one with 'Open' workflow state
         if not active_order:
-            # Need to get a branch. In a real app we get the user's current branch or shift.
             branch = table.branch
-            active_order = Order.objects.create(table=table, branch=branch)
-            # workflow state will be automatically assigned 'Open' by WorkflowMixin
+            open_state = State.objects.filter(workflow__name='Order Lifecycle', name='Open').first()
+            active_order = Order.objects.create(table=table, branch=branch, workflow_state=open_state)
             
     context = {
         'items': items,
@@ -175,14 +209,14 @@ def pos_dashboard(request, table_id=None):
     }
     return render(request, 'hotel_pos/pos_dashboard.html', context)
 
+
 def add_to_order(request, order_id, item_id):
-    """ HTMX endpoint to add item to current order """
+    """ HTMX endpoint to add item to current order in Pending state """
     order = get_object_or_404(Order, id=order_id)
     item = get_object_or_404(MenuItem, id=item_id)
     
-    # Fetch the Pending state explicitly
-    from core.models import State
-    pending_state = State.objects.filter(workflow__name='Order Item Lifecycle', name='Pending').first()
+    item_wf, _ = Workflow.objects.get_or_create(name='Order Item Lifecycle', defaults={'model_name': 'hotel_pos.OrderItem'})
+    pending_state, _ = State.objects.get_or_create(workflow=item_wf, name='Pending', defaults={'is_initial': True})
     
     # Check if this item is already in the order in 'Pending' state
     order_item, created = OrderItem.objects.get_or_create(
@@ -196,10 +230,15 @@ def add_to_order(request, order_id, item_id):
         order_item.quantity += 1
         order_item.save()
         
-    # Re-render the order items partial
+    valid_items = order.items.exclude(workflow_state__name='Cancelled')
+    order.total_amount = sum((i.total_price for i in valid_items), Decimal('0.00'))
+    order.save()
+        
     return render(request, 'hotel_pos/partials/order_items.html', {'order': order})
 
+
 def send_to_kitchen(request, order_id):
+    """ Transitions all Pending items to Cooking state """
     order = get_object_or_404(Order, id=order_id)
     pending_items = order.items.filter(workflow_state__name='Pending')
     
@@ -212,21 +251,27 @@ def send_to_kitchen(request, order_id):
             
     return render(request, 'hotel_pos/partials/order_items.html', {'order': order})
 
+
 def generate_bill(request, order_id):
+    """ Transitions order to Billed state and computes totals strictly from Served items """
     order = get_object_or_404(Order, id=order_id)
     if request.method == 'POST':
+        # Business rule: Disallow bill generation if any items are in Pending or Cooking state
+        if order.has_unserved_items:
+            messages.error(request, f"Cannot generate bill for Table {order.table.number if order.table else 'N/A'}: items are still in Pending or Cooking state. Please serve or cancel all items first.")
+            return render(request, 'hotel_pos/partials/order_items.html', {'order': order})
+
         billed_state = State.objects.filter(workflow__name='Order Lifecycle', name='Billed').first()
         if billed_state:
             order.workflow_state = billed_state
         
-        # calculate total amount from Served items
+        # Calculate subtotal strictly from Served items
         valid_items = order.items.filter(workflow_state__name='Served')
         total = sum((i.total_price for i in valid_items), Decimal('0.00'))
         
         apply_tax = request.POST.get('apply_tax') == 'on'
         tax_amount = Decimal('0.00')
         if apply_tax:
-            from .models import TaxConfiguration
             taxes = TaxConfiguration.objects.filter(branch=order.branch, is_active=True)
             total_tax_percentage = sum((Decimal(str(t.percentage)) for t in taxes), Decimal('0.00'))
             tax_amount = (total * (total_tax_percentage / Decimal('100'))).quantize(Decimal('0.01'))
@@ -236,23 +281,23 @@ def generate_bill(request, order_id):
         order.is_tax_applied = apply_tax
         order.save()
         
-    response = render(request, 'hotel_pos/partials/order_items.html', {'order': order})
-    response['HX-Trigger'] = json.dumps({'openReceipt': f"/hotel-pos/receipt/{order.id}/"})
-    return response
+        response = render(request, 'hotel_pos/partials/order_items.html', {'order': order})
+        response['HX-Trigger'] = json.dumps({'openReceipt': f"/hotel-pos/receipt/{order.id}/"})
+        return response
+        
+    return render(request, 'hotel_pos/partials/order_items.html', {'order': order})
+
 
 def kitchen_display_system(request):
     """
-    Advanced Kitchen Display System (KDS):
+    Kitchen Display System (KDS):
     - Groups cooking items into KOT Order Tickets (by Table & Order)
     - Provides aggregated prep item summary counts
     - Tracks elapsed wait times with color-coded urgency
-    - Supports station filtering and ticket bumping
+    - Supports station batch summary
     """
-    from django.db.models import Sum, Count
-    from django.utils import timezone
     now = timezone.now()
     
-    # 1. Orders with items currently cooking
     active_orders = Order.objects.filter(
         items__workflow_state__name='Cooking'
     ).distinct().select_related('table', 'waiter', 'branch').prefetch_related(
@@ -268,11 +313,9 @@ def kitchen_display_system(request):
             order_qty = sum(item.quantity for item in cooking_items)
             total_cooking_items += order_qty
             
-            # Calculate elapsed minutes
             elapsed_seconds = (now - order.created_at).total_seconds()
             elapsed_minutes = int(elapsed_seconds // 60)
             
-            # Urgency level: normal (<10m), warning (10-20m), urgent (>20m)
             if elapsed_minutes < 10:
                 urgency = 'normal'
             elif elapsed_minutes < 20:
@@ -289,14 +332,12 @@ def kitchen_display_system(request):
                 'urgency': urgency,
             })
             
-    # 2. Aggregated preparation summary by dish
     prep_summary = OrderItem.objects.filter(
         workflow_state__name='Cooking'
     ).values('menu_item__name').annotate(
         total_qty=Sum('quantity')
     ).order_by('-total_qty')
     
-    # 3. Items served today
     served_today_count = OrderItem.objects.filter(
         workflow_state__name='Served',
         order__created_at__date=now.date()
@@ -313,6 +354,7 @@ def kitchen_display_system(request):
     }
     return render(request, 'hotel_pos/kds.html', context)
 
+
 @require_POST
 def mark_item_served(request, item_id):
     """ Mark individual KOT item as Served """
@@ -327,6 +369,7 @@ def mark_item_served(request, item_id):
         return HttpResponse("")
     return redirect('hotel_pos:kds')
 
+
 @require_POST
 def bump_kot_ticket(request, order_id):
     """ Mark all cooking items for a table order as Served (Bump Ticket) """
@@ -340,14 +383,9 @@ def bump_kot_ticket(request, order_id):
         return HttpResponse("")
     return redirect('hotel_pos:kds')
 
+
 def receipt_printer(request, order_id):
-    """ View for Thermal Receipt Printer (PDF) """
-    from django.template.loader import render_to_string
-    try:
-        from xhtml2pdf import pisa
-    except ImportError:
-        pisa = None
-        
+    """ View for Thermal Receipt Printer (PDF or HTML) """
     order = get_object_or_404(Order, id=order_id)
     items = order.items.filter(workflow_state__name='Served')
     
@@ -357,66 +395,103 @@ def receipt_printer(request, order_id):
         response = HttpResponse(content_type='application/pdf')
         response['Content-Disposition'] = f'inline; filename="receipt_{order.id}.pdf"'
         
-        # Create PDF
         pisa_status = pisa.CreatePDF(html, dest=response)
-        
         if pisa_status.err:
             return HttpResponse('We had some errors <pre>' + html + '</pre>')
         return response
     
-    # Fallback if xhtml2pdf is not installed
     return HttpResponse(html)
 
+
 def cancel_item(request, item_id):
+    """ Cancels an unserved item from an active order """
     item = get_object_or_404(OrderItem, id=item_id)
     order = item.order
     
     if item.workflow_state and item.workflow_state.name == 'Served':
-        # Do nothing if item is already served
         return render(request, 'hotel_pos/partials/order_items.html', {'order': order})
         
-    cancelled_state = State.objects.filter(workflow__name='Order Item Lifecycle', name='Cancelled').first()
-    if cancelled_state:
-        item.workflow_state = cancelled_state
-        item.save()
-        
-        # update order total
-        valid_items = order.items.exclude(workflow_state__name='Cancelled')
-        order.total_amount = sum(i.total_price for i in valid_items)
-        order.save()
+    item_wf, _ = Workflow.objects.get_or_create(
+        name='Order Item Lifecycle',
+        defaults={'model_name': 'hotel_pos.OrderItem'}
+    )
+    cancelled_state, _ = State.objects.get_or_create(
+        workflow=item_wf, name='Cancelled',
+        defaults={'is_final': True}
+    )
+    
+    item.workflow_state = cancelled_state
+    item.save()
+    
+    valid_items = order.items.exclude(workflow_state__name='Cancelled')
+    order.total_amount = sum((i.total_price for i in valid_items), Decimal('0.00'))
+    order.save()
         
     return render(request, 'hotel_pos/partials/order_items.html', {'order': order})
 
-import logging
-logger = logging.getLogger(__name__)
 
 def cancel_order(request, order_id):
+    """ Cancels an entire order and all its items, releasing the table for new orders """
     order = get_object_or_404(Order, id=order_id)
+    table_number = order.table.number if order.table else "N/A"
     
-    cancelled_state_order = State.objects.filter(workflow__name='Order Lifecycle', name='Cancelled').first()
-    cancelled_state_item = State.objects.filter(workflow__name='Order Item Lifecycle', name='Cancelled').first()
+    order_wf, _ = Workflow.objects.get_or_create(name='Order Lifecycle', defaults={'model_name': 'hotel_pos.Order'})
+    item_wf, _ = Workflow.objects.get_or_create(name='Order Item Lifecycle', defaults={'model_name': 'hotel_pos.OrderItem'})
     
-    if cancelled_state_order:
-        order.workflow_state = cancelled_state_order
-        order.save()
+    cancelled_state_order, _ = State.objects.get_or_create(workflow=order_wf, name='Cancelled', defaults={'is_final': True})
+    cancelled_state_item, _ = State.objects.get_or_create(workflow=item_wf, name='Cancelled', defaults={'is_final': True})
+    
+    old_state_name = order.workflow_state.name if order.workflow_state else 'Open'
+    order.workflow_state = cancelled_state_order
+    order.save()
+    
+    order.items.update(workflow_state=cancelled_state_item)
+    
+    # Record AuditLog for order cancellation & table release
+    content_type = ContentType.objects.get_for_model(Order)
+    AuditLog.objects.create(
+        user=request.user if request.user.is_authenticated else None,
+        action='UPDATE',
+        content_type=content_type,
+        object_id=order.id,
+        old_values={
+            'workflow_state': old_state_name,
+            'table_number': table_number,
+            'status': 'Occupied'
+        },
+        new_values={
+            'event': 'ORDER_CANCELLED_AND_TABLE_RELEASED',
+            'workflow_state': 'Cancelled',
+            'table_number': table_number,
+            'status': 'Released'
+        }
+    )
+    
+    messages.success(request, f"Order #{order.id} for Table T{table_number} was cancelled. Table is now released and available for new orders.")
         
-    if cancelled_state_item:
-        order.items.update(workflow_state=cancelled_state_item)
-        
-    response = HttpResponse()
-    response['HX-Redirect'] = reverse('hotel_pos:table_dashboard')
-    return response
+    if request.headers.get('HX-Request'):
+        response = HttpResponse()
+        response['HX-Redirect'] = reverse('hotel_pos:table_dashboard')
+        return response
+    return redirect('hotel_pos:table_dashboard')
+
 
 @require_POST
 def release_table(request, order_id):
     """
     Complete order processing, finalize bill, record audit logs, and release the table.
     """
-    from django.contrib.contenttypes.models import ContentType
-    from core.models import AuditLog
-
     order = get_object_or_404(Order, id=order_id)
     table_number = order.table.number if order.table else "N/A"
+    
+    # Business rule: Disallow table release if any items are in Pending or Cooking state
+    if order.has_unserved_items:
+        messages.error(request, f"Cannot release Table T{table_number}: Order #{order.id} has items still in Pending or Cooking state. Please serve or cancel all items first.")
+        if request.headers.get('HX-Request'):
+            response = HttpResponse()
+            response['HX-Redirect'] = reverse('hotel_pos:pos_dashboard_table', kwargs={'table_id': order.table.id}) if order.table else reverse('hotel_pos:table_dashboard')
+            return response
+        return redirect('hotel_pos:pos_dashboard_table', table_id=order.table.id) if order.table else redirect('hotel_pos:table_dashboard')
     
     # 1. Finalize totals from served items if not already computed
     valid_items = order.items.filter(workflow_state__name='Served')
@@ -424,7 +499,6 @@ def release_table(request, order_id):
     
     if order.total_amount == 0 and subtotal > 0:
         if order.is_tax_applied:
-            from .models import TaxConfiguration
             taxes = TaxConfiguration.objects.filter(branch=order.branch, is_active=True)
             total_tax_percentage = sum((Decimal(str(t.percentage)) for t in taxes), Decimal('0.00'))
             tax_amount = (subtotal * (total_tax_percentage / Decimal('100'))).quantize(Decimal('0.01'))
@@ -459,7 +533,6 @@ def release_table(request, order_id):
         for item in order.items.all()
     ]
     
-    # Write to AuditLog
     content_type = ContentType.objects.get_for_model(Order)
     AuditLog.objects.create(
         user=request.user if request.user.is_authenticated else None,
@@ -498,9 +571,6 @@ def release_table(request, order_id):
         
     return redirect('hotel_pos:table_dashboard')
 
-from django.core.paginator import Paginator
-from django.db.models import Q, Sum, Count
-from django.utils import timezone
 
 def order_history(request):
     """
@@ -511,8 +581,8 @@ def order_history(request):
     all_orders = Order.objects.all()
     today_orders = all_orders.filter(created_at__date=now.date())
     
-    total_revenue = all_orders.filter(workflow_state__name__in=['Closed', 'Paid', 'Billed']).aggregate(Sum('total_amount'))['total_amount__sum'] or 0
-    today_revenue = today_orders.filter(workflow_state__name__in=['Closed', 'Paid', 'Billed']).aggregate(Sum('total_amount'))['total_amount__sum'] or 0
+    total_revenue = all_orders.filter(workflow_state__name__in=['Closed', 'Paid', 'Billed']).aggregate(Sum('total_amount'))['total_amount__sum'] or Decimal('0.00')
+    today_revenue = today_orders.filter(workflow_state__name__in=['Closed', 'Paid', 'Billed']).aggregate(Sum('total_amount'))['total_amount__sum'] or Decimal('0.00')
     completed_count = all_orders.filter(workflow_state__name__in=['Closed', 'Paid']).count()
     active_count = all_orders.exclude(workflow_state__name__in=['Closed', 'Paid', 'Cancelled']).count()
     
@@ -543,7 +613,7 @@ def order_history(request):
     if date_filter == 'today':
         orders_qs = orders_qs.filter(created_at__date=now.date())
     elif date_filter == 'week':
-        orders_qs = orders_qs.filter(created_at__gte=now - timezone.timedelta(days=7))
+        orders_qs = orders_qs.filter(created_at__gte=now - timedelta(days=7))
         
     # Pagination: 10 records per page
     paginator = Paginator(orders_qs, 10)
@@ -566,14 +636,12 @@ def order_history(request):
     }
     return render(request, 'hotel_pos/order_history.html', context)
 
+
 @require_POST
 def reopen_order(request, order_id):
     """
     Recovers an accidentally closed/released order and restores it on the table if available.
     """
-    from django.contrib.contenttypes.models import ContentType
-    from core.models import AuditLog
-
     order = get_object_or_404(Order, id=order_id)
     table = order.table
     
@@ -589,7 +657,6 @@ def reopen_order(request, order_id):
             messages.error(request, f"Cannot re-open Order #{order.id} on Table T{table.number} because Table T{table.number} currently has active Order #{existing_active.id}. Please clear that order first.")
             return redirect('hotel_pos:order_history')
             
-    # Set back to Billed or Open state
     billed_state = State.objects.filter(workflow__name='Order Lifecycle', name='Billed').first()
     open_state = State.objects.filter(workflow__name='Order Lifecycle', name='Open').first()
     target_state = billed_state or open_state
@@ -602,7 +669,6 @@ def reopen_order(request, order_id):
         order._audit_user_id = request.user.id
     order.save()
     
-    # Audit log
     content_type = ContentType.objects.get_for_model(Order)
     AuditLog.objects.create(
         user=request.user if request.user.is_authenticated else None,

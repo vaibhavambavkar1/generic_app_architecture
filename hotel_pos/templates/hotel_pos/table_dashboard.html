@@ -228,10 +228,24 @@
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                         Billed • Ready
                                     </span>
-                                {% else %}
-                                    <span class="badge badge-error font-bold text-xs uppercase tracking-wider py-2.5 px-3 shadow-sm gap-1 text-white">
+                                {% elif data.has_cooking %}
+                                    <span class="badge badge-info font-bold text-xs uppercase tracking-wider py-2.5 px-3 shadow-sm gap-1 text-white">
                                         <span class="h-1.5 w-1.5 rounded-full bg-white animate-pulse"></span>
-                                        Dining • {{ data.order_status }}
+                                        Cooking in Kitchen
+                                    </span>
+                                {% elif data.has_pending %}
+                                    <span class="badge badge-warning font-bold text-xs uppercase tracking-wider py-2.5 px-3 shadow-sm gap-1 text-warning-content">
+                                        <span class="h-1.5 w-1.5 rounded-full bg-warning-content animate-ping"></span>
+                                        Pending KOT
+                                    </span>
+                                {% elif data.has_served %}
+                                    <span class="badge badge-success font-bold text-xs uppercase tracking-wider py-2.5 px-3 shadow-sm gap-1 text-white">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                                        Served • Ready for Bill
+                                    </span>
+                                {% else %}
+                                    <span class="badge badge-ghost font-bold text-xs uppercase tracking-wider py-2.5 px-3 shadow-sm gap-1">
+                                        {{ data.order_status }}
                                     </span>
                                 {% endif %}
                             </div>
@@ -251,7 +265,7 @@
 
                         <!-- Card Action Footer -->
                         <div class="p-3 pt-0 border-t border-base-200/60 bg-base-100 flex flex-col gap-1.5">
-                            <div class="grid grid-cols-2 gap-1.5 pt-2">
+                            <div class="grid {% if data.order_status == 'Billed' %}grid-cols-2{% elif data.has_cooking %}grid-cols-2{% else %}grid-cols-1{% endif %} gap-1.5 pt-2">
                                 <a href="{% url 'hotel_pos:pos_dashboard_table' data.table.id %}" class="btn btn-sm btn-outline btn-primary text-xs font-bold gap-1">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                                     Open POS
@@ -262,21 +276,19 @@
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
                                     Receipt
                                 </a>
-                                {% else %}
-                                <form method="POST" action="{% url 'hotel_pos:release_table' data.active_order.id %}" onsubmit="return confirm('Force release Table T{{ data.table.number }}?');">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-ghost text-error w-full text-xs" title="Release Table">
-                                        Release
-                                    </button>
-                                </form>
+                                {% elif data.has_cooking %}
+                                <a href="{% url 'hotel_pos:kds' %}" class="btn btn-sm btn-outline btn-info text-xs font-bold gap-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
+                                    KDS
+                                </a>
                                 {% endif %}
                             </div>
 
-                            <!-- Dedicated Prominent Release Button for Billed Tables -->
-                            {% if data.order_status == 'Billed' %}
-                            <form method="POST" action="{% url 'hotel_pos:release_table' data.active_order.id %}" onsubmit="return confirm('Complete payment and release Table T{{ data.table.number }}?');">
+                            <!-- Dedicated Prominent Release Button for Billed Tables (Allowed ONLY when ready) -->
+                            {% if data.can_release and data.order_status == 'Billed' %}
+                            <form method="POST" action="{% url 'hotel_pos:release_table' data.active_order.id %}">
                                 {% csrf_token %}
-                                <button type="submit" class="btn btn-sm w-full btn-warning text-black font-bold shadow-md gap-1.5">
+                                <button type="submit" data-confirm="Complete payment and release Table T{{ data.table.number }}?" class="btn btn-sm w-full btn-warning text-black font-bold shadow-md gap-1.5">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
                                     Release Table
                                 </button>

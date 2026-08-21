@@ -1,16 +1,15 @@
-{% if order and order.items.count > 0 %}
-    {% for item in order.items.all %}
-    {% if item.workflow_state.name != 'Cancelled' %}
-    <li class="flex items-center justify-between p-3 border-b border-base-200">
-        <div>
-            <span class="font-bold">{{ item.menu_item.name }}</span>
-            <div class="text-xs text-base-content/70">
-                x{{ item.quantity }} @ INR {{ item.price }} 
+{% if order and order.active_items.exists %}
+    {% for item in order.active_items %}
+    <li class="flex items-center justify-between p-3 border-b border-base-200 hover:bg-base-200/50 rounded-lg transition-colors">
+        <div class="flex-1 pr-2">
+            <div class="font-bold text-sm">{{ item.menu_item.name }}</div>
+            <div class="text-xs text-base-content/70 flex items-center gap-1.5 mt-0.5">
+                <span>x{{ item.quantity }} @ INR {{ item.price }}</span>
                 {% if item.workflow_state %}
-                    <span class="badge badge-sm 
-                        {% if item.workflow_state.name == 'Pending' %}badge-warning
-                        {% elif item.workflow_state.name == 'Cooking' %}badge-info
-                        {% elif item.workflow_state.name == 'Served' %}badge-success
+                    <span class="badge badge-xs font-semibold
+                        {% if item.workflow_state.name == 'Pending' %}badge-warning text-warning-content
+                        {% elif item.workflow_state.name == 'Cooking' %}badge-info text-info-content
+                        {% elif item.workflow_state.name == 'Served' %}badge-success text-success-content
                         {% endif %}">
                         {{ item.workflow_state.name }}
                     </span>
@@ -18,22 +17,108 @@
             </div>
         </div>
         <div class="flex items-center gap-2">
-            <div class="font-bold text-primary">
+            <div class="font-bold text-primary text-sm whitespace-nowrap">
                 INR {{ item.total_price }}
             </div>
             {% if item.workflow_state.name != 'Served' %}
-            <button hx-post="{% url 'hotel_pos:cancel_item' item.id %}" hx-target="#order-items" class="btn btn-ghost btn-xs text-error px-1">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            <button type="button"
+                    hx-post="{% url 'hotel_pos:cancel_item' item.id %}" 
+                    hx-target="#order-items" 
+                    hx-swap="innerHTML"
+                    class="btn btn-ghost btn-xs text-error hover:bg-error/20 px-1.5"
+                    title="Cancel Item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
             </button>
             {% endif %}
         </div>
     </li>
-    {% endif %}
     {% endfor %}
-    <li class="mt-4 flex items-center justify-between text-lg font-bold">
-        <span>Total</span>
-        <span>INR {{ order.total_amount|default:"0.00" }}</span>
+    <li class="mt-4 pt-2 border-t border-base-300 flex items-center justify-between text-lg font-bold">
+        <span>Subtotal</span>
+        <span class="text-primary">INR {{ order.total_amount|default:"0.00" }}</span>
     </li>
 {% else %}
-    <li class="text-center text-base-content/50 py-4">No items in this order.</li>
+    <li class="text-center text-base-content/50 py-8">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mx-auto mb-2 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+        </svg>
+        <span>No active items in this order.</span>
+    </li>
+{% endif %}
+
+<!-- Out-Of-Band Dynamic Action Controls for the Order -->
+{% if order %}
+<div id="order-actions-panel" hx-swap-oob="true" class="mt-4 pt-4 border-t border-base-200 flex flex-col gap-2">
+    <!-- Send to Kitchen (KOT) Button -->
+    {% if order.has_pending_items %}
+    <button hx-post="{% url 'hotel_pos:send_to_kitchen' order.id %}" hx-target="#order-items" class="btn btn-info w-full shadow-lg text-white font-bold flex items-center justify-center gap-1.5">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+        </svg>
+        Send to Kitchen (KOT)
+    </button>
+    {% endif %}
+
+    <!-- State Indicator Alert -->
+    {% if order.has_unserved_items %}
+    <div class="alert alert-warning text-xs py-2 px-3 shadow-sm flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-4 w-4" fill="none" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <span>
+            Items in <strong>{% if order.has_cooking_items and order.has_pending_items %}Pending & Cooking{% elif order.has_cooking_items %}Cooking{% else %}Pending{% endif %}</strong>. Serve all items to generate bill.
+        </span>
+    </div>
+    {% endif %}
+
+    <!-- Generate Bill & Release Table Actions (Allowed ONLY when all items are served) -->
+    {% if order.can_generate_bill_and_release %}
+    <form hx-post="{% url 'hotel_pos:generate_bill' order.id %}" hx-target="#order-items" class="w-full">
+        <div class="form-control w-full mb-2">
+            <label class="cursor-pointer label bg-base-200 rounded-box px-4 py-2">
+                <span class="label-text font-bold text-xs">Apply Configured Tax</span>
+                <input type="checkbox" name="apply_tax" class="toggle toggle-primary toggle-sm" {% if order.is_tax_applied %}checked{% endif %} />
+            </label>
+        </div>
+        <button type="submit" class="btn btn-success w-full shadow-lg text-white font-bold flex items-center justify-center gap-1.5">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Generate Bill
+        </button>
+    </form>
+    
+    <form method="POST" action="{% url 'hotel_pos:release_table' order.id %}" class="w-full">
+        {% csrf_token %}
+        <button type="submit" data-confirm="Complete order processing and release Table {{ order.table.number|default:'' }}?" class="btn btn-warning w-full shadow-lg text-black font-bold flex items-center justify-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            Complete & Release Table
+        </button>
+    </form>
+    {% else %}
+    <!-- Disabled Actions when unserved items exist -->
+    <div class="flex flex-col gap-1.5 opacity-60">
+        <button type="button" disabled class="btn btn-disabled w-full cursor-not-allowed font-medium text-xs">
+            Generate Bill (Serve All Items First)
+        </button>
+        <button type="button" disabled class="btn btn-disabled w-full cursor-not-allowed font-medium text-xs">
+            Release Table (Serve All Items First)
+        </button>
+    </div>
+    {% endif %}
+
+    <button hx-post="{% url 'hotel_pos:cancel_order' order.id %}" hx-confirm="Are you sure you want to cancel this entire order?" class="btn btn-error btn-outline w-full text-xs font-bold">
+        Cancel Order
+    </button>
+
+    <div class="grid grid-cols-3 gap-1.5 mt-1">
+        <a href="{% url 'hotel_pos:table_dashboard' %}" class="btn btn-outline btn-xs">Tables</a>
+        <a href="{% url 'hotel_pos:kds' %}" class="btn btn-outline btn-info btn-xs">KDS</a>
+        <a href="{% url 'hotel_pos:order_history' %}" class="btn btn-outline btn-accent btn-xs">History</a>
+    </div>
+</div>
 {% endif %}

@@ -28,3 +28,5 @@ django-tables2>=2.7.0
 django-guardian>=2.4.0
 django-import-export>=3.3.0
 xhtml2pdf>=0.2.16
+pytest>=8.0.0
+pytest-django>=4.8.0
