@@ -226,9 +226,18 @@
                 const btnEl = document.getElementById('topRightConfirmSubmitBtn');
                 const iconEl = document.getElementById('topRightConfirmIcon');
 
-                let msg = typeof optionsOrMsg === 'string' ? optionsOrMsg : (optionsOrMsg.message || 'Are you sure you want to proceed?');
-                let title = typeof optionsOrMsg === 'object' && optionsOrMsg.title ? optionsOrMsg.title : 'Confirmation';
-                let btnText = typeof optionsOrMsg === 'object' && optionsOrMsg.confirmText ? optionsOrMsg.confirmText : 'Confirm';
+                let msg = 'Are you sure you want to proceed?';
+                let title = 'Confirmation';
+                let btnText = 'Confirm';
+
+                if (typeof optionsOrMsg === 'string') {
+                    msg = optionsOrMsg;
+                } else if (optionsOrMsg && typeof optionsOrMsg === 'object') {
+                    if (optionsOrMsg.message) msg = optionsOrMsg.message;
+                    if (optionsOrMsg.title) title = optionsOrMsg.title;
+                    if (optionsOrMsg.confirmText) btnText = optionsOrMsg.confirmText;
+                }
+
                 let isDestructive = msg.toLowerCase().includes('delete') || msg.toLowerCase().includes('cancel');
 
                 titleEl.textContent = title;
@@ -256,8 +265,11 @@
             }
         };
 
-        // 1. Intercept HTMX hx-confirm event to use Top-Right Modal
+        // 1. Intercept HTMX hx-confirm event ONLY when a confirmation question exists
         document.addEventListener('htmx:confirm', function(evt) {
+            if (!evt.detail || !evt.detail.question) {
+                return; // Allow standard unconfirmed HTMX actions (like adding items) to proceed
+            }
             evt.preventDefault();
             const question = evt.detail.question;
             window.showTopRightConfirm(question).then((confirmed) => {

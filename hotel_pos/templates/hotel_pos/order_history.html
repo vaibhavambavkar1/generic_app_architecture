@@ -3,31 +3,29 @@
 {% block title %}Bills & Order History | Hotel Management{% endblock %}
 
 {% block content %}
-<div class="h-full flex flex-col gap-6">
+<div class="h-full flex flex-col gap-3.5">
     <!-- Top Header -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-base-200 pb-4">
-        <div>
-            <div class="flex items-center gap-3">
-                <div class="p-2.5 rounded-xl bg-primary/10 text-primary">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                </div>
-                <div>
-                    <h1 class="text-3xl font-black tracking-tight">Bills & Order History</h1>
-                    <p class="text-sm text-base-content/70">Review past orders, reprint invoices, or recover accidentally released tables.</p>
-                </div>
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2.5 border-b border-base-200 shrink-0">
+        <div class="flex items-center gap-2.5">
+            <div class="p-1.5 rounded-lg bg-primary/10 text-primary shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-lg font-black tracking-tight text-base-content leading-tight">Bills & Order History</h1>
+                <p class="text-[11px] text-base-content/60">Review past orders, print thermal receipts, or restore mistakenly released tables</p>
             </div>
         </div>
-        <div class="flex items-center gap-3">
-            <a href="{% url 'hotel_pos:table_dashboard' %}" class="btn btn-outline btn-sm gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div class="flex items-center gap-2 shrink-0">
+            <a href="{% url 'hotel_pos:table_dashboard' %}" class="btn btn-xs btn-outline font-bold gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
-                Table Management
+                Table Layout
             </a>
-            <a href="{% url 'hotel_pos:pos_dashboard' %}" class="btn btn-primary btn-sm gap-2 shadow-lg shadow-primary/20">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <a href="{% url 'hotel_pos:pos_dashboard' %}" class="btn btn-xs btn-primary font-bold gap-1 shadow-xs">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                 </svg>
                 POS Terminal
@@ -35,148 +33,146 @@
         </div>
     </div>
 
-    <!-- Quick Stats Cards -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="card bg-base-100 border border-base-200 shadow-sm p-4 hover:shadow-md transition-shadow">
+    <!-- Quick Stats Cards (Compact 4-Card Strip) -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 shrink-0">
+        <div class="card bg-base-100 border border-base-200 shadow-2xs p-3 hover:shadow-xs transition-all">
             <div class="flex items-center justify-between">
-                <span class="text-xs font-semibold uppercase tracking-wider text-base-content/60">Today's Sales</span>
-                <span class="p-1.5 rounded-lg bg-success/10 text-success">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-base-content/60">Today's Sales</span>
+                <span class="p-1 rounded bg-success/10 text-success">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 </span>
             </div>
-            <div class="text-2xl font-black text-primary mt-2 font-mono">INR {{ stats.today_revenue|floatformat:2 }}</div>
-            <div class="text-xs text-base-content/50 mt-1">Total revenue processed today</div>
+            <div class="text-base font-black text-primary mt-1 font-mono">INR {{ stats.today_revenue|floatformat:2 }}</div>
+            <div class="text-[10px] text-base-content/50">Processed today</div>
         </div>
 
-        <div class="card bg-base-100 border border-base-200 shadow-sm p-4 hover:shadow-md transition-shadow">
+        <div class="card bg-base-100 border border-base-200 shadow-2xs p-3 hover:shadow-xs transition-all">
             <div class="flex items-center justify-between">
-                <span class="text-xs font-semibold uppercase tracking-wider text-base-content/60">Total Revenue</span>
-                <span class="p-1.5 rounded-lg bg-info/10 text-info">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-base-content/60">Total Revenue</span>
+                <span class="p-1 rounded bg-info/10 text-info">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
                 </span>
             </div>
-            <div class="text-2xl font-black text-info mt-2 font-mono">INR {{ stats.total_revenue|floatformat:2 }}</div>
-            <div class="text-xs text-base-content/50 mt-1">Cumulative sales recorded</div>
+            <div class="text-base font-black text-info mt-1 font-mono">INR {{ stats.total_revenue|floatformat:2 }}</div>
+            <div class="text-[10px] text-base-content/50">Cumulative sales</div>
         </div>
 
-        <div class="card bg-base-100 border border-base-200 shadow-sm p-4 hover:shadow-md transition-shadow">
+        <div class="card bg-base-100 border border-base-200 shadow-2xs p-3 hover:shadow-xs transition-all">
             <div class="flex items-center justify-between">
-                <span class="text-xs font-semibold uppercase tracking-wider text-base-content/60">Completed Bills</span>
-                <span class="p-1.5 rounded-lg bg-success/10 text-success">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-base-content/60">Completed Bills</span>
+                <span class="p-1 rounded bg-success/10 text-success">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 </span>
             </div>
-            <div class="text-2xl font-black text-success mt-2 font-mono">{{ stats.completed_count }}</div>
-            <div class="text-xs text-base-content/50 mt-1">Orders paid and tables released</div>
+            <div class="text-base font-black text-success mt-1 font-mono">{{ stats.completed_count }}</div>
+            <div class="text-[10px] text-base-content/50">Orders completed</div>
         </div>
 
-        <div class="card bg-base-100 border border-base-200 shadow-sm p-4 hover:shadow-md transition-shadow">
+        <div class="card bg-base-100 border border-base-200 shadow-2xs p-3 hover:shadow-xs transition-all">
             <div class="flex items-center justify-between">
-                <span class="text-xs font-semibold uppercase tracking-wider text-base-content/60">Active Orders</span>
-                <span class="p-1.5 rounded-lg bg-warning/10 text-warning">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-base-content/60">Active Orders</span>
+                <span class="p-1 rounded bg-warning/10 text-warning">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 </span>
             </div>
-            <div class="text-2xl font-black text-warning mt-2 font-mono">{{ stats.active_count }}</div>
-            <div class="text-xs text-base-content/50 mt-1">Currently open / cooking / billed</div>
+            <div class="text-base font-black text-warning mt-1 font-mono">{{ stats.active_count }}</div>
+            <div class="text-[10px] text-base-content/50">Open / in kitchen</div>
         </div>
     </div>
 
-    <!-- Filter & Search Toolbar -->
-    <div class="card bg-base-100 shadow-sm border border-base-200 p-4">
-        <form method="GET" class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+    <!-- Filter & Search Toolbar (Compact Single Bar) -->
+    <div class="card bg-base-100 shadow-2xs border border-base-200 px-3 py-2 shrink-0">
+        <form method="GET" class="flex flex-wrap items-center justify-between gap-2">
             <!-- Search & Filters -->
-            <div class="flex flex-wrap items-center gap-3 flex-grow">
+            <div class="flex flex-wrap items-center gap-2 flex-grow">
                 <!-- Search Input -->
-                <div class="form-control w-full sm:w-80">
-                    <div class="relative flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 absolute left-3 text-base-content/40 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                        <input type="text" name="q" value="{{ q }}" placeholder="Search by Order # or Table T1..." class="input input-bordered input-sm w-full pl-9 pr-8" />
-                        {% if q %}
-                        <a href="{% url 'hotel_pos:order_history' %}" class="absolute right-2.5 text-xs text-base-content/50 hover:text-base-content">✕</a>
-                        {% endif %}
-                    </div>
+                <div class="relative flex items-center w-full sm:w-64">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 absolute left-2.5 text-base-content/40 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <input type="text" name="q" value="{{ q }}" placeholder="Search Order # or Table..." class="input input-bordered input-xs w-full pl-8 pr-7 text-xs rounded-lg" />
+                    {% if q %}
+                    <a href="{% url 'hotel_pos:order_history' %}" class="absolute right-2 text-xs text-base-content/40 hover:text-base-content">✕</a>
+                    {% endif %}
                 </div>
 
                 <!-- Status Filter -->
-                <select name="status" class="select select-sm select-bordered font-medium" onchange="this.form.submit()">
-                    <option value="" {% if not status_filter %}selected{% endif %}>All Order Statuses</option>
-                    <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>✓ Completed / Closed</option>
+                <select name="status" class="select select-xs select-bordered font-medium text-xs rounded-lg" onchange="this.form.submit()">
+                    <option value="" {% if not status_filter %}selected{% endif %}>All Statuses</option>
+                    <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>✓ Completed</option>
                     <option value="Billed" {% if status_filter == 'Billed' %}selected{% endif %}>🧾 Billed</option>
-                    <option value="active" {% if status_filter == 'active' %}selected{% endif %}>🍽️ Active / Open</option>
+                    <option value="active" {% if status_filter == 'active' %}selected{% endif %}>🍽️ Active</option>
                     <option value="Cancelled" {% if status_filter == 'Cancelled' %}selected{% endif %}>✕ Cancelled</option>
                 </select>
 
                 <!-- Date Filter -->
-                <select name="date" class="select select-sm select-bordered font-medium" onchange="this.form.submit()">
+                <select name="date" class="select select-xs select-bordered font-medium text-xs rounded-lg" onchange="this.form.submit()">
                     <option value="all" {% if date_filter == 'all' %}selected{% endif %}>📅 All Time</option>
-                    <option value="today" {% if date_filter == 'today' %}selected{% endif %}>📅 Today Only</option>
+                    <option value="today" {% if date_filter == 'today' %}selected{% endif %}>📅 Today</option>
                     <option value="week" {% if date_filter == 'week' %}selected{% endif %}>📅 Last 7 Days</option>
                 </select>
             </div>
 
             <!-- Action buttons -->
-            <div class="flex items-center gap-2">
-                <button type="submit" class="btn btn-sm btn-primary gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
-                    Apply Filters
+            <div class="flex items-center gap-1.5 shrink-0">
+                <button type="submit" class="btn btn-xs btn-primary font-bold gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
+                    Apply
                 </button>
-                <a href="{% url 'hotel_pos:order_history' %}" class="btn btn-sm btn-ghost">Reset</a>
+                <a href="{% url 'hotel_pos:order_history' %}" class="btn btn-xs btn-ghost text-xs">Reset</a>
             </div>
         </form>
     </div>
 
-    <!-- Orders Table with 10 Records Pagination -->
-    <div class="card bg-base-100 shadow-sm border border-base-200 overflow-hidden flex-grow flex flex-col justify-between">
-        <div class="overflow-x-auto">
-            <table class="table table-zebra w-full">
+    <!-- Orders Table (Compact High-Density View) -->
+    <div class="card bg-base-100 shadow-2xs border border-base-200 overflow-hidden flex-grow flex flex-col justify-between min-h-0">
+        <div class="overflow-x-auto flex-grow">
+            <table class="table table-xs table-zebra w-full">
                 <thead>
-                    <tr class="bg-base-200/60 text-xs uppercase tracking-wider text-base-content/70 font-bold border-b border-base-300">
-                        <th class="py-3.5">Order ID</th>
+                    <tr class="bg-base-200/70 text-[11px] uppercase tracking-wider text-base-content/70 font-bold border-b border-base-300">
+                        <th class="py-2.5 pl-3">Order ID</th>
                         <th>Table</th>
                         <th>Timestamp</th>
                         <th>Status</th>
                         <th>Items Summary</th>
-                        <th>Subtotal</th>
-                        <th>Tax</th>
-                        <th>Total Amount</th>
-                        <th class="text-right">Actions</th>
+                        <th class="text-right">Subtotal</th>
+                        <th class="text-right">Tax</th>
+                        <th class="text-right">Total Amount</th>
+                        <th class="text-right pr-3">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-base-200">
+                <tbody class="divide-y divide-base-200/60 text-xs">
                     {% for order in orders %}
-                    <tr class="hover:bg-base-200/40 transition-colors">
+                    <tr class="hover:bg-base-200/50 transition-colors">
                         <!-- Order ID -->
-                        <td class="font-mono font-bold text-primary text-sm py-4">
+                        <td class="font-mono font-bold text-primary py-2 pl-3">
                             #{{ order.id }}
                         </td>
 
                         <!-- Table -->
                         <td>
                             {% if order.table %}
-                                <span class="badge badge-outline font-bold text-xs py-2 px-2.5">Table {{ order.table.number }}</span>
+                                <span class="badge badge-xs badge-outline font-bold text-[10px] py-1 px-1.5">T{{ order.table.number }}</span>
                             {% else %}
-                                <span class="badge badge-ghost text-xs">Takeaway</span>
+                                <span class="badge badge-xs badge-ghost text-[10px]">Takeaway</span>
                             {% endif %}
                         </td>
 
                         <!-- Timestamp -->
-                        <td class="text-xs">
-                            <div class="font-semibold text-base-content/90">{{ order.created_at|date:"d M Y" }}</div>
-                            <div class="font-mono text-xs opacity-50">{{ order.created_at|date:"h:i A" }}</div>
+                        <td class="text-[11px] whitespace-nowrap">
+                            <span class="font-semibold text-base-content/90">{{ order.created_at|date:"d M Y" }}</span>
+                            <span class="font-mono opacity-50 ml-1">{{ order.created_at|date:"h:i A" }}</span>
                         </td>
 
                         <!-- Status Badge -->
                         <td>
-                            <span class="badge badge-sm font-bold uppercase tracking-wide gap-1
+                            <span class="badge badge-xs font-bold uppercase tracking-wider text-[10px] py-1 px-2 gap-1
                                 {% if order.workflow_state.name == 'Closed' or order.workflow_state.name == 'Paid' %}badge-success text-white
                                 {% elif order.workflow_state.name == 'Billed' %}badge-warning text-black
                                 {% elif order.workflow_state.name == 'Cancelled' %}badge-error text-white
                                 {% else %}badge-info text-white{% endif %}">
                                 {% if order.workflow_state.name == 'Closed' or order.workflow_state.name == 'Paid' %}
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-2.5 w-2.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
                                 {% endif %}
                                 {{ order.workflow_state.name|default:"Open" }}
                             </span>
@@ -184,60 +180,59 @@
 
                         <!-- Items Summary -->
                         <td>
-                            <div class="text-xs max-w-xs truncate text-base-content/80" title="{% for item in order.items.all %}{{ item.quantity }}x {{ item.menu_item.name }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+                            <div class="max-w-xs truncate text-[11px] text-base-content/80" title="{% for item in order.items.all %}{{ item.quantity }}x {{ item.menu_item.name }}{% if not forloop.last %}, {% endif %}{% endfor %}">
                                 {% for item in order.items.all %}
                                     <span class="{% if item.workflow_state.name == 'Cancelled' %}line-through opacity-40 text-error{% endif %}">
                                         {{ item.quantity }}x {{ item.menu_item.name }}
                                     </span>{% if not forloop.last %}<span class="text-base-content/30">, </span>{% endif %}
                                 {% empty %}
-                                    <span class="text-base-content/40 italic">No items attached</span>
+                                    <span class="text-base-content/40 italic text-[11px]">No items</span>
                                 {% endfor %}
                             </div>
-                            <div class="text-[11px] text-base-content/50 mt-0.5">{{ order.items.count }} item{{ order.items.count|pluralize }}</div>
                         </td>
 
                         <!-- Subtotal -->
-                        <td class="font-mono text-sm text-base-content/80">INR {{ order.subtotal|floatformat:2 }}</td>
+                        <td class="font-mono text-right text-base-content/80">₹{{ order.subtotal|floatformat:2 }}</td>
 
                         <!-- Tax -->
-                        <td class="font-mono text-sm">
+                        <td class="font-mono text-right text-[11px]">
                             {% if order.is_tax_applied and order.tax_amount > 0 %}
-                                <span class="text-success font-bold">+INR {{ order.tax_amount|floatformat:2 }}</span>
+                                <span class="text-success font-semibold">+₹{{ order.tax_amount|floatformat:2 }}</span>
                             {% else %}
-                                <span class="opacity-40">INR 0.00</span>
+                                <span class="opacity-40">₹0.00</span>
                             {% endif %}
                         </td>
 
                         <!-- Total Amount -->
-                        <td class="font-mono font-black text-base text-primary">
-                            INR {{ order.total_amount|floatformat:2 }}
+                        <td class="font-mono font-bold text-right text-primary text-xs">
+                            ₹{{ order.total_amount|floatformat:2 }}
                         </td>
 
                         <!-- Actions -->
-                        <td class="text-right">
-                            <div class="flex items-center justify-end gap-1.5">
+                        <td class="text-right pr-3">
+                            <div class="flex items-center justify-end gap-1">
                                 <!-- Print / Reprint Receipt Button -->
-                                <a href="{% url 'hotel_pos:receipt_printer' order.id %}" target="_blank" class="btn btn-sm btn-outline btn-primary gap-1.5 text-xs shadow-sm" title="Print / Reprint Thermal Bill">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <a href="{% url 'hotel_pos:receipt_printer' order.id %}" target="_blank" class="btn btn-xs btn-outline btn-primary font-bold px-2 gap-1" title="Print / Reprint Thermal Bill">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                                     </svg>
-                                    Print Bill
+                                    Print
                                 </a>
 
                                 <!-- View Details Modal Trigger -->
-                                <button onclick="openOrderModal({{ order.id }})" class="btn btn-sm btn-ghost btn-square" title="View Full Order Breakdown">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <button onclick="openOrderModal({{ order.id }})" class="btn btn-xs btn-ghost btn-square" title="View Full Order Breakdown">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                     </svg>
                                 </button>
 
-                                <!-- Re-Open Order Button (For Mistakenly Released Orders) -->
+                                <!-- Re-Open Order Button -->
                                 {% if order.workflow_state.name == 'Closed' or order.workflow_state.name == 'Paid' %}
-                                <form method="POST" action="{% url 'hotel_pos:reopen_order' order.id %}">
+                                <form method="POST" action="{% url 'hotel_pos:reopen_order' order.id %}" class="inline">
                                     {% csrf_token %}
-                                    <button type="submit" data-confirm="Re-open Order #{{ order.id }} for Table T{{ order.table.number }}?" class="btn btn-sm btn-warning btn-outline gap-1 text-xs" title="Restore order if table was released accidentally">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <button type="submit" data-confirm="Re-open Order #{{ order.id }} for Table T{{ order.table.number }}?" class="btn btn-xs btn-warning btn-outline px-1.5 gap-1 font-bold" title="Restore order if table was released accidentally">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                         </svg>
                                         Re-open
@@ -248,20 +243,20 @@
 
                             <!-- Hidden details data payload for modal preview -->
                             <div id="order_data_{{ order.id }}" class="hidden">
-                                <div class="flex items-center justify-between border-b pb-3 mb-4">
+                                <div class="flex items-center justify-between border-b pb-2.5 mb-3">
                                     <div>
-                                        <h3 class="font-black text-xl text-primary">Invoice #{{ order.id }}</h3>
-                                        <div class="text-xs text-base-content/60">{{ order.created_at|date:"l, d F Y - h:i A" }}</div>
+                                        <h3 class="font-black text-lg text-primary">Invoice #{{ order.id }}</h3>
+                                        <div class="text-[11px] text-base-content/60">{{ order.created_at|date:"l, d F Y - h:i A" }}</div>
                                     </div>
-                                    <span class="badge badge-sm font-bold uppercase">{{ order.workflow_state.name|default:"Open" }}</span>
+                                    <span class="badge badge-xs font-bold uppercase py-1 px-2">{{ order.workflow_state.name|default:"Open" }}</span>
                                 </div>
-                                <div class="grid grid-cols-2 gap-3 text-sm bg-base-200/50 p-3 rounded-lg mb-4">
-                                    <div><span class="text-xs uppercase text-base-content/50 font-bold block">Table</span> <span class="font-bold">Table {{ order.table.number|default:"Takeaway" }}</span></div>
-                                    <div><span class="text-xs uppercase text-base-content/50 font-bold block">Cashier / Staff</span> <span class="font-bold">{{ order.waiter.username|default:"Admin" }}</span></div>
+                                <div class="grid grid-cols-2 gap-2 text-xs bg-base-200/50 p-2.5 rounded-lg mb-3">
+                                    <div><span class="text-[10px] uppercase text-base-content/50 font-bold block">Table</span> <span class="font-bold">Table {{ order.table.number|default:"Takeaway" }}</span></div>
+                                    <div><span class="text-[10px] uppercase text-base-content/50 font-bold block">Cashier / Staff</span> <span class="font-bold">{{ order.waiter.username|default:"Admin" }}</span></div>
                                 </div>
-                                <table class="table table-compact w-full mb-4">
+                                <table class="table table-xs table-compact w-full mb-3">
                                     <thead>
-                                        <tr class="bg-base-200 text-xs uppercase">
+                                        <tr class="bg-base-200 text-[10px] uppercase">
                                             <th>Item</th>
                                             <th class="text-center">Qty</th>
                                             <th class="text-right">Price</th>
@@ -272,25 +267,25 @@
                                     <tbody>
                                         {% for item in order.items.all %}
                                         <tr class="{% if item.workflow_state.name == 'Cancelled' %}opacity-40 line-through{% endif %}">
-                                            <td class="font-medium">{{ item.menu_item.name }}</td>
-                                            <td class="text-center">{{ item.quantity }}</td>
-                                            <td class="text-right font-mono">INR {{ item.price }}</td>
-                                            <td class="text-right font-mono font-bold">INR {{ item.total_price }}</td>
-                                            <td class="text-center"><span class="badge badge-xs">{{ item.workflow_state.name }}</span></td>
+                                            <td class="font-medium text-xs">{{ item.menu_item.name }}</td>
+                                            <td class="text-center font-mono">{{ item.quantity }}</td>
+                                            <td class="text-right font-mono text-xs">INR {{ item.price }}</td>
+                                            <td class="text-right font-mono font-bold text-xs">INR {{ item.total_price }}</td>
+                                            <td class="text-center"><span class="badge badge-xs text-[10px]">{{ item.workflow_state.name }}</span></td>
                                         </tr>
                                         {% endfor %}
                                     </tbody>
                                 </table>
-                                <div class="border-t-2 border-dashed border-base-300 pt-3 text-sm space-y-1.5 font-mono">
+                                <div class="border-t-2 border-dashed border-base-300 pt-2.5 text-xs space-y-1 font-mono">
                                     <div class="flex justify-between text-base-content/70"><span>Subtotal</span> <span>INR {{ order.subtotal|floatformat:2 }}</span></div>
                                     {% if order.is_tax_applied %}
                                     <div class="flex justify-between text-success font-semibold"><span>Tax (Configured GST)</span> <span>+INR {{ order.tax_amount|floatformat:2 }}</span></div>
                                     {% endif %}
-                                    <div class="flex justify-between font-black text-lg text-primary border-t border-base-200 pt-2"><span>Total Amount</span> <span>INR {{ order.total_amount|floatformat:2 }}</span></div>
+                                    <div class="flex justify-between font-black text-sm text-primary border-t border-base-200 pt-1.5"><span>Total Amount</span> <span>INR {{ order.total_amount|floatformat:2 }}</span></div>
                                 </div>
-                                <div class="mt-6 flex gap-2">
-                                    <a href="{% url 'hotel_pos:receipt_printer' order.id %}" target="_blank" class="btn btn-primary w-full gap-2">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                                <div class="mt-4 flex gap-2">
+                                    <a href="{% url 'hotel_pos:receipt_printer' order.id %}" target="_blank" class="btn btn-xs btn-primary w-full font-bold gap-1.5 shadow-xs">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
                                         Print Official Receipt
                                     </a>
                                 </div>
@@ -299,15 +294,15 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="9" class="text-center py-16 text-base-content/50">
+                        <td colspan="9" class="text-center py-10 text-base-content/50">
                             <div class="flex flex-col items-center justify-center">
-                                <div class="p-4 rounded-full bg-base-200 mb-3">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 opacity-40 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <div class="p-2.5 rounded-full bg-base-200 mb-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 opacity-40 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                     </svg>
                                 </div>
-                                <div class="font-bold text-base">No orders found</div>
-                                <div class="text-xs text-base-content/40 mt-1">Try adjusting your search keywords or status filter.</div>
+                                <div class="font-bold text-xs">No orders found</div>
+                                <div class="text-[11px] text-base-content/40 mt-0.5">Try adjusting your search keywords or status filter.</div>
                             </div>
                         </td>
                     </tr>
@@ -316,45 +311,40 @@
             </table>
         </div>
 
-        <!-- 10 Records Pagination Footer -->
-        <div class="p-4 border-t border-base-200 flex flex-col sm:flex-row items-center justify-between gap-4 bg-base-100">
-            <div class="text-xs text-base-content/70">
+        <!-- Compact Pagination Footer -->
+        <div class="px-3 py-2 border-t border-base-200 flex flex-col sm:flex-row items-center justify-between gap-2 bg-base-100 shrink-0">
+            <div class="text-[11px] text-base-content/70">
                 {% if total_count > 0 %}
-                    Showing <span class="font-bold text-base-content">{{ orders.start_index }}</span> to <span class="font-bold text-base-content">{{ orders.end_index }}</span> of <span class="font-bold text-base-content">{{ total_count }}</span> total orders (10 per page)
+                    Showing <span class="font-bold text-base-content">{{ orders.start_index }}</span> to <span class="font-bold text-base-content">{{ orders.end_index }}</span> of <span class="font-bold text-base-content">{{ total_count }}</span> orders (10/page)
                 {% else %}
                     0 orders found
                 {% endif %}
             </div>
 
             {% if orders.has_other_pages %}
-            <div class="join shadow-sm">
-                <!-- First Page -->
+            <div class="join shadow-2xs">
                 {% if orders.number > 1 %}
-                <a href="?page=1&q={{ q }}&status={{ status_filter }}&date={{ date_filter }}" class="join-item btn btn-sm" title="First Page">««</a>
+                <a href="?page=1&q={{ q }}&status={{ status_filter }}&date={{ date_filter }}" class="join-item btn btn-xs" title="First Page">««</a>
                 {% endif %}
 
-                <!-- Previous Page -->
                 {% if orders.has_previous %}
-                <a href="?page={{ orders.previous_page_number }}&q={{ q }}&status={{ status_filter }}&date={{ date_filter }}" class="join-item btn btn-sm">« Prev</a>
+                <a href="?page={{ orders.previous_page_number }}&q={{ q }}&status={{ status_filter }}&date={{ date_filter }}" class="join-item btn btn-xs">« Prev</a>
                 {% else %}
-                <button class="join-item btn btn-sm btn-disabled opacity-50">« Prev</button>
+                <button class="join-item btn btn-xs btn-disabled opacity-40">« Prev</button>
                 {% endif %}
 
-                <!-- Page Indicator Button -->
-                <button class="join-item btn btn-sm btn-primary font-mono font-bold">
+                <button class="join-item btn btn-xs btn-primary font-mono font-bold text-[11px]">
                     Page {{ orders.number }} / {{ orders.paginator.num_pages }}
                 </button>
 
-                <!-- Next Page -->
                 {% if orders.has_next %}
-                <a href="?page={{ orders.next_page_number }}&q={{ q }}&status={{ status_filter }}&date={{ date_filter }}" class="join-item btn btn-sm">Next »</a>
+                <a href="?page={{ orders.next_page_number }}&q={{ q }}&status={{ status_filter }}&date={{ date_filter }}" class="join-item btn btn-xs">Next »</a>
                 {% else %}
-                <button class="join-item btn btn-sm btn-disabled opacity-50">Next »</button>
+                <button class="join-item btn btn-xs btn-disabled opacity-40">Next »</button>
                 {% endif %}
 
-                <!-- Last Page -->
                 {% if orders.number < orders.paginator.num_pages %}
-                <a href="?page={{ orders.paginator.num_pages }}&q={{ q }}&status={{ status_filter }}&date={{ date_filter }}" class="join-item btn btn-sm" title="Last Page">»»</a>
+                <a href="?page={{ orders.paginator.num_pages }}&q={{ q }}&status={{ status_filter }}&date={{ date_filter }}" class="join-item btn btn-xs" title="Last Page">»»</a>
                 {% endif %}
             </div>
             {% endif %}
@@ -364,10 +354,10 @@
 
 <!-- Order Detail Modal -->
 <dialog id="order_detail_modal" class="modal">
-    <div class="modal-box max-w-xl p-6">
+    <div class="modal-box max-w-lg p-5">
         <div id="modal_order_content"></div>
-        <div class="modal-action mt-6 border-t pt-4">
-            <button type="button" class="btn btn-ghost" onclick="order_detail_modal.close()">Close</button>
+        <div class="modal-action mt-4 border-t pt-3">
+            <button type="button" class="btn btn-xs btn-ghost" onclick="order_detail_modal.close()">Close</button>
         </div>
     </div>
     <form method="dialog" class="modal-backdrop">
